@@ -483,7 +483,7 @@ async function startNazu() {
       process.exit(1);
     }
   }
-}
+} 
 
 process.on('SIGINT', () => {
   console.log('\n🛑 Recebido sinal de interrupção. Encerrando bot graciosamente...');
