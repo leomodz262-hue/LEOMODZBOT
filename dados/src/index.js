@@ -5235,7 +5235,7 @@ case 'listadv':
   
   case 'perfil':
   try {
-    const target = menc_os2 || sender;
+    const target = sender;
 
     const targetId = target.split('@')[0];
     const targetName = `@${targetId}`;
@@ -5283,7 +5283,9 @@ case 'listadv':
     
     const userStatus = isOwner ? 'Meu dono' : isPremium ? 'Usuario premium' : isGroupAdmin ? 'Admin do grupo' : 'Membro comum';
     
-    const card = await new Banner.ProfileCard().setUsername(pushname).setAvatar(profilePic).setBio(bio).setStatus("online").setAvatarBorderColor("#FFFFFF").setOverlayOpacity(0.4).setCustomField("Cargo", userStatus).build();
+    const PosAtivo = groupData.contador.sort((a, b) => ((a.figu == undefined ? a.figu = 0 : a.figu + a.msg + a.cmd) < (b.figu == undefined ? b.figu = 0 : b.figu + b.cmd + b.msg)) ? 0 : -1).findIndex(item => item.id === sender) + 1;
+    
+    const card = await new Banner.discordProfile().setUsername(pushname).setAvatar(profilePic).setDiscriminator(String(PosAtivo)+' RankAtivo').setCustomField('BIOGRAFIA', bio).setCustomField('CARGO', userStatus).addBadge({ url: "https://raw.githubusercontent.com/nazuninha/uploads/main/outros/1750256388571_pho2rc.bin", description: "nazu_1" }).addBadge({ url: "https://raw.githubusercontent.com/nazuninha/uploads/main/outros/1750256376195_yxuvia.bin", description: "nazu_2" }).addBadge({ url: "https://raw.githubusercontent.com/nazuninha/uploads/main/outros/1750256372026_opr8yt.bin", description: "nazu_3" }).addBadge({ url: "https://raw.githubusercontent.com/nazuninha/uploads/main/outros/1750256365503_3g4ea3.bin", description: "nazu_4" }).addBadge({ url: "https://raw.githubusercontent.com/nazuninha/uploads/main/outros/1750256353890_d1wsij.bin", description: "nazu_5" }).setBanner('https://raw.githubusercontent.com/nazuninha/uploads/main/outros/1750256280558_108lrc.bin').build();
     
     await nazu.sendMessage(from, { image: card, caption: perfilText, mentions: [target] }, { quoted: info });
   } catch (error) {
