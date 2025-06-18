@@ -51,16 +51,18 @@ async function menuadm(prefix, botName = "MeuBot", userName = "Usuário", isLite
 │
 │╭─▸ *Gerenciamento do Grupo:*
 ││
+││◕⁠➜ ${prefix}banghost [número]
+││    ↳ Bane membros com até [número] mensagens no grupo
 ││◕⁠➜ ${prefix}del / ${prefix}d
 ││    ↳ Deletar mensagens
-││◕⁠➜ ${prefix}limpar
-││    ↳ Limpar o chat visualmente
 ││◕⁠➜ ${prefix}hidetag
 ││    ↳ Marcar todos escondido
 ││◕⁠➜ ${prefix}marcar
 ││    ↳ Marcar membros
 ││◕⁠➜ ${prefix}linkgp
 ││    ↳ Gerar link do grupo
+││◕⁠➜ ${prefix}limpar
+││    ↳ Limpar o chat visualmente
 ││◕⁠➜ ${prefix}grupo A/F
 ││    ↳ Abrir/fechar grupo
 ││◕⁠➜ ${prefix}setname
