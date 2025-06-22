@@ -2,7 +2,7 @@
 // Nazuna Bot - Index principal
 // Criado por: Hiudy
 // Versão: 4.0.0
-// Atualizado: 21/06/2025
+// Atualizado: 22/06/2025
 // ====================
 
 
@@ -3527,6 +3527,37 @@ break;
   };
   break
   
+  case 'sorteio': case 'sortear':
+  if (!isGroup) return reply("isso so pode ser usado em grupo 💔");
+  if (!isGroupAdmin) return reply("Comando restrito a Administradores ou Moderadores com permissão. 💔");
+  if (!isBotAdmin) return reply("Eu preciso ser adm 💔");
+  if(!q) return reply(`❌ Digite os dados após o comando...\n${prefix}${command} Dados Sorteio | Ganhadores\n\nExemplos:\n${prefix}${command} 100 Reais\n${prefix}${command} 100 Reais | 2`);
+  try {
+    if(q.includes('|')) {
+      const quantidadeMenb = Number(q.split('|')[1]);
+      let TextSort = `🥳 Parabéns aos ganhadores do sorteio\n\n💰 Prêmio: ${q.split('|')[0]}\n👑 Ganhadores: `;
+      let MentionsSort = [];
+      let TextArray = [];
+      for(i=0;i<quantidadeMenb;i++) {
+        const menb = AllgroupMembers[Math.floor(Math.random() * AllgroupMembers.length)];
+        if(!MentionsSort.includes(menb)) {
+          TextArray.push(`@${menb.split('@')[0]}`);
+        } else {
+          i--;
+        };
+      };
+      TextSort += TextArray.join(', ');
+      await nazu.sendMessage(from, {text: TextSort, mentions: [MentionsSort]});
+    } else {
+      const menb = AllgroupMembers[Math.floor(Math.random() * AllgroupMembers.length)];
+      await nazu.sendMessage(from, {text: `🥳 Parabéns ao ganhador do sorteio\n\n💰 Prêmio: ${q}\n👑 Ganhador: ${menb.split('@')[0]}`, mentions: [menb]});
+    };
+  } catch(error) {
+    console.error(error);
+    await reply("🐝 Oh não! Aconteceu um errinho inesperado aqui. Tente de novo daqui a pouquinho, por favor! 🥺");
+  };
+  break
+  
   case 'totag':
   case 'cita':
   case 'hidetag': try {
@@ -4402,6 +4433,31 @@ case 'listadv':
   } catch (e) {
     console.error(e);
     reply("ocorreu um erro 💔");
+  }
+  break;
+  
+  case 'invite':
+case 'indicacao':
+case 'bonus':
+  try {
+    const linkConvite = `https://wa.me/553399285117?text=${encodeURIComponent(`Olá! Tenho interesse em alugar a bot ou ter a minha própria. Você poderia me passar mais informações?\n\n> Indicação: ${sender.split('@')[0]}`)}`;
+    const anu = await axios.get(`https://tinyurl.com/api-create.php?url=${linkConvite}`);
+
+    await reply(
+      `💸 *Quer ganhar dinheiro apenas compartilhando um link?*\n\n` +
+      `Com o *Sistema de Indicações da Nazuna*, você pode transformar seus contatos em renda extra!\n\n` +
+      `🔹 Ganhe indicando usuários que desejam alugar uma bot, ter a própria ou adquirir qualquer outro serviço.\n\n` +
+      `💰 *Quais são seus ganhos?*\n` +
+      `• 15% do valor total que o indicado gastar, *ou*\n` +
+      `• 25% do valor convertido em *créditos* para uso em nossos produtos (Hospedagem, API, Aluguel, IA, etc.)\n\n` +
+      `📨 *Seu link de indicação personalizado está aqui:*\n${anu.data}\n\n` +
+      `*Importante:*\n` +
+      `> Este sistema pertence ao criador da bot (*Hiudy*). O dono da bot que você está utilizando *não tem responsabilidade* sobre o sistema de indicações, exceto se estiver diretamente envolvido com o criador.\n` +
+      `> As indicações são válidas apenas se realizadas através do *seu link exclusivo* de convite.`
+    );
+  } catch (e) {
+    console.error(e);
+    await reply("⚠️ Ocorreu um erro ao gerar seu link. Tente novamente mais tarde.");
   }
   break;
   

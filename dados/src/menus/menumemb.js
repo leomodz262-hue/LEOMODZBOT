@@ -4,6 +4,11 @@ async function menuMembros(prefix, botName = "MeuBot", userName = "Usuário") {
 ┊Olá, *${userName}*!
 ╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯
 
+╭┈❪🍧ฺꕸ▸ *GANHAR DINHEIRO*
+┊
+┊•.̇𖥨֗🍓⭟${prefix}indicacao
+╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯
+
 ╭┈❪🍧ฺꕸ▸ *INFORMAÇÕES*
 ┊
 ┊•.̇𖥨֗🍓⭟${prefix}perfil
@@ -31,8 +36,7 @@ async function menuMembros(prefix, botName = "MeuBot", userName = "Usuário") {
 ┊•.̇𖥨֗🍓⭟${prefix}rankativo
 ┊•.̇𖥨֗🍓⭟${prefix}rankinativo
 ┊•.̇𖥨֗🍓⭟${prefix}rankativog
-╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯
-`;
+╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯`;
 }
 
 module.exports = menuMembros;
