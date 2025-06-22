@@ -3550,7 +3550,7 @@ break;
       await nazu.sendMessage(from, {text: TextSort, mentions: [MentionsSort]});
     } else {
       const menb = AllgroupMembers[Math.floor(Math.random() * AllgroupMembers.length)];
-      await nazu.sendMessage(from, {text: `🥳 Parabéns ao ganhador do sorteio\n\n💰 Prêmio: ${q}\n👑 Ganhador: ${menb.split('@')[0]}`, mentions: [menb]});
+      await nazu.sendMessage(from, {text: `🥳 Parabéns ao ganhador do sorteio\n\n💰 Prêmio: ${q}\n👑 Ganhador: @${menb.split('@')[0]}`, mentions: [menb]});
     };
   } catch(error) {
     console.error(error);
