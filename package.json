@@ -19,7 +19,7 @@
   "license": "ISC",
   "dependencies": {
     "@cognima/banners": "latest",
-    "@cognima/walib": "npm:baileys-mod@latest",
+    "@cognima/walib": "latest",
     "fluent-ffmpeg": "latest",
     "linkedom": "latest",
     "node-cron": "latest",
