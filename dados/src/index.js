@@ -5255,29 +5255,72 @@ function getDiskSpaceInfo() {
 };
 
 
-cron.schedule('* * * * *', async () => {
-  const DIR_PROGRAM = pathz.join(DATABASE_DIR, 'prog_actions.json');
-  if (!fs.existsSync(DIR_PROGRAM)) {
-    await fs.writeFileSync(DIR_PROGRAM, JSON.stringify([], null, 2));
-  };
-  const ACTIONS = JSON.parse(fs.readFileSync(DIR_PROGRAM, 'utf-8'));
-  for (let i = ACTIONS.length - 1; i >= 0; i--) {
-    const ACTION = ACTIONS[i];
-    const Data = new Date(Date.now()).toLocaleString('pt-BR');
-    if (Number(ACTION.data.ano) !== Number(Data.split('/').pop().split(',')[0])) continue;
-    if (Number(ACTION.data.mes) !== Number(Data.split('/')[1])) continue;
-    if (Number(ACTION.data.dia) !== Number(Data.split('/')[0])) continue;
-    if (Number(ACTION.hora.hora) > Number(Data.split(' ').pop().split(':')[0])) continue;
-    if (Number(ACTION.hora.minuto) > Number(Data.split(':')[1])) continue;
-    if (ACTION.tipo && ACTION.tipo === "lembrete") {
-      const destino = ACTION.destino === 'privado' ? ACTION.sender : ACTION.from;
-      await SocketActions.sendMessage(destino, { text: `${ACTION.texto}\n\n@${ACTION.sender.split('@')[0]}`, mentions: [ACTION.sender] });
-    } else if (ACTION.tipo && ACTION.tipo === "grupo") {
-      await SocketActions.groupSettingUpdate(ACTION.from, ACTION.acao === 'abrir' ? 'not_announcement' : 'announcement');
+cron.schedule('* * * * *', () => {
+  const DIR_PROGRAM = path.join(DATABASE_DIR, 'prog_actions.json');
+  
+  try {
+    if (!fs.existsSync(DIR_PROGRAM)) {
+      fs.writeFileSync(DIR_PROGRAM, JSON.stringify([], null, 2));
+    }
+
+    let actions = [];
+    try {
+      const data = fs.readFileSync(DIR_PROGRAM, 'utf-8');
+      actions = JSON.parse(data);
+    } catch (err) {
+      console.error('Erro ao ler/parsear prog_actions.json:', err);
+      return;
+    }
+
+    const now = new Date();
+    const offsetBRT = -3 * 60;
+    const nowBRT = new Date(now.getTime() + offsetBRT * 60 * 1000);
+    const current = {
+      year: nowBRT.getUTCFullYear(),
+      month: nowBRT.getUTCMonth() + 1,
+      day: nowBRT.getUTCDate(),
+      hour: nowBRT.getUTCHours(),
+      minute: nowBRT.getUTCMinutes()
     };
-    ACTIONS.splice(i, 1);
+
+    for (let i = actions.length - 1; i >= 0; i--) {
+      const action = actions[i];
+
+      if (
+        Number(action.data.ano) !== current.year ||
+        Number(action.data.mes) !== current.month ||
+        Number(action.data.dia) !== current.day ||
+        Number(action.hora.hora) > current.hour ||
+        (Number(action.hora.hora) === current.hour && Number(action.hora.minuto) > current.minute)
+      ) {
+        continue;
+      }
+
+      try {
+        if (action.tipo === 'lembrete') {
+          const destino = action.destino === 'privado' ? action.sender : action.from;
+          const mention = action.sender.startsWith('@') ? action.sender : `@${action.sender}`;
+          SocketActions.sendMessage(destino, {
+            text: `${action.texto}\n\n${mention}`,
+            mentions: [action.sender]
+          });
+        } else if (action.tipo === 'grupo') {
+          SocketActions.groupSettingUpdate(
+            action.from,
+            action.acao === 'abrir' ? 'not_announcement' : 'announcement'
+          );
+        }
+
+        actions.splice(i, 1);
+      } catch (err) {
+        console.error(`Erro ao processar ação ${action.tipo}:`, err);
+      }
+    }
+
+    fs.writeFileSync(DIR_PROGRAM, JSON.stringify(actions, null, 2));
+  } catch (err) {
+    console.error('Erro na execução do cron:', err);
   }
-  fs.writeFileSync(DIR_PROGRAM, JSON.stringify(ACTIONS, null, 2));
 });
 
 
