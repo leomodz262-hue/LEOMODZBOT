@@ -174,7 +174,7 @@ async function createBotSocket(authDir, isPrimary = true) {
           if (jsonGp.welcome?.image) {
             let profilePic = 'https://raw.githubusercontent.com/nazuninha/uploads/main/outros/1747053564257_bzswae.bin';
             try {
-              profilePic = await nazu.profilePictureUrl(sender, 'image');
+              profilePic = await socket.profilePictureUrl(sender, 'image');
             } catch (error) {};
             const ImageZinha = jsonGp.welcome.image !== 'banner' ? { url: jsonGp.welcome.image } : await new Banner.welcomeLeave().setAvatar(profilePic).setTitle('Bem Vindo(a)').setMessage('Aceita um cafézinho enquanto lê as regras?').build();
             message.image = ImageZinha;
