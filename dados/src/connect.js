@@ -10,7 +10,7 @@
 const { makeWASocket, useMultiFileAuthState, proto, DisconnectReason } = require('@cognima/walib');
 const Banner = require("@cognima/banners");
 const { Boom } = require('@hapi/boom');
-const NodeCache = require('node-cache');
+const NodeCache = require('@cacheable/node-cache');
 const readline = require('readline');
 const pino = require('pino');
 const fs = require('fs').promises;
