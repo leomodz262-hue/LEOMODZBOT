@@ -2,7 +2,7 @@
 ═════════════════════════════
   Nazuna - Conexão WhatsApp
   Autor: Hiudy
-  Revisão: 21/06/2025
+  Revisão: 22/06/2025
 ═════════════════════════════
 */
 
@@ -10,7 +10,7 @@
 const { makeWASocket, useMultiFileAuthState, proto, DisconnectReason } = require('@cognima/walib');
 const Banner = require("@cognima/banners");
 const { Boom } = require('@hapi/boom');
-const NodeCache = require('@cacheable/node-cache');
+const { NodeCache } = require('@cacheable/node-cache');
 const readline = require('readline');
 const pino = require('pino');
 const fs = require('fs').promises;
