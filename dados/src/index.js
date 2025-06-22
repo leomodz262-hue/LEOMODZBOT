@@ -3863,6 +3863,7 @@ break;
       fs.writeFileSync(__dirname + `/../database/grupos/${from}.json`, JSON.stringify(groupData, null, 2));
       await reply('✅ Foto de boas-vindas configurada com sucesso!');
     } else if(q.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') === 'banner') {
+      if (!groupData.welcome) groupData.welcome = {};
       groupData.welcome.image = 'banner';
       fs.writeFileSync(__dirname + `/../database/grupos/${from}.json`, JSON.stringify(groupData, null, 2));
       await reply('✅ Foto de boas-vindas configurada com sucesso!');
