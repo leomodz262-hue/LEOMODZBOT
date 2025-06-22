@@ -4478,7 +4478,7 @@ case 'listadv':
 case 'indicacao':
 case 'bonus':
   try {
-    const linkConvite = `https://wa.me/553399285117?text=${encodeURIComponent(`Olá! Tenho interesse em alugar a bot ou ter a minha própria. Você poderia me passar mais informações?\n\n> Indicação: ${sender.split('@')[0]}`)}`;
+    const linkConvite = `https://wa.me/553399285117?text=Olá! Tenho interesse em alugar a bot ou ter a minha própria. Você poderia me passar mais informações? Fui indicado(a) por: ${sender.split('@')[0]}`;
     const anu = await axios.get(`https://tinyurl.com/api-create.php?url=${linkConvite}`);
 
     await reply(
