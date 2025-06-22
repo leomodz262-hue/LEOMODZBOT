@@ -26,6 +26,7 @@ async function menuadm(prefix, botName = "MeuBot", userName = "Usuário", isLite
 ┊
 ┊•.̇𖥨֗🍓⭟${prefix}del
 ┊•.̇𖥨֗🍓⭟${prefix}limpar
+┊•.̇𖥨֗🍓⭟${prefix}banghost
 ┊•.̇𖥨֗🍓⭟${prefix}hidetag
 ┊•.̇𖥨֗🍓⭟${prefix}marcar
 ┊•.̇𖥨֗🍓⭟${prefix}sorteio

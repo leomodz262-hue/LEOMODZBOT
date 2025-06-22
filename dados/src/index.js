@@ -3808,6 +3808,44 @@ break;
     };
     break;
     
+    case 'banghost':
+    try {
+    if (!isGroup) return reply("❌ Só pode ser usado em grupos.");
+    if (!isGroupAdmin) return reply("❌ Apenas administradores.");
+    if (!isBotAdmin) return reply("❌ Preciso ser administrador.");
+
+    const limite = parseInt(q);
+    if (isNaN(limite) || limite < 0) return reply("⚠️ Use um número válido. Ex: /banghost 1");
+
+    const arquivoGrupo = `${GRUPOS_DIR}/${from}.json`;
+    if (!fs.existsSync(arquivoGrupo)) return reply("📂 Sem dados de mensagens.");
+
+    const dados = JSON.parse(fs.readFileSync(arquivoGrupo));
+    const contador = dados.contador;
+    if (!Array.isArray(contador)) return reply("⚠️ Contador não disponível.");
+
+    const admins = groupAdmins || [];
+    const fantasmas = contador.filter(u => (u.msg || 0) <= limite && !admins.includes(u.id) && u.id !== botNumber && u.id !== sender && u.id !== nmrdn).map(u => u.id);
+
+    if (!fantasmas.length) return reply(`🎉 Nenhum fantasma com até ${limite} msg.`);
+
+    const antes = (await nazu.groupMetadata(from)).participants.map(p => p.id || p.jid);
+    try {
+      await nazu.groupParticipantsUpdate(from, fantasmas, 'remove');
+    } catch (e) {
+      console.error("Erro ao remover:", e);
+    }
+    const depois = (await nazu.groupMetadata(from)).participants.map(p => p.id || p.jid);
+    const removidos = fantasmas.filter(jid => antes.includes(jid) && !depois.includes(jid)).length;
+
+    reply(removidos === 0 ? `⚠️ Nenhum fantasma pôde ser removido com até ${limite} msg.` : `✅ ${removidos} fantasma(s) removido(s).`);
+
+  } catch (e) {
+    console.error("Erro no banghost:", e);
+    reply("💥 Erro ao tentar remover fantasmas.");
+  }
+  break;
+  
    case 'fotobv':
    case 'welcomeimg': {
   if (!isGroup) return reply("isso so pode ser usado em grupo 💔");
