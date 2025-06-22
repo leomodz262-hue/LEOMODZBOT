@@ -5256,7 +5256,7 @@ function getDiskSpaceInfo() {
 
 
 cron.schedule('* * * * *', () => {
-  const DIR_PROGRAM = path.join(DATABASE_DIR, 'prog_actions.json');
+  const DIR_PROGRAM = pathz.join(DATABASE_DIR, 'prog_actions.json');
   
   try {
     if (!fs.existsSync(DIR_PROGRAM)) {
