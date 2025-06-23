@@ -48,6 +48,7 @@ async function menuDono(prefix, botName = "MeuBot", userName = "Usuário") {
 
 ╭┈❪🍧ฺꕸ▸  *OUTROS*
 ┊
+┊•.̇𖥨֗🍓⭟${prefix}listagp
 ┊•.̇𖥨֗🍓⭟${prefix}antipv
 ┊•.̇𖥨֗🍓⭟${prefix}antipv2
 ┊•.̇𖥨֗🍓⭟${prefix}antipv3
