@@ -2566,6 +2566,49 @@ case 'ytmp4':
   }
   break;
   
+  case 'listapremium': case 'listavip': case 'premiumlist': case 'listpremium':
+  try {
+    if (!isOwner) return reply('⛔ Desculpe, este comando é exclusivo para o meu dono!')
+
+    const premiumList = premiumListaZinha || {}
+
+    const usersPremium = Object.keys(premiumList).filter(id => id.includes('@s.whatsapp.net'))
+    const groupsPremium = Object.keys(premiumList).filter(id => id.includes('@g.us'))
+
+    let teks = `✨ *Lista de Membros Premium* ✨\n\n`
+
+    teks += `👤 *Usuários Premium* (${usersPremium.length})\n`
+    if (usersPremium.length > 0) {
+      usersPremium.forEach((user, i) => {
+        const userNumber = user.split('@')[0]
+        teks += `🔹 ${i + 1}. @${userNumber}\n`
+      })
+    } else {
+      teks += `   Nenhum usuário premium encontrado.\n`
+    };
+
+    teks += `\n👥 *Grupos Premium* (${groupsPremium.length})\n`
+    if (groupsPremium.length > 0) {
+      for (let i = 0; i < groupsPremium.length; i++) {
+        try {
+          const groupInfo = await nazu.groupMetadata(groupsPremium[i])
+          teks += `🔹 ${i + 1}. ${groupInfo.subject}\n`
+        } catch {
+          teks += `🔹 ${i + 1}. Grupo ID: ${groupsPremium[i]}\n`
+        }
+      }
+    } else {
+      teks += `   Nenhum grupo premium encontrado.\n`
+    };
+
+    await nazu.sendMessage(from, { text: teks, mentions: usersPremium }, { quoted: info })
+
+  } catch (e) {
+    console.error(e)
+    await reply('😔 Ops, algo deu errado. Tente novamente mais tarde!');
+  };
+  break
+  
   //COMANDOS GERAIS
   case 'rvisu':case 'open':case 'revelar': try {
   var RSMM = info.message?.extendedTextMessage?.contextInfo?.quotedMessage
