@@ -2480,14 +2480,14 @@ case 'ytmp4':
   case 'listagp': case 'listgp':
   try {
     if (!isOwner) return reply('⛔ Desculpe, este comando é exclusivo para o meu dono!')    
-    const getGroups = await flox.groupFetchAllParticipating()
+    const getGroups = await nazu.groupFetchAllParticipating()
     const groups = Object.entries(getGroups).slice(0).map(entry => entry[1])
     const sortedGroups = groups.sort((a, b) => a.subject.localeCompare(b.subject))    
     let teks = `🌟 *Lista de Grupos e Comunidades* 🌟\n📊 *Total de Grupos:* ${sortedGroups.length}\n\n`    
     for (let i = 0; i < sortedGroups.length; i++) {
       let linkGroup = '🔒 Não foi possível gerar o link.'
       try {
-        const inviteCode = await flox.groupInviteCode(sortedGroups[i].id)
+        const inviteCode = await nazu.groupInviteCode(sortedGroups[i].id)
         linkGroup = `https://chat.whatsapp.com/${inviteCode}`
       } catch {}      
       teks += `🔹 *${i + 1}. ${sortedGroups[i].subject}*\n` + `🆔 *ID:* ${sortedGroups[i].id}\n` + `🔗 *Link:* ${linkGroup}\n` + `👥 *Participantes:* ${sortedGroups[i].participants.length}\n\n`
