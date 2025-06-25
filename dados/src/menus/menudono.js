@@ -37,6 +37,7 @@ async function menuDono(prefix, botName = "MeuBot", userName = "Usuário") {
 ┊•.̇𖥨֗🍓⭟${prefix}modoaluguel
 ┊•.̇𖥨֗🍓⭟${prefix}addaluguel
 ┊•.̇𖥨֗🍓⭟${prefix}gerarcodigo
+┊•.̇𖥨֗🍓⭟${prefix}listaluguel
 ╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯
 
 ╭┈❪🍧ฺꕸ▸ *ADMINISTRAÇÃO*

@@ -2,7 +2,7 @@
 // Nazuna Bot - Index principal
 // Criado por: Hiudy
 // Versão: 4.0.0
-// Atualizado: 22/06/2025
+// Atualizado: 26/06/2025
 // ====================
 
 
@@ -26,8 +26,8 @@ const { version: botVersion } = JSON.parse(fs.readFileSync(pathz.join(__dirname,
 const { menu, menudown, menuadm, menubn, menuDono, menuMembros, menuFerramentas, menuSticker, menuIa, menuAlterador, menuLogos, menuTopCmd } = require(`${__dirname}/menus/index.js`);
 
 
-const config = JSON.parse(fs.readFileSync(__dirname+'/config.json'));
-const { numerodono, nomedono, nomebot, prefixo, debug } = config;
+var config = JSON.parse(fs.readFileSync(__dirname+'/config.json'));
+var { numerodono, nomedono, nomebot, prefixo, debug } = config;
 const prefix = prefixo; 
 
 
@@ -382,7 +382,10 @@ const isModoLiteActive = (groupData, modoLiteGlobalConfig) => {
 
 async function NazuninhaBotExec(nazu, info, store, groupCache) {
   SocketActions = nazu;
-    
+  
+  var config = JSON.parse(fs.readFileSync(__dirname+'/config.json'));
+  var { numerodono, nomedono, nomebot, prefixo, debug } = config;
+
   const { youtube, tiktok, pinterest, igdl, sendSticker, FilmesDL, styleText, emojiMix, upload, mcPlugin, tictactoe, toolsJson, vabJson, apkMod, google, Lyrics, commandStats, ia, VerifyUpdate } = await require(__dirname+'/funcs/exports.js');
     
   const antipvData = loadJsonFile(DATABASE_DIR + '/antipv.json');
@@ -514,6 +517,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache) {
     const isAntiPorn = groupData.antiporn;
     const isMuted = groupData.mutedUsers?.[sender];
     const isAntiLinkGp = groupData.antilinkgp;
+    const isAutoRepo = groupData.autorepo;
     const isModoLite = isGroup && isModoLiteActive(groupData, modoLiteGlobal);
   
     if (isGroup && isOnlyAdmin && !isGroupAdmin) {
@@ -1662,6 +1666,35 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
     }
     break;
 
+  case 'listaralugueis': case 'aluguelist': case 'listaluguel': case 'listaaluguel':
+  try {
+    if (!isOwnerOrSub) {
+      await reply('🚫 Apenas o dono ou subdonos podem usar este comando.');
+      return;
+    };
+    const rentalData = loadRentalData();
+    const activeRentals = [];
+    for (const groupId in rentalData.groups) {
+      const groupInfo = rentalData.groups[groupId];
+      if (groupInfo.expiresAt === 'permanent') {
+        activeRentals.push(`${groupId} - Permanente`);
+      } else if (groupInfo.expiresAt && new Date(groupInfo.expiresAt) > new Date()) {
+        const expiresAt = new Date(groupInfo.expiresAt).toLocaleDateString('pt-BR');
+        activeRentals.push(`${groupId} - Expira em: ${expiresAt}`);
+      }
+    }
+    if (activeRentals.length === 0) {
+      await reply('📋 Não há aluguéis ativos no momento.');
+    } else {
+      const message = '📋 *Aluguéis Ativos* 📋\n\n' + activeRentals.join('\n');
+      await reply(message);
+    }
+  } catch (e) {
+    console.error('Erro no comando listaralugueis:', e);
+    await reply('Ocorreu um erro ao listar os aluguéis ativos 💔');
+  };
+  break;
+  
   case 'addaluguel':
     if (!isOwner) return reply("🚫 Apenas o Dono principal pode adicionar aluguel!");
     if (!isGroup) return reply("Este comando só pode ser usado em grupos.");
@@ -3875,7 +3908,7 @@ break;
     if (!isBotAdmin) return reply("❌ Preciso ser administrador.");
 
     const limite = parseInt(q);
-    if (isNaN(limite) || limite < 0) return reply("⚠️ Use um número válido. Ex: /banghost 1");
+    if (isNaN(limite) || limite < 0) return reply("⚠️ Use um número válido. Ex: "+prefix+"banghost 1");
 
     const arquivoGrupo = `${GRUPOS_DIR}/${from}.json`;
     if (!fs.existsSync(arquivoGrupo)) return reply("📂 Sem dados de mensagens.");
@@ -4297,6 +4330,21 @@ case 'listadv':
     reply("Ocorreu um erro 💔");
    }
    break;
+    
+    case 'autorepo': case 'autoresposta':
+    try {
+    if (!isGroup) return reply("Isso só pode ser usado em grupo 💔");
+    if (!isGroupAdmin) return reply("Você precisa ser administrador 💔");
+    const groupFilePath = __dirname + `/../database/grupos/${from}.json`;
+    let groupData = fs.existsSync(groupFilePath) ? JSON.parse(fs.readFileSync(groupFilePath)) : {};
+    groupData.autorepo = !groupData.autorepo;
+    fs.writeFileSync(groupFilePath, JSON.stringify(groupData, null, 2));
+    reply(`✅ Auto resposta ${groupData.autorepo ? 'ativada' : 'desativada'}!`);
+   } catch (e) {
+    console.error(e);
+    reply("Ocorreu um erro 💔");
+   }
+   break;
   
     case 'antigore':
     try {
@@ -4314,26 +4362,6 @@ case 'listadv':
     reply("ocorreu um erro 💔");
   }
   break;
-    
-    case 'modonsfw':
-    case 'modo+18':
-    try {
-    if (!isGroup) return reply("isso so pode ser usado em grupo 💔");
-    if (!isGroupAdmin) return reply("você precisa ser adm 💔");
-    const groupFilePath = __dirname + `/../database/grupos/${from}.json`;
-    let groupData = fs.existsSync(groupFilePath) ? JSON.parse(fs.readFileSync(groupFilePath)) : { nsfwMode: false };
-    groupData.nsfwMode = !groupData.nsfwMode;
-    fs.writeFileSync(groupFilePath, JSON.stringify(groupData));
-    if (groupData.nsfwMode) {
-      await nazu.sendMessage(from, {text: `🔞 *Modo +18 ativado!*`,}, { quoted: info });
-    } else {
-      await nazu.sendMessage(from, {text: `✅ *Modo +18 desativado!.*`,}, { quoted: info });
-    }
-    } catch (e) {
-     console.error(e);
-     reply("ocorreu um erro 💔");
-    }
-    break;
     
     case 'legendabv': case 'textbv': try {
     if (!isGroup) return reply("isso so pode ser usado em grupo 💔");
@@ -5233,7 +5261,18 @@ ${weatherEmoji} *${weatherDescription}*`;
 
  default:
   if(isCmd) await nazu.react('❌');
- }; 
+  if (!isCmd && isAutoRepo) {
+  if (['prefix', 'prefixo'].includes(budy2)) {
+    await reply(`✨ Aqui está o meu prefixo para usar os comandos: 『 ${prefix} 』 ✨`);
+  } else if (['b dia', 'bom dia'].includes(budy2)) {
+    await reply('🌞 Bom dia! Espero que seu dia seja incrível! 😊');
+  } else if (['b noite', 'boa noite'].includes(budy2)) {
+    await reply('🌙 Boa noite! Que sua noite seja cheia de paz e estrelas! 🌟');
+  } else if (['b tarde', 'boa tarde'].includes(budy2)) {
+    await reply('🌅 Boa tarde! Como posso te ajudar a tornar o dia ainda melhor? 😄');
+  };
+};
+ };
   } catch(error) {
     console.error('==== ERRO NO PROCESSAMENTO DA MENSAGEM ====');
     console.error('Tipo de erro:', error.name);
@@ -5247,7 +5286,7 @@ ${weatherEmoji} *${weatherDescription}*`;
       console.error('Remetente:', sender);
     } catch (logError) {
       console.error('Erro ao registrar informações adicionais:', logError);
-    }
+    };
   };
 };
 
