@@ -5262,16 +5262,16 @@ ${weatherEmoji} *${weatherDescription}*`;
  default:
   if(isCmd) await nazu.react('❌');
   if (!isCmd && isAutoRepo) {
-  if (['prefix', 'prefixo'].includes(budy2)) {
-    await reply(`✨ Aqui está o meu prefixo para usar os comandos: 『 ${prefix} 』 ✨`);
-  } else if (['b dia', 'bom dia'].includes(budy2)) {
-    await reply('🌞 Bom dia! Espero que seu dia seja incrível! 😊');
-  } else if (['b noite', 'boa noite'].includes(budy2)) {
-    await reply('🌙 Boa noite! Que sua noite seja cheia de paz e estrelas! 🌟');
-  } else if (['b tarde', 'boa tarde'].includes(budy2)) {
-    await reply('🌅 Boa tarde! Como posso te ajudar a tornar o dia ainda melhor? 😄');
+    if (['prefix', 'prefixo'].includes(budy2)) {
+      await reply(`✨ Aqui está o meu prefixo para usar os comandos: 『 ${prefix} 』 ✨`);
+    } else if (['b dia', 'bom dia'].includes(budy2)) {
+      await reply('🌞 Bom dia! Espero que seu dia seja incrível! 😊');
+    } else if (['b noite', 'boa noite'].includes(budy2)) {
+      await reply('🌙 Boa noite! Que sua noite seja cheia de paz e estrelas! 🌟');
+    } else if (['b tarde', 'boa tarde'].includes(budy2)) {
+      await reply('🌅 Boa tarde! Como posso te ajudar a tornar o dia ainda melhor? 😄');
+    };
   };
-};
  };
   } catch(error) {
     console.error('==== ERRO NO PROCESSAMENTO DA MENSAGEM ====');
