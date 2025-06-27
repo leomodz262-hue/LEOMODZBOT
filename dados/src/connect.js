@@ -240,9 +240,9 @@ async function createBotSocket(authDir, isPrimary = true) {
       for (const { key, update } of events) {
         if (update.pollUpdates) {
           try {
+            console.log(key);
             const pollCreation = await getMessage(key);
-            console.log(pollCreation);
-            if (pollCreation && pollCreation.key.fromMe) {
+            if (pollCreation) {
               const pollResult = getAggregateVotesInPollMessage({
                 message: pollCreation,
                 pollUpdates: update.pollUpdates,
@@ -253,9 +253,9 @@ async function createBotSocket(authDir, isPrimary = true) {
             };
           } catch (e) {
             console.error(`Erro ao processar atualização de enquete:`, e);
-          }
-        }
-      }
+          };
+        };
+      };
     });
 
     socket.ev.on('connection.update', async (update) => {
