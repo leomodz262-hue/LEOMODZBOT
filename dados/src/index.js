@@ -1269,7 +1269,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache) {
     if (now - userData.lastReset >= groupData.messageLimit.interval * 1000) {
       userData.count = 0;
       userData.lastReset = now;
-    }
+    };
 
     userData.count++;
     groupData.messageLimit.users[sender] = userData;

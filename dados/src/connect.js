@@ -219,26 +219,6 @@ async function createBotSocket(authDir, isPrimary = true) {
     });
 
     socket.ev.on('messages.upsert', async (m) => {
-      if (m.type === 'notify' && m.messages) {
-        if (m.messages[0]?.message?.pollUpdateMessage) {
-          const message = m.messages[0];
-          const pollUpdate = message.message.pollUpdateMessage;
-          try {
-            const pollCreation = await getMessage(pollUpdate.pollCreationMessageKey);
-            console.log(pollCreation);
-            if (pollCreation) {
-              const pollResult = await getAggregateVotesInPollMessage({
-                message: pollCreation,
-                pollUpdates: pollUpdate.vote,
-              });
-              console.log('📊 Resultado da enquete:', pollResult);
-            }
-          } catch (e) {
-            console.error('Erro ao processar atualização de enquete:', e);
-          }
-        }
-      }
-
       if (!m.messages || !Array.isArray(m.messages) || m.type !== 'notify') return;
       try {
         if (typeof indexModule === 'function') {
@@ -261,13 +241,16 @@ async function createBotSocket(authDir, isPrimary = true) {
         if (update.pollUpdates) {
           try {
             const pollCreation = await getMessage(key);
-            if (pollCreation) {
+            console.log(pollCreation);
+            if (pollCreation && pollCreation.key.fromMe) {
               const pollResult = getAggregateVotesInPollMessage({
                 message: pollCreation,
                 pollUpdates: update.pollUpdates,
               });
-              console.log(`📊 Atualização de enquete recebida no grupo ${key.remoteJid}:`, pollResult);
-            }
+              var toCmd = pollResult.filter(v => v.voters.length !== 0)[0]?.name;
+              if (toCmd == undefined) return;
+              console.log(toCmd);
+            };
           } catch (e) {
             console.error(`Erro ao processar atualização de enquete:`, e);
           }
