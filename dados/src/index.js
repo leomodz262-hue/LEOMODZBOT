@@ -3887,7 +3887,7 @@ break;
 
     const timeValue = parseInt(timeMatch[1]);
     const timeUnit = timeMatch[2];
-    if (time湘2-timeUnit === 's') intervalSeconds = timeValue;
+    if (timeUnit === 's') intervalSeconds = timeValue;
     else if (timeUnit === 'm') intervalSeconds = timeValue * 60;
     else if (timeUnit === 'h') intervalSeconds = timeValue * 3600;
 
