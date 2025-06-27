@@ -36,6 +36,8 @@ async function menuadm(prefix, botName = "MeuBot", userName = "Usuário", isLite
 ┊•.̇𖥨֗🍓⭟${prefix}setdesc
 ┊•.̇𖥨֗🍓⭟${prefix}addregra
 ┊•.̇𖥨֗🍓⭟${prefix}delregra
+┊•.̇𖥨֗🍓⭟${prefix}limitmessage
+┊•.̇𖥨֗🍓⭟${prefix}dellimitmessage
 ╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯
 
 ╭┈❪🍧ฺꕸ▸ *COMANDOS BLOCK*
