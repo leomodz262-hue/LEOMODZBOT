@@ -267,19 +267,6 @@ async function createBotSocket(authDir, isPrimary = true) {
                 pollUpdates: update.pollUpdates,
               });
               console.log(`📊 Atualização de enquete recebida no grupo ${key.remoteJid}:`, pollResult);
-
-              const groupMetadata = await socket.groupMetadata(key.remoteJid).catch(() => null);
-              if (groupMetadata) {
-                const pollMessage = pollCreation.message?.pollCreationMessage;
-                if (pollMessage) {
-                  const pollName = pollMessage.name;
-                  let updateText = `📊 *Atualização da Enquete*: ${pollName}\n\n`;
-                  pollResult.forEach((option, index) => {
-                    updateText += `🔹 ${option.name}: ${option.votes} voto(s)\n`;
-                  });
-                  await socket.sendMessage(key.remoteJid, { text: updateText });
-                }
-              }
             }
           } catch (e) {
             console.error(`Erro ao processar atualização de enquete:`, e);
