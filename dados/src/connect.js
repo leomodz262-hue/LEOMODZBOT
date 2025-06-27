@@ -255,6 +255,8 @@ async function createBotSocket(authDir, isPrimary = true) {
               const From = key.remoteJid;
               const Id = key.id;
               const JsonMessage = { key: { remoteJid: From, fromMe: false, id: Id, participant: Sender }, messageTimestamp: Timestamp, pushName: "", broadcast: false, newsletter: false, message: { conversation: prefixo+toCmd}};
+              const activeSocket = dualMode && useSecondary && secondarySocket?.user ? secondarySocket : socket;
+              useSecondary = !useSecondary;
               await indexModule(activeSocket, JsonMessage, null, groupCache);
             };
           } catch (e) {
