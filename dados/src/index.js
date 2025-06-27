@@ -3206,7 +3206,7 @@ break;
         "┊",
         "┊ ⚙️ *Configurações:*",
         toggles,
-        "╰──────────────────╯"
+        "╰───────────────╯"
       ].join("\n");
 
       await reply(lines, { mentions: [ ownerJid ] });
