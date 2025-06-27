@@ -218,7 +218,14 @@ async function createBotSocket(authDir, isPrimary = true) {
     socket.ev.on('messages.upsert', async (m) => {
       if (m.type === 'notify') {
         if (m.messages) {
-          if(m.messages[0]?.message?.pollUpdateMessage) console.log(m.messages[0]?.message?.pollUpdateMessage);
+          if(m.messages[0]?.message?.pollUpdateMessage) {
+            const Message = m.messages[0]?.message?.pollUpdateMessage;
+            const pollResult = await getAggregateVotesInPollMessage({
+                message: Message.pollCreationMessageKey,
+                pollUpdates: Message.vote,
+            });
+            console.log(pollResult);
+          };
         };
       };
       if (!m.messages || !Array.isArray(m.messages) || m.type !== 'notify') return;
