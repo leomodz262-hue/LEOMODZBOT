@@ -74,7 +74,7 @@ async function createBotSocket(authDir, isPrimary = true) {
     cachedGroupMetadata: (jid) => groupCache.get(jid) || null,
   });
 
-  store.bind(socket);
+  store.bind(socket.ev);
 
   socket.ev.on('creds.update', saveCreds);
 
