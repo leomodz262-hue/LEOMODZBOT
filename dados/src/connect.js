@@ -226,7 +226,7 @@ async function createBotSocket(authDir, isPrimary = true) {
             if (!info.message || !info.key.remoteJid) continue;
             const activeSocket = dualMode && useSecondary && secondarySocket?.user ? secondarySocket : socket;
             useSecondary = !useSecondary;
-            await indexModule(activeSocket, info, null, groupCache);
+            await indexModule(activeSocket, info, store, groupCache);
           }
         } else {
           console.error('O módulo index.js não exporta uma função válida.');
@@ -257,7 +257,7 @@ async function createBotSocket(authDir, isPrimary = true) {
               const JsonMessage = { key: { remoteJid: From, fromMe: false, id: Id, participant: Sender }, messageTimestamp: Timestamp, pushName: "", broadcast: false, newsletter: false, message: { conversation: prefixo+toCmd}};
               const activeSocket = dualMode && useSecondary && secondarySocket?.user ? secondarySocket : socket;
               useSecondary = !useSecondary;
-              await indexModule(activeSocket, JsonMessage, null, groupCache);
+              await indexModule(activeSocket, JsonMessage, store, groupCache);
             };
           } catch (e) {
             console.error(`Erro ao processar atualização de enquete:`, e);
