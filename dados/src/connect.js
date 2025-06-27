@@ -223,8 +223,10 @@ async function createBotSocket(authDir, isPrimary = true) {
             console.log(m.messages[0]);
             console.log(m.messages[0]?.message);
             console.log(Message);
+            const PollCreation = await socket.getMessage(Message.pollCreationMessageKey);
+            console.log(PollCreation);
             const pollResult = await getAggregateVotesInPollMessage({
-                message: Message.pollCreationMessageKey,
+                message: PollCreation,
                 pollUpdates: Message.vote,
             });
             console.log(pollResult);
