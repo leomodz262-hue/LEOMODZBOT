@@ -1275,24 +1275,30 @@ async function NazuninhaBotExec(nazu, info, store, groupCache) {
     groupData.messageLimit.users[sender] = userData;
 
     if (userData.count > groupData.messageLimit.limit) {
-      groupData.messageLimit.warnings[sender] = (groupData.messageLimit.warnings[sender] || 0) + 1;
-      const warnings = groupData.messageLimit.warnings[sender];
-
-      if (warnings >= 3 && isBotAdmin) {
+      if (groupData.messageLimit.action === 'ban' && isBotAdmin) {
         await nazu.groupParticipantsUpdate(from, [sender], 'remove');
-        await reply(`🚨 @${sender.split('@')[0]} foi banido por exceder o limite de mensagens (${groupData.messageLimit.limit} em ${groupData.messageLimit.interval}s) 3 vezes!`, { mentions: [sender] });
-        delete groupData.messageLimit.warnings[sender];
+        await reply(`🚨 @${sender.split('@')[0]} foi banido por exceder o limite de ${groupData.messageLimit.limit} mensagens em ${groupData.messageLimit.interval}s!`, { mentions: [sender] });
         delete groupData.messageLimit.users[sender];
-      } else {
-        await reply(`⚠️ @${sender.split('@')[0]}, você excedeu o limite de ${groupData.messageLimit.limit} mensagens em ${groupData.messageLimit.interval}s! Advertência ${warnings}/3.`, { mentions: [sender] });
-      };
-    };
+      } else if (groupData.messageLimit.action === 'adv') {
+        groupData.messageLimit.warnings[sender] = (groupData.messageLimit.warnings[sender] || 0) + 1;
+        const warnings = groupData.messageLimit.warnings[sender];
+
+        if (warnings >= 3 && isBotAdmin) {
+          await nazu.groupParticipantsUpdate(from, [sender], 'remove');
+          await reply(`🚨 @${sender.split('@')[0]} foi banido por exceder o limite de mensagens (${groupData.messageLimit.limit} em ${groupData.messageLimit.interval}s) 3 vezes!`, { mentions: [sender] });
+          delete groupData.messageLimit.warnings[sender];
+          delete groupData.messageLimit.users[sender];
+        } else {
+          await reply(`⚠️ @${sender.split('@')[0]}, você excedeu o limite de ${groupData.messageLimit.limit} mensagens em ${groupData.messageLimit.interval}s! Advertência ${warnings}/3.`, { mentions: [sender] });
+        }
+      }
+    }
 
     fs.writeFileSync(groupFile, JSON.stringify(groupData, null, 2));
   } catch (e) {
     console.error("Erro no sistema de limite de mensagens:", e);
   }
-};
+}
 
   switch(command) {
   
@@ -3868,18 +3874,23 @@ break;
     if (!isGroupAdmin) return reply("Apenas administradores podem usar este comando 🚫");
 
     if (!q) {
-      return reply(`📝 Configure o limite de mensagens! Exemplo: ${prefix}limitmessage 5 1m\n` + `Formato: ${prefix}limitmessage <quantidade> <tempo>\n` + `Tempo: s (segundos), m (minutos), h (horas)`);
+      return reply(`📝 Configure o limite de mensagens! Exemplo: ${prefix}limitmessage 5 1m ban\n` + `Formato: ${prefix}limitmessage <quantidade> <tempo> <ação>\n` + `Tempo: s (segundos), m (minutos), h (horas)\n` + `Ação: ban (banimento direto) ou adv (advertências)`);
     }
 
     const args = q.trim().split(' ');
-    if (args.length !== 2) {
-      return reply("❌ Formato inválido! Use: " + `${prefix}limitmessage <quantidade> <tempo>`);
+    if (args.length !== 3) {
+      return reply("� ❌ Formato inválido! Use: " + `${prefix}limitmessage <quantidade> <tempo> <ação>`);
     }
 
     const limit = parseInt(args[0]);
     const timeInput = args[1].toLowerCase();
-    let intervalSeconds;
+    const action = args[2].toLowerCase();
 
+    if (!['ban', 'adv'].includes(action)) {
+      return reply("❌ Ação inválida! Use 'ban' para banimento direto ou 'adv' para advertências.");
+    }
+
+    let intervalSeconds;
     const timeMatch = timeInput.match(/^(\d+)(s|m|h)$/);
     if (!timeMatch) {
       return reply("❌ Tempo inválido! Use formatos como 20s, 1m ou 2h.");
@@ -3899,17 +3910,20 @@ break;
       enabled: true,
       limit: limit,
       interval: intervalSeconds,
-      warnings: groupData.messageLimit?.warnings || {}
+      action: action,
+      warnings: groupData.messageLimit?.warnings || {},
+      users: groupData.messageLimit?.users || {}
     };
     fs.writeFileSync(groupFile, JSON.stringify(groupData, null, 2));
-    await reply(`✅ Limite de mensagens configurado: ${limit} mensagens a cada ${timeInput}. Usuários que excederem receberão advertências e podem ser banidos após 3 infrações!`);
+    const actionText = action === 'ban' ? 'banimento direto' : 'advertências (ban após 3)';
+    await reply(`✅ Limite de mensagens configurado: ${limit} mensagens a cada ${timeInput} com ${actionText}!`);
   } catch (e) {
     console.error('Erro no comando limitmessage:', e);
     await reply("🐝 Oh não! Aconteceu um errinho inesperado aqui. Tente de novo daqui a pouquinho, por favor! 🥺");
   }
   break;
 
-  case 'dellimitmessage':
+case 'dellimitmessage':
   try {
     if (!isGroup) return reply("Este comando só funciona em grupos 💔");
     if (!isGroupAdmin) return reply("Apenas administradores podem usar este comando 🚫");
