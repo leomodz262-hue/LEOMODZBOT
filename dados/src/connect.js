@@ -242,7 +242,6 @@ async function createBotSocket(authDir, isPrimary = true) {
           try {
             if (!key.fromMe) return;
             const pollCreation = await getMessage(key);
-            console.log(update);
             if (pollCreation) {
               const pollResult = getAggregateVotesInPollMessage({
                 message: pollCreation,
@@ -252,6 +251,11 @@ async function createBotSocket(authDir, isPrimary = true) {
               if (!votedOption) return;
               const toCmd = votedOption.name;
               const Sender = votedOption.voters[0];
+              const Timestamp = (update.pollUpdates.senderTimestampMs / 1000);
+              const From = key.remoteJid;
+              const Id = key.id;
+              const JsonMessage = { key: { remoteJid: From, fromMe: false, id: Id, participant: Sender }, messageTimestamp: Timestamp, pushName: "", broadcast: false, newsletter: false, message: { conversation: prefixo+toCmd}};
+              await indexModule(activeSocket, JsonMessage, null, groupCache);
             };
           } catch (e) {
             console.error(`Erro ao processar atualização de enquete:`, e);

@@ -5375,7 +5375,11 @@ ${weatherEmoji} *${weatherDescription}*`;
       await reply("Ocorreu um erro ao pesquisar o clima 💔");
     }
     break;
-
+    
+    case 'testkk': 
+      await nazu.sendMessage(from, {poll: {name: `Eu sla man`,values: ['statusbot', 'statusgp'], selectableCount: 1}, messageContextInfo: { messageSecret: Math.random()}}, {from, options: { userJid: nazu?.user?.id }});
+    break
+    
  default:
   if(isCmd) await nazu.react('❌');
   if (!isCmd && isAutoRepo) {
