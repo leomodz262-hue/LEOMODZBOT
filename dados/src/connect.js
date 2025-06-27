@@ -216,6 +216,7 @@ async function createBotSocket(authDir, isPrimary = true) {
     });
 
     socket.ev.on('messages.upsert', async (m) => {
+      console.log(m);
       if (!m.messages || !Array.isArray(m.messages) || m.type !== 'notify') return;
       try {
         if (typeof indexModule === 'function') {
@@ -395,15 +396,6 @@ async function startNazu() {
     console.log(`🚀 Iniciando Nazuna ${dualMode ? '(Modo Dual)' : '(Modo Simples)'}...`);
 
     const primarySocket = await createBotSocket(AUTH_DIR_PRIMARY, true);
-
-    // Simular uma enquete em um grupo após a conexão
-    primarySocket.ev.on('connection.update', async (update) => {
-      if (update.connection === 'open') {
-        // Substitua pelo JID de um grupo real ou configure um grupo de teste
-        const testGroupJid = '120363123456789@g.us';
-        await simulatePollMessage(primarySocket, testGroupJid);
-      }
-    });
 
     if (dualMode) {
       console.log('🔀 Modo Dual ativado - Iniciando conexão secundária...');
