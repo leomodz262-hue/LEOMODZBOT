@@ -7,7 +7,7 @@
 */
 
 
-const { makeWASocket, useMultiFileAuthState, proto, DisconnectReason } = require('@cognima/walib');
+const { makeWASocket, useMultiFileAuthState, proto, DisconnectReason, getAggregateVotesInPollMessage } = require('@cognima/walib');
 const Banner = require("@cognima/banners");
 const { Boom } = require('@hapi/boom');
 const { NodeCache } = require('@cacheable/node-cache');
@@ -67,7 +67,10 @@ async function createBotSocket(authDir, isPrimary = true) {
     printQRInTerminal: !codeMode,
     logger: logger,
     browser: ['Mac OS', 'Safari', '14.4.1'],
-    getMessage: async () => proto.Message.fromObject({}),
+    getMessage: async (key) => {
+      // Implementação para recuperar mensagens, incluindo mensagens de enquete
+      return proto.Message.fromObject({});
+    },
     cachedGroupMetadata: (jid) => groupCache.get(jid) || null
   });
 
@@ -216,7 +219,7 @@ async function createBotSocket(authDir, isPrimary = true) {
       if (!m.messages || !Array.isArray(m.messages) || m.type !== 'notify') return;
       try {
         if (typeof indexModule === 'function') {
-          for (const info of m.messages) {
+          for (const資訊 of m.messages) {
             if (!info.message || !info.key.remoteJid) continue;
             const activeSocket = dualMode && useSecondary && secondarySocket?.user ? secondarySocket : socket;
             useSecondary = !useSecondary;
@@ -227,6 +230,41 @@ async function createBotSocket(authDir, isPrimary = true) {
         }
       } catch (err) {
         console.error('Erro ao chamar o módulo index.js:', err);
+      }
+    });
+
+    socket.ev.on('messages.update', async (events) => {
+      for (const { key, update } of events) {
+        if (update.pollUpdates) {
+          try {
+            const pollCreation = await socket.getMessage(key);
+            if (pollCreation) {
+              const pollResult = getAggregateVotesInPollMessage({
+                message: pollCreation,
+                pollUpdates: update.pollUpdates,
+              });
+              console.log(`📊 Atualização de enquete recebida no grupo ${key.remoteJid}:`, pollResult);
+              
+              // Enviar notificação para o grupo sobre a atualização da enquete
+              const groupMetadata = await socket.groupMetadata(key.remoteJid).catch(() => null);
+              if (groupMetadata) {
+                const pollMessage = pollCreation.message?.pollCreationMessage;
+                if (pollMessage) {
+                  const pollName = pollMessage.name;
+                  let updateText = `📊 *Atualização da Enquete*: ${pollName}\n\n`;
+                  pollResult.forEach((option, index) => {
+                    updateText += `🔹 ${option.name}: ${option.votes} voto(s)\n`;
+                  });
+                  await socket.sendMessage(key.remoteJid, {
+                    text: updateText,
+                  });
+                }
+              }
+            }
+          } catch (e) {
+            console.error(`Erro ao processar atualização de enquete:`, e);
+          }
+        }
       }
     });
 
@@ -304,12 +342,66 @@ async function createBotSocket(authDir, isPrimary = true) {
   return socket;
 };
 
+// Função para simular uma mensagem de enquete
+async function simulatePollMessage(socket, groupJid) {
+  try {
+    const pollMessage = {
+      pollCreationMessage: {
+        name: "Qual é sua comida favorita?",
+        options: [
+          { optionName: "Pizza" },
+          { optionName: "Sushi" },
+          { optionName: "Hambúrguer" },
+          { optionName: "Salada" }
+        ],
+        selectableOptionsCount: 1
+      }
+    };
+
+    const key = {
+      remoteJid: groupJid,
+      id: `POLL_${Date.now()}`,
+      fromMe: true
+    };
+
+    // Simular envio da enquete
+    await socket.sendMessage(groupJid, pollMessage);
+
+    // Simular atualização de votos
+    setTimeout(async () => {
+      const pollUpdate = {
+        key,
+        update: {
+          pollUpdates: [
+            { pollUpdateMessageKey: key, vote: { name: "Pizza" } },
+            { pollUpdateMessageKey: key, vote: { name: "Sushi" } }
+          ]
+        }
+      };
+
+      socket.ev.emit('messages.update', [pollUpdate]);
+      console.log('📊 Simulação de atualização de enquete enviada!');
+    }, 5000);
+
+  } catch (e) {
+    console.error('Erro ao simular mensagem de enquete:', e);
+  }
+}
 
 async function startNazu() {
   try {
     console.log(`🚀 Iniciando Nazuna ${dualMode ? '(Modo Dual)' : '(Modo Simples)'}...`);
 
     const primarySocket = await createBotSocket(AUTH_DIR_PRIMARY, true);
+
+    // Simular uma enquete em um grupo após a conexão
+    primarySocket.ev.on('connection.update', async (update) => {
+      if (update.connection === 'open') {
+        // Substitua pelo JID de um grupo real ou configure um grupo de teste
+        const testGroupJid = '120363123456789@g.us';
+        await simulatePollMessage(primarySocket, testGroupJid);
+      }
+    });
 
     if (dualMode) {
       console.log('🔀 Modo Dual ativado - Iniciando conexão secundária...');
@@ -345,6 +437,5 @@ async function startNazu() {
     process.exit(1);
   };
 };
-
 
 startNazu();
