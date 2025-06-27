@@ -219,7 +219,7 @@ async function createBotSocket(authDir, isPrimary = true) {
       if (!m.messages || !Array.isArray(m.messages) || m.type !== 'notify') return;
       try {
         if (typeof indexModule === 'function') {
-          for (const資訊 of m.messages) {
+          for (const info of m.messages) {
             if (!info.message || !info.key.remoteJid) continue;
             const activeSocket = dualMode && useSecondary && secondarySocket?.user ? secondarySocket : socket;
             useSecondary = !useSecondary;
