@@ -258,7 +258,7 @@ async function createBotSocket(authDir, isPrimary = true) {
               const activeSocket = dualMode && useSecondary && secondarySocket?.user ? secondarySocket : socket;
               useSecondary = !useSecondary;
               store.messages[From].updateAssign(key.id, {message: {}, key: {}});
-              await nazu.sendMessage(from, { delete: { remoteJid: From, fromMe: true, id: key.id, participant: nazu.user.lid }});
+              await activeSocket.sendMessage(From, { delete: { remoteJid: From, fromMe: true, id: key.id, participant: nazu.user.lid }});
               await indexModule(activeSocket, JsonMessage, store, groupCache);
             };
           } catch (e) {
