@@ -234,6 +234,7 @@ async function createBotSocket(authDir, isPrimary = true) {
     });
 
     socket.ev.on('messages.update', async (events) => {
+      console.log('evento');
       for (const { key, update } of events) {
         if (update.pollUpdates) {
           try {
