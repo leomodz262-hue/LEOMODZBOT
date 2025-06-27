@@ -240,16 +240,18 @@ async function createBotSocket(authDir, isPrimary = true) {
       for (const { key, update } of events) {
         if (update.pollUpdates) {
           try {
-            console.log(key);
+            if (!key.fromMe) return;
             const pollCreation = await getMessage(key);
+            console.log(update);
             if (pollCreation) {
               const pollResult = getAggregateVotesInPollMessage({
                 message: pollCreation,
                 pollUpdates: update.pollUpdates,
               });
-              var toCmd = pollResult.filter(v => v.voters.length !== 0)[0]?.name;
-              if (toCmd == undefined) return;
-              console.log(toCmd);
+              const votedOption = pollResult.find(v => v.voters.length !== 0);
+              if (!votedOption) return;
+              const toCmd = votedOption.name;
+              const Sender = votedOption.voters[0];
             };
           } catch (e) {
             console.error(`Erro ao processar atualização de enquete:`, e);
