@@ -7,7 +7,7 @@
 */
 
 
-const { makeWASocket, useMultiFileAuthState, proto, DisconnectReason, getAggregateVotesInPollMessage } = require('@cognima/walib');
+const { makeWASocket, useMultiFileAuthState, proto, DisconnectReason, getAggregateVotesInPollMessage, makeInMemoryStore } = require('@cognima/walib');
 const Banner = require("@cognima/banners");
 const { Boom } = require('@hapi/boom');
 const { NodeCache } = require('@cacheable/node-cache');
@@ -16,7 +16,6 @@ const pino = require('pino');
 const fs = require('fs').promises;
 const path = require('path');
 
-
 const logger = pino({ level: 'silent' });
 const AUTH_DIR_PRIMARY = path.join(__dirname, '..', 'database', 'qr-code');
 const AUTH_DIR_SECONDARY = path.join(__dirname, '..', 'database', 'qr-code-secondary');
@@ -24,26 +23,27 @@ const DATABASE_DIR = path.join(__dirname, '..', 'database', 'grupos');
 const msgRetryCounterCache = new NodeCache({ stdTTL: 120, useClones: false });
 const { prefixo, nomebot, nomedono, numerodono } = require('./config.json');
 
-
 const indexModule = require(path.join(__dirname, 'index.js'));
-
 
 const codeMode = process.argv.includes('--code');
 const dualMode = process.argv.includes('--dual');
-
 
 const ask = (question) => {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   return new Promise((resolve) => rl.question(question, (answer) => { rl.close(); resolve(answer.trim()); }));
 };
 
-
 const groupCache = new NodeCache({ stdTTL: 5 * 60, useClones: false });
 
-
 let secondarySocket = null;
-let useSecondary = false; 
+let useSecondary = false;
 
+const store = makeInMemoryStore({ logger });
+
+async function getMessage(key) {
+  const msg = await store.loadMessage(key.remoteJid, key.id);
+  return msg?.message || proto.Message.fromObject({});
+};
 
 async function createBotSocket(authDir, isPrimary = true) {
   await fs.mkdir(DATABASE_DIR, { recursive: true });
@@ -68,11 +68,13 @@ async function createBotSocket(authDir, isPrimary = true) {
     logger: logger,
     browser: ['Mac OS', 'Safari', '14.4.1'],
     getMessage: async (key) => {
-      // Implementação para recuperar mensagens, incluindo mensagens de enquete
-      return proto.Message.fromObject({});
+      const msg = await store.loadMessage(key.remoteJid, key.id);
+      return msg?.message || proto.Message.fromObject({});
     },
-    cachedGroupMetadata: (jid) => groupCache.get(jid) || null
+    cachedGroupMetadata: (jid) => groupCache.get(jid) || null,
   });
+
+  store.bind(socket);
 
   socket.ev.on('creds.update', saveCreds);
 
@@ -175,6 +177,7 @@ async function createBotSocket(authDir, isPrimary = true) {
         try {
           const message = { text: welcomeText, mentions: [sender] };
           if (jsonGp.welcome?.image) {
+外观
             let profilePic = 'https://raw.githubusercontent.com/nazuninha/uploads/main/outros/1747053564257_bzswae.bin';
             try {
               profilePic = await socket.profilePictureUrl(sender, 'image');
@@ -216,23 +219,26 @@ async function createBotSocket(authDir, isPrimary = true) {
     });
 
     socket.ev.on('messages.upsert', async (m) => {
-      if (m.type === 'notify') {
-        if (m.messages) {
-          if(m.messages[0]?.message?.pollUpdateMessage) {
-            const Message = m.messages[0]?.message?.pollUpdateMessage;
-            console.log(m.messages[0]);
-            console.log(m.messages[0]?.message);
-            console.log(Message);
-            const PollCreation = await socket.getMessage(Message.pollCreationMessageKey);
-            console.log(PollCreation);
-            const pollResult = await getAggregateVotesInPollMessage({
-                message: PollCreation,
-                pollUpdates: Message.vote,
-            });
-            console.log(pollResult);
-          };
-        };
-      };
+      if (m.type === 'notify' && m.messages) {
+        if (m.messages[0]?.message?.pollUpdateMessage) {
+          const message = m.messages[0];
+          const pollUpdate = message.message.pollUpdateMessage;
+          try {
+            const pollCreation = await getMessage(pollUpdate.pollCreationMessageKey);
+            console.log(pollCreation);
+            if (pollCreation) {
+              const pollResult = await getAggregateVotesInPollMessage({
+                message: pollCreation,
+                pollUpdates: pollUpdate.vote,
+              });
+              console.log('📊 Resultado da enquete:', pollResult);
+            }
+          } catch (e) {
+            console.error('Erro ao processar atualização de enquete:', e);
+          }
+        }
+      }
+
       if (!m.messages || !Array.isArray(m.messages) || m.type !== 'notify') return;
       try {
         if (typeof indexModule === 'function') {
@@ -251,8 +257,6 @@ async function createBotSocket(authDir, isPrimary = true) {
     });
 
     socket.ev.on('messages.update', async (events) => {
-      console.log('evento');
-      console.log(events);
       for (const { key, update } of events) {
         if (update.pollUpdates) {
           try {
@@ -263,8 +267,7 @@ async function createBotSocket(authDir, isPrimary = true) {
                 pollUpdates: update.pollUpdates,
               });
               console.log(`📊 Atualização de enquete recebida no grupo ${key.remoteJid}:`, pollResult);
-              
-              // Enviar notificação para o grupo sobre a atualização da enquete
+
               const groupMetadata = await socket.groupMetadata(key.remoteJid).catch(() => null);
               if (groupMetadata) {
                 const pollMessage = pollCreation.message?.pollCreationMessage;
@@ -274,9 +277,7 @@ async function createBotSocket(authDir, isPrimary = true) {
                   pollResult.forEach((option, index) => {
                     updateText += `🔹 ${option.name}: ${option.votes} voto(s)\n`;
                   });
-                  await socket.sendMessage(key.remoteJid, {
-                    text: updateText,
-                  });
+                  await socket.sendMessage(key.remoteJid, { text: updateText });
                 }
               }
             }
@@ -346,7 +347,7 @@ async function createBotSocket(authDir, isPrimary = true) {
           try {
             console.log('🔀 Tentando reconectar conexão secundária...');
             secondarySocket = await createBotSocket(AUTH_DIR_SECONDARY, false);
-          } catch(e) {
+          } catch (e) {
             console.error('🔀 Falha ao reconectar conexão secundária:', e);
           }
         }, 5000);
@@ -359,52 +360,6 @@ async function createBotSocket(authDir, isPrimary = true) {
   }
 
   return socket;
-};
-
-// Função para simular uma mensagem de enquete
-async function simulatePollMessage(socket, groupJid) {
-  try {
-    const pollMessage = {
-      pollCreationMessage: {
-        name: "Qual é sua comida favorita?",
-        options: [
-          { optionName: "Pizza" },
-          { optionName: "Sushi" },
-          { optionName: "Hambúrguer" },
-          { optionName: "Salada" }
-        ],
-        selectableOptionsCount: 1
-      }
-    };
-
-    const key = {
-      remoteJid: groupJid,
-      id: `POLL_${Date.now()}`,
-      fromMe: true
-    };
-
-    // Simular envio da enquete
-    await socket.sendMessage(groupJid, pollMessage);
-
-    // Simular atualização de votos
-    setTimeout(async () => {
-      const pollUpdate = {
-        key,
-        update: {
-          pollUpdates: [
-            { pollUpdateMessageKey: key, vote: { name: "Pizza" } },
-            { pollUpdateMessageKey: key, vote: { name: "Sushi" } }
-          ]
-        }
-      };
-
-      socket.ev.emit('messages.update', [pollUpdate]);
-      console.log('📊 Simulação de atualização de enquete enviada!');
-    }, 5000);
-
-  } catch (e) {
-    console.error('Erro ao simular mensagem de enquete:', e);
-  }
 }
 
 async function startNazu() {
@@ -432,7 +387,7 @@ async function startNazu() {
 
         await Promise.all([
           waitForConnection(primarySocket),
-          waitForConnection(secondarySocket)
+          waitForConnection(secondarySocket),
         ]);
 
         console.log('🔀 Ambas as conexões estabelecidas - Modo dual pronto!');
@@ -441,11 +396,10 @@ async function startNazu() {
         console.log('🔀 Continuando apenas com conexão primária...');
       }
     }
-
   } catch (err) {
     console.error('Erro ao iniciar o bot:', err);
     process.exit(1);
-  };
-};
+  }
+}
 
 startNazu();
