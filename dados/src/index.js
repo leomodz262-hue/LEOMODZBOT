@@ -5623,6 +5623,63 @@ ${weatherEmoji} *${weatherDescription}*`;
       await reply('🌅 Boa tarde! Como posso te ajudar a tornar o dia ainda melhor? 😄');
     };
   };
+  
+  if (!isCmd) {
+  const userId = sender;
+  const searchData = loadAnimeSearchData(userId);
+  if (searchData && searchData.results) {
+    const prefixRegex = /^[`•°⁕»«⁑※⁂⁺⁻]\s+/;
+    const cleanedMessage = body.trim().replace(prefixRegex, '');
+    
+    if (cleanedMessage === 'Próxima página') {
+      if (searchData.currentPage < searchData.totalPages) {
+        searchData.currentPage++;
+        saveAnimeSearchData(userId, searchData);
+        const pollMessage = `🔎 Resultados da pesquisa por "${searchData.query}"\n📃 Página ${searchData.currentPage} de ${searchData.totalPages}\n\nEscolha um anime:`;
+        await nazu.sendMessage(sender, {
+          poll: {
+            name: pollMessage,
+            values: getPollValues(searchData.currentPage),
+            selectableCount: 1
+          },
+          messageContextInfo: { messageSecret: Math.random() }
+        }, { options: { userJid: nazu?.user?.id } });
+      }
+      return;
+    }
+
+    if (cleanedMessage === 'Página anterior') {
+      if (searchData.currentPage > 1) {
+        searchData.currentPage--;
+        saveAnimeSearchData(userId, searchData);
+        const pollMessage = `🔎 Resultados da pesquisa por "${searchData.query}"\n📃 Página ${searchData.currentPage} de ${searchData.totalPages}\n\nEscolha um anime:`;
+        await nazu.sendMessage(sender, {
+          poll: {
+            name: pollMessage,
+            values: getPollValues(searchData.currentPage),
+            selectableCount: 1
+          },
+          messageContextInfo: { messageSecret: Math.random() }
+        }, { options: { userJid: nazu?.user?.id } });
+      }
+      return;
+    }
+
+    const pageSize = 11;
+    const start = (searchData.currentPage - 1) * pageSize;
+    const selectedAnime = searchData.results.find(anime => anime.animeName === cleanedMessage);
+
+    if (selectedAnime) {
+      await nazu.sendMessage(sender, {
+        image: { url: selectedAnime.thumbnail },
+        caption: `🎬 *${selectedAnime.animeName}*\n\n🔗 ${selectedAnime.animeLink}`
+      }, { quoted: info });
+
+      saveAnimeSearchData(userId, null);
+      return;
+    }
+  }
+}
  };
   } catch(error) {
     console.error('==== ERRO NO PROCESSAMENTO DA MENSAGEM ====');
