@@ -5628,7 +5628,7 @@ function getDiskSpaceInfo() {
 };
 
 
-cron.schedule('* * * * *', () => {
+cron.schedule('* * * * *', async () => {
   try {
     if (!fs.existsSync(DIR_PROGRAM)) {
       fs.writeFileSync(DIR_PROGRAM, JSON.stringify([], null, 2));
