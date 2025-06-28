@@ -1980,7 +1980,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
   
   case 'cog':
   try {
-    if(!isPremium) return reply('Apenas usuários premium.');
     if (!q) return await reply('Falta o prompt 🥱');
     const resultPriv = await ia.makeCognimaRequest('cognimai', q, `cog_${sender.split('@')[0]}`);
     if (!resultPriv.success) return reply("ocorreu um erro 💔");
