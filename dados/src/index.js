@@ -5628,7 +5628,7 @@ ${weatherEmoji} *${weatherDescription}*`;
   const userId = sender;
   const searchData = loadAnimeSearchData(userId);
   if (searchData && searchData.results) {
-    const prefixRegex = /^[`•°⁕»«⁑※⁂⁺⁻]\s+/;
+    const prefixRegex = /^[`•°⁕»«⁑※⁂➡️⬅️⁺⁻]\s+/;
     const cleanedMessage = body.trim().replace(prefixRegex, '');
     
     if (cleanedMessage === 'Próxima página') {
