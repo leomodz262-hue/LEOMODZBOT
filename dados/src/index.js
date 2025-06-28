@@ -107,7 +107,7 @@ ensureDirectoryExists(ANIME_SEARCH_DIR);
 
 ensureJsonFileExists(DATABASE_DIR + '/antiflood.json');
 ensureJsonFileExists(DATABASE_DIR + '/cmdlimit.json');
-ensureJsonFileExists(DATABASE_DIR + '/antipv.json');
+ensureJsonFileExists(DATABASE_DIR + '/antipv.json', { mode: 'off', message: '🚫 Este comando só funciona em grupos!' });
 ensureJsonFileExists(DONO_DIR + '/premium.json');
 ensureJsonFileExists(DONO_DIR + '/bangp.json');
 ensureJsonFileExists(DATABASE_DIR + '/globalBlocks.json', { commands: {}, users: {} });
@@ -482,19 +482,19 @@ async function NazuninhaBotExec(nazu, info, store, groupCache) {
     const command = isCmd ? (normalizar(body.trim().slice(groupPrefix.length).split(/ +/).shift().trim())).replace(/\s+/g, '') : null;
  
     if (!isGroup) {
-      if (antipvData.mode === 'antipv' && !isOwner) {
-        return;
-      };
-      if (antipvData.mode === 'antipv2' && isCmd && !isOwner) {
-        await reply('🚫 Este comando só funciona em grupos!');
-        return;
-      };
-      if (antipvData.mode === 'antipv3' && isCmd && !isOwner) {
-        await nazu.updateBlockStatus(sender, 'block');
-        await reply('🚫 Você foi bloqueado por usar comandos no privado!');
-        return;
-      };
-    };
+  if (antipvData.mode === 'antipv' && !isOwner) {
+    return;
+  };
+  if (antipvData.mode === 'antipv2' && isCmd && !isOwner) {
+    await reply(antipvData.message || '🚫 Este comando só funciona em grupos!');
+    return;
+  };
+  if (antipvData.mode === 'antipv3' && isCmd && !isOwner) {
+    await nazu.updateBlockStatus(sender, 'block');
+    await reply('🚫 Você foi bloqueado por usar comandos no privado!');
+    return;
+  };
+}
 
     const isPremium = premiumListaZinha[sender] || premiumListaZinha[from] || isOwner;
  
@@ -2500,6 +2500,23 @@ case 'ytmp4':
   } catch (e) {
     console.error(e);
     await reply("Ocorreu um erro 💔");
+  }
+  break;
+
+  case 'antipvmessage':
+  try {
+    if (!isOwner) return reply('🚫 Este comando é apenas para o dono do bot!');
+    if (!q) return reply(`Por favor, forneça a nova mensagem para o antipv. Exemplo: ${prefix}antipvmessage Comandos no privado estão desativados!`);
+
+    const antipvFile = DATABASE_DIR + '/antipv.json';
+    let antipvData = loadJsonFile(antipvFile, { mode: 'off', message: '🚫 Este comando só funciona em grupos!' });
+    
+    antipvData.message = q.trim();
+    fs.writeFileSync(antipvFile, JSON.stringify(antipvData, null, 2));
+    await reply(`✅ Mensagem do antipv atualizada para: "${antipvData.message}"`);
+  } catch (e) {
+    console.error('Erro no comando setantipvmensagem:', e);
+    await reply("Ocorreu um erro ao configurar a mensagem do antipv 💔");
   }
   break;
   
