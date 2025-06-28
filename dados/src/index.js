@@ -5691,14 +5691,18 @@ ${weatherEmoji} *${weatherDescription}*`;
     const selectedAnime = searchData.results.find(anime => anime.animeName === cleanedMessage);
 
     if (selectedAnime) {
-      await nazu.sendMessage(sender, {
-        image: { url: selectedAnime.thumbnail },
-        caption: `🎬 *${selectedAnime.animeName}*\n\n🔗 ${selectedAnime.animeLink}`
-      }, { quoted: info });
+  DatinhaAnimez = await anime.getInfo(selectedAnime.animeLink);
 
-      saveAnimeSearchData(userId, null);
-      return;
-    }
+  const textoBonito = `🎬 *${DatinhaAnimez.animeTitle}*\n` + `🎙️ *Tipo:* ${DatinhaAnimez.type}\n` + `🏢 *Estúdio:* ${DatinhaAnimez.studio}\n` + `🌟 *Gêneros:* ${DatinhaAnimez.genres.join(', ')}\n\n` + `📝 *Sinopse:*\n${DatinhaAnimez.description}\n\n` + `🔗 *Assista aqui:* ${selectedAnime.animeLink}`;
+
+  await nazu.sendMessage(sender, {
+    image: { url: selectedAnime.thumbnail || DatinhaAnimez.imageUrl },
+    caption: textoBonito
+  }, { quoted: info });
+
+  saveAnimeSearchData(userId, null);
+  return;
+}
   }
 }
  };
