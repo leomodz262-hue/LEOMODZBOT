@@ -5827,7 +5827,7 @@ ${weatherEmoji} *${weatherDescription}*`;
                          `🏢 *Estúdio:* ${DatinhaAnimez.studio}\n` +
                          `🌟 *Gêneros:* ${DatinhaAnimez.genres.join(', ')}\n\n` +
                          `📝 *Sinopse:*\n${DatinhaAnimez.description}`;
-l
+
       await nazu.sendMessage(sender, {
         image: { url: selectedAnime.thumbnail || DatinhaAnimez.imageUrl },
         caption: textoBonito
