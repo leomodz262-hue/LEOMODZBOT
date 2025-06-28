@@ -1399,10 +1399,6 @@ if (budy2.includes('@' + nazu.user.id.split(':')[0]) && !isCmd) {
             break;
         }
       }
-
-      if (respAssist.mensagem_sucesso) {
-        await reply(respAssist.mensagem_sucesso);
-      }
     } else {
       await reply('Ops, algo deu errado na resposta da IA! 😕 Tenta de novo?');
     }
