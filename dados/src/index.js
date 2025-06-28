@@ -3865,6 +3865,66 @@ break;
   }
   break;
   
+  case 'fechargp':
+  try {
+    if (!isGroup) return reply("Este comando só funciona em grupos.");
+    if (!isGroupAdmin) return reply("Apenas administradores podem agendar o fechamento do grupo.");
+    if (!isBotAdmin) return reply("⚠️ Eu preciso ser administrador para fechar o grupo!");
+    if (!q) return reply(`Por favor, forneça o horário no formato HH:MM. Exemplo: ${groupPrefix}fechargp 22:00`);
+
+    const [hour, minute] = q.split(':').map(n => parseInt(n.trim()));
+    if (isNaN(hour) || isNaN(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+      return reply("🤔 Formato de horário inválido! Use HH:MM (ex: 22:00).");
+    }
+
+    const actions = loadJsonFile(DIR_PROGRAM, []);
+    actions.push({
+      tipo: 'acao_repetida',
+      acao: 'FECHAR_GRUPO',
+      frequencia: 'diaria',
+      from: from,
+      sender: sender,
+      hora: { hora: String(hour).padStart(2, '0'), minuto: String(minute).padStart(2, '0') }
+    });
+    
+    fs.writeFileSync(DIR_PROGRAM, JSON.stringify(actions, null, 2));
+    await reply(`✅ Grupo será fechado diariamente às ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} (BRT)!`);
+  } catch (e) {
+    console.error('Erro no comando fechargp:', e);
+    await reply("Ocorreu um erro ao agendar o fechamento do grupo 💔");
+  }
+  break;
+
+  case 'abrirgp':
+  try {
+    if (!isGroup) return reply("Este comando só funciona em grupos.");
+    if (!isGroupAdmin) return reply("Apenas administradores podem agendar a abertura do grupo.");
+    if (!isBotAdmin) return reply("⚠️ Eu preciso ser administrador para abrir o grupo!");
+    if (!q) return reply(`Por favor, forneça o horário no formato HH:MM. Exemplo: ${groupPrefix}abrirgp 08:00`);
+
+    const [hour, minute] = q.split(':').map(n => parseInt(n.trim()));
+    if (isNaN(hour) || isNaN(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+      return reply("🤔 Formato de horário inválido! Use HH:MM (ex: 08:00).");
+    }
+
+    const actions = loadJsonFile(DIR_PROGRAM, []);
+    actions.push({
+      tipo: 'acao_repetida',
+      acao: 'ABRIR_GRUPO',
+      frequencia: 'diaria',
+      from: from,
+      sender: sender,
+      hora: { hora: String(hour).padStart(2, '0'), minuto: String(minute).padStart(2, '0') }
+    });
+    
+    fs.writeFileSync(DIR_PROGRAM, JSON.stringify(actions, null, 2));
+    await reply(`✅ Grupo será aberto diariamente às ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} (BRT)!`);
+  } catch (e) {
+    console.error('Erro no comando abrirgp:', e);
+    await reply("Ocorreu um erro ao agendar a abertura do grupo 💔");
+  }
+  break;
+
   case 'grupo': case 'gp': try {
   if (!isGroup) return reply("isso so pode ser usado em grupo 💔");
   if (!isGroupAdmin) return reply("Comando restrito a Administradores ou Moderadores com permissão. 💔");
