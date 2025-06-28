@@ -5663,7 +5663,7 @@ ${weatherEmoji} *${weatherDescription}*`;
     const prefixRegex = /^[`•°⁕»«⁑※⁂➡️⬅️⁺⁻]\s+/;
     const cleanedMessage = body.trim().replace(prefixRegex, '');
 
-    const pageSize = 11; // Máximo de 11 itens por página (para animes ou episódios)
+    const pageSize = 11;
     const animeTotalPages = Math.ceil(searchData.results.length / pageSize);
 
     const getAnimePollValues = (page) => {
@@ -5683,7 +5683,6 @@ ${weatherEmoji} *${weatherDescription}*`;
       return pollValues;
     };
 
-    // Navegação de páginas para animes
     if (budy2 === '➡️ proxima pagina' && !searchData.selectedAnime) {
       if (searchData.currentPage < animeTotalPages) {
         searchData.currentPage++;
@@ -5726,7 +5725,7 @@ ${weatherEmoji} *${weatherDescription}*`;
         const start = (searchData.currentEpisodePage - 1) * episodePageSize;
         const end = start + episodePageSize;
         const pageEpisodes = searchData.episodes.slice(start, end);
-        const pollValues = pageEpisodes.map(ep => ep[0]);
+        const pollValues = pageEpisodes.map((_, index) => `${start + index + 1}`);
         if (searchData.episodeTotalPages > 1 && searchData.currentEpisodePage < searchData.episodeTotalPages) {
           pollValues.push('➡️ Próxima página');
         }
@@ -5754,7 +5753,7 @@ ${weatherEmoji} *${weatherDescription}*`;
         const start = (searchData.currentEpisodePage - 1) * episodePageSize;
         const end = start + episodePageSize;
         const pageEpisodes = searchData.episodes.slice(start, end);
-        const pollValues = pageEpisodes.map(ep => ep[0]);
+        const pollValues = pageEpisodes.map((_, index) => `${start + index + 1}`);
         if (searchData.episodeTotalPages > 1 && searchData.currentEpisodePage < searchData.episodeTotalPages) {
           pollValues.push('➡️ Próxima página');
         }
@@ -5777,7 +5776,7 @@ ${weatherEmoji} *${weatherDescription}*`;
     if (cleanedMessage === 'Ver episódios' && searchData.selectedAnime) {
       const episodes = await anime.eps(searchData.selectedAnime.animeLink);
       if (episodes.length === 1) {
-        const episodioUrl = episodes[0][1];
+        const episodioUrl = episodes[0];
         const videoUrl = await anime.getUrl(episodioUrl);
         await nazu.sendMessage(sender, { text: `Aqui está o link para assistir: ${videoUrl.links.SD}` });
         saveAnimeSearchData(userId, null);
@@ -5792,7 +5791,7 @@ ${weatherEmoji} *${weatherDescription}*`;
         const start = (searchData.currentEpisodePage - 1) * episodePageSize;
         const end = start + episodePageSize;
         const pageEpisodes = episodes.slice(start, end);
-        const pollValues = pageEpisodes.map(ep => ep[0]);
+        const pollValues = pageEpisodes.map((_, index) => `Episodio ${start + index + 1}`);
         if (episodeTotalPages > 1) {
           pollValues.push('➡️ Próxima página');
         }
@@ -5815,18 +5814,20 @@ ${weatherEmoji} *${weatherDescription}*`;
       return;
     }
 
+    // Verifica se um anime foi selecionado
     const selectedAnime = searchData.results.find(anime => anime.animeName === cleanedMessage);
     if (selectedAnime) {
       searchData.selectedAnime = selectedAnime;
       saveAnimeSearchData(userId, searchData);
 
+      // Obtém as informações do anime
       const DatinhaAnimez = await anime.getInfo(selectedAnime.animeLink);
       const textoBonito = `🎬 *${DatinhaAnimez.animeTitle}*\n` +
                          `🎙️ *Tipo:* ${DatinhaAnimez.type}\n` +
                          `🏢 *Estúdio:* ${DatinhaAnimez.studio}\n` +
                          `🌟 *Gêneros:* ${DatinhaAnimez.genres.join(', ')}\n\n` +
                          `📝 *Sinopse:*\n${DatinhaAnimez.description}`;
-
+l
       await nazu.sendMessage(sender, {
         image: { url: selectedAnime.thumbnail || DatinhaAnimez.imageUrl },
         caption: textoBonito
@@ -5845,9 +5846,9 @@ ${weatherEmoji} *${weatherDescription}*`;
     }
 
     if (searchData.episodes) {
-      const selectedEpisode = searchData.episodes.find(ep => ep[0] === cleanedMessage);
-      if (selectedEpisode) {
-        const episodioUrl = selectedEpisode[1];
+      const episodeIndex = parseInt(cleanedMessage) - 1;
+      if (episodeIndex >= 0 && episodeIndex < searchData.episodes.length) {
+        const episodioUrl = searchData.episodes[episodeIndex];
         const videoUrl = await anime.getUrl(episodioUrl);
         await nazu.sendMessage(sender, { text: `Aqui está o link para assistir: ${videoUrl.links.SD}` });
         saveAnimeSearchData(userId, null);
@@ -5856,6 +5857,7 @@ ${weatherEmoji} *${weatherDescription}*`;
     }
   }
 }
+
  };
   } catch(error) {
     console.error('==== ERRO NO PROCESSAMENTO DA MENSAGEM ====');
