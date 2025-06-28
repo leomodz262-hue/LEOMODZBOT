@@ -5652,10 +5652,7 @@ ${weatherEmoji} *${weatherDescription}*`;
       return pollValues;
     };
     
-    console.log(budy2)
-    console.log(budy2 === '➡️proxima pagina')
-    console.log(budy2 === '➡️ proxima pagina')
-    if (budy2 === '➡️proxima pagina') {
+    if (budy2 === '➡️ proxima pagina') {
     console.log('foi?');
       if (searchData.currentPage < searchData.totalPages) {
         searchData.currentPage++;
@@ -5673,7 +5670,7 @@ ${weatherEmoji} *${weatherDescription}*`;
       return;
     }
 
-    if (budy2 === '⬅️pagina anterior') {
+    if (budy2 === '⬅️ pagina anterior') {
       if (searchData.currentPage > 1) {
         searchData.currentPage--;
         saveAnimeSearchData(userId, searchData);
