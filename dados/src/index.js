@@ -5521,7 +5521,7 @@ cron.schedule('* * * * *', () => {
           const destino = action.destino === 'privado' ? action.sender : action.from;
           const mention = action.sender.startsWith('@') ? action.sender : `@${action.sender}`;
           SocketActions.sendMessage(destino, {
-            text: `${action.texto}\n\n${mention.split('@')[0]}`,
+            text: `${action.texto}\n\n@${action.sender.split('@')[0]}`,
             mentions: [action.sender]
           });
         } else if (action.tipo === 'grupo') {
