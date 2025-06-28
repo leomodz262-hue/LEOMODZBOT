@@ -451,6 +451,8 @@ async function NazuninhaBotExec(nazu, info, store, groupCache) {
     
     const groupFile = pathz.join(__dirname, '..', 'database', 'grupos', `${from}.json`);
     let groupData = {};
+    const groupMetadata = !isGroup ? {} : await nazu.groupMetadata(from).catch(() => ({}));
+    const groupName = groupMetadata?.subject || '';
     if (isGroup) {
       if (!fs.existsSync(groupFile)) {
         fs.writeFileSync(groupFile, JSON.stringify({ 
@@ -502,8 +504,6 @@ async function NazuninhaBotExec(nazu, info, store, groupCache) {
       return;
     };
  
-    const groupMetadata = !isGroup ? {} : await nazu.groupMetadata(from).catch(() => ({}));
-    const groupName = groupMetadata?.subject || '';
     const AllgroupMembers = !isGroup ? [] : groupMetadata.participants?.map(p => p.id) || [];
     const groupAdmins = !isGroup ? [] : groupMetadata.participants?.filter(p => p.admin).map(p => p.id) || [];
   
@@ -1930,8 +1930,8 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
         const expires = info.expiresAt === 'permanent' ? '∞ Permanente' : info.expiresAt ? new Date(info.expiresAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'N/A';
         
         message += `🔹 *${index}. ${groupName}*\n`;
-        message += `   - *Status*: ${status}\n`;
-        message += `   - *Expira em*: ${expires}\n\n`;
+        message += `  - *Status*: ${status}\n`;
+        message += `  - *Expira em*: ${expires}\n\n`;
         index++;
       }
     }
