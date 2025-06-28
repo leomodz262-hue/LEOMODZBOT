@@ -5634,6 +5634,7 @@ ${weatherEmoji} *${weatherDescription}*`;
     
     const pageSize = 11;
     const start = (searchData.currentPage - 1) * pageSize;
+    const totalPages = Math.ceil(searchData.results.length / pageSize);
     
     const getPollValues = (page) => {
       const start = (page - 1) * pageSize;
