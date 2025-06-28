@@ -35,6 +35,7 @@ const DATABASE_DIR = __dirname + '/../database';
 const GRUPOS_DIR = DATABASE_DIR + '/grupos';
 const USERS_DIR = DATABASE_DIR + '/users';
 const DONO_DIR = DATABASE_DIR + '/dono';
+const DIR_PROGRAM = pathz.join(DATABASE_DIR, 'prog_actions.json');
 
 
 function formatUptime(seconds, longFormat = false, showZero = false) {
@@ -1141,61 +1142,118 @@ async function NazuninhaBotExec(nazu, info, store, groupCache) {
  
     if(budy2.match(/^(\d+)d(\d+)$/))reply(+budy2.match(/^(\d+)d(\d+)$/)[1]>50||+budy2.match(/^(\d+)d(\d+)$/)[2]>100?"❌ Limite: max 50 dados e 100 lados":"🎲 Rolando "+budy2.match(/^(\d+)d(\d+)$/)[1]+"d"+budy2.match(/^(\d+)d(\d+)$/)[2]+"...\n🎯 Resultados: "+(r=[...Array(+budy2.match(/^(\d+)d(\d+)$/)[1])].map(_=>1+Math.floor(Math.random()*+budy2.match(/^(\d+)d(\d+)$/)[2]))).join(", ")+"\n📊 Total: "+r.reduce((a,b)=>a+b,0));
 
-    if(budy2.includes('@'+nazu.user.id.split(':')[0]) && !isCmd) {
-      if(budy2.replaceAll('@'+nazu.user.id.split(':')[0], '').length > 2) {
-        jSoNzIn = { mensagem_original: budy2.replaceAll('@'+nazu.user.id.split(':')[0], ''), usuario_id: sender.split('@')[0] };
-        let { participant, quotedMessage } = info.message?.extendedTextMessage?.contextInfo || {}, jsonO = { participant, quotedMessage, texto: quotedMessage?.conversation || quotedMessage?.extendedTextMessage?.text || quotedMessage?.imageMessage?.caption || quotedMessage?.videoMessage?.caption || quotedMessage?.documentMessage?.caption || "" };
-        if(jsonO && jsonO.participant && jsonO.texto && jsonO.texto.length > 0) {
-          jSoNzIn.mensagem_citada = jsonO.texto;
-          jSoNzIn.usuario_mencionado_id = jsonO.participant.split('@')[0];
-        };
-        const respAssist = await ia.makeAssistentRequest(jSoNzIn);
-        if(respAssist.acao && respAssist.dados && respAssist.mensagem_aguarde) {
-          if(respAssist.acao === 'BANIR_USUARIO') {
-            if(respAssist.dados && respAssist.dados.usuario_id) {
-              if (!isGroupAdmin && !isOwner) return reply('Apenas admins me dão ordem para banir membros 🙄');
-              await reply(respAssist.mensagem_aguarde);
-              await nazu.groupParticipantsUpdate(from, [`${respAssist.dados.usuario_id}@s.whatsapp.net`], 'remove');
-            };
-          } else if(respAssist.acao === 'PROMOVER_USUARIO') {
-            if(respAssist.dados && respAssist.dados.usuario_id) {
-              if (!isGroupAdmin && !isOwner) return reply('Apenas admins me dão ordem para promover membros 🙄');
-              await reply(respAssist.mensagem_aguarde);
-              await nazu.groupParticipantsUpdate(from, [`${respAssist.dados.usuario_id}@s.whatsapp.net`], 'promote');
-            };
-          } else if(respAssist.acao === 'REBAIXAR_USUARIO') {
-            if(respAssist.dados && respAssist.dados.usuario_id) {
-              if (!isGroupAdmin && !isOwner) return reply('Apenas admins me dão ordem para rebaixar admins 🙄');
-              await reply(respAssist.mensagem_aguarde);
-              await nazu.groupParticipantsUpdate(from, [`${respAssist.dados.usuario_id}@s.whatsapp.net`], 'demote');
-            };
-          } else if(respAssist.acao === 'ABRIR_GRUPO') {
-            if (!isGroupAdmin && !isOwner) return reply('Apenas admins me dão ordem para abrir ou fechar o grupo 🙄');
-            await reply(respAssist.mensagem_aguarde);
+if (budy2.includes('@' + nazu.user.id.split(':')[0]) && !isCmd) {
+  if (budy2.replaceAll('@' + nazu.user.id.split(':')[0], '').length > 2) {
+    const jSoNzIn = {
+      mensagem_original: budy2.replaceAll('@' + nazu.user.id.split(':')[0], '').trim(),
+      usuario_id: sender.split('@')[0],
+      data_atual: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+        .split('/').reverse().join('-') + ' ' + new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+        .split(' ')[1].split(':').slice(0, 2).join(':')
+    };
+
+    let { participant, quotedMessage } = info.message?.extendedTextMessage?.contextInfo || {};
+    let jsonO = {
+      participant,
+      quotedMessage,
+      texto: quotedMessage?.conversation ||
+             quotedMessage?.extendedTextMessage?.text ||
+             quotedMessage?.imageMessage?.caption ||
+             quotedMessage?.videoMessage?.caption ||
+             quotedMessage?.documentMessage?.caption || ""
+    };
+    if (jsonO && jsonO.participant && jsonO.texto && jsonO.texto.length > 0) {
+      jSoNzIn.mensagem_citada = jsonO.texto;
+      jSoNzIn.usuario_mencionado_id = jsonO.participant.split('@')[0];
+    }
+
+    const respAssist = await ia.makeAssistentRequest(jSoNzIn);
+
+    if (respAssist.acoes && Array.isArray(respAssist.acoes) && respAssist.mensagem_aguarde) {
+      await reply(respAssist.mensagem_aguarde);
+
+      for (const action of respAssist.acoes) {
+        const { acao, dados } = action;
+
+        switch (acao) {
+          case 'BANIR_USUARIO':
+            if (dados && dados.usuario_id) {
+              if (!isGroupAdmin && !isOwner) {
+                await reply('Apenas admins me dão ordem para banir membros 🙄');
+                continue;
+              }
+              await nazu.groupParticipantsUpdate(from, [`${dados.usuario_id}@s.whatsapp.net`], 'remove');
+            }
+            break;
+
+          case 'PROMOVER_USUARIO':
+            if (dados && dados.usuario_id) {
+              if (!isGroupAdmin && !isOwner) {
+                await reply('Apenas admins me dão ordem para promover membros 🙄');
+                continue;
+              }
+              await nazu.groupParticipantsUpdate(from, [`${dados.usuario_id}@s.whatsapp.net`], 'promote');
+            }
+            break;
+
+          case 'REBAIXAR_USUARIO':
+            if (dados && dados.usuario_id) {
+              if (!isGroupAdmin && !isOwner) {
+                await reply('Apenas admins me dão ordem para rebaixar admins 🙄');
+                continue;
+              }
+              await nazu.groupParticipantsUpdatei(from, [`${dados.usuario_id}@s.whatsapp.net`], 'demote');
+            }
+            break;
+
+          case 'ABRIR_GRUPO':
+            if (!isGroupAdmin && !isOwner) {
+              await reply('Apenas admins me dão ordem para abrir ou fechar o grupo 🙄');
+              continue;
+            }
             await nazu.groupSettingUpdate(from, 'not_announcement');
-          } else if(respAssist.acao === 'FECHAR_GRUPO') {
-            if (!isGroupAdmin && !isOwner) return reply('Apenas admins me dão ordem para abrir ou fechar o grupo 🙄');
-            await reply(respAssist.mensagem_aguarde);
+            break;
+
+          case 'FECHAR_GRUPO':
+            if (!isGroupAdmin && !isOwner) {
+              await reply('Apenas admins me dão ordem para abrir ou fechar o grupo 🙄');
+              continue;
+            }
             await nazu.groupSettingUpdate(from, 'announcement');
-          } else if(respAssist.acao === 'TOCAR_MUSICA') {
-            if(respAssist.dados && respAssist.dados.musica) {
-              await reply(respAssist.mensagem_aguarde);
-              videoInfo = await youtube.search(respAssist.dados.musica);
+            break;
+
+          case 'TOCAR_MUSICA':
+            if (dados && dados.musica) {
+              const videoInfo = await youtube.search(dados.musica);
               const caption = `📌 *Título:* ${videoInfo.data.title}\n👤 *Artista/Canal:* ${videoInfo.data.author.name}\n⏱ *Duração:* ${videoInfo.data.timestamp} (${videoInfo.data.seconds} segundos)\n\n🎧 *Baixando e processando sua música, aguarde...*`;
               await reply(caption);
               const dlRes = await youtube.mp3(videoInfo.data.url);
               if (!dlRes.ok) {
-                return reply(`❌ Erro ao baixar o áudio: ${dlRes.msg}`);
-              };
+                await reply(`❌ Erro ao baixar o áudio: ${dlRes.msg}`);
+                continue;
+              }
               await nazu.sendMessage(from, { audio: dlRes.buffer, mimetype: 'audio/mpeg' }, { quoted: info });
-            };
-          } else if(respAssist.acao === 'CRIAR_ENQUETE') {
-            if(respAssist.dados && respAssist.dados.pergunta && respAssist.dados.opcoes) {
-              await reply(respAssist.mensagem_aguarde);
-              await nazu.sendMessage(from, {poll: {name: respAssist.dados.pergunta,values: respAssist.dados.opcoes.split('_'), selectableCount: 1}, messageContextInfo: { messageSecret: Math.random()}}, {from, options: { userJid: nazu?.user?.id }});
-            };
-          } else if(respAssist.acao === 'DELETAR_MENSAGEM') {
-            if (!isGroupAdmin && !isOwner) return reply('Apenas admins me dão ordem para deletar mensagens 🙄');
+            }
+            break;
+
+          case 'CRIAR_ENQUETE':
+            if (dados && dados.pergunta && dados.opcoes) {
+              await nazu.sendMessage(from, {
+                poll: {
+                  name: dados.pergunta,
+                  values: dados.opcoes.split('_'),
+                  selectableCount: 1
+                },
+                messageContextInfo: { messageSecret: Math.random() }
+              }, { from, options: { userJid: nazu?.user?.id } });
+            }
+            break;
+
+          case 'DELETAR_MENSAGEM':
+            if (!isGroupAdmin && !isOwner) {
+              await reply('Apenas admins me dão ordem para deletar mensagens 🙄');
+              continue;
+            }
             let stanzaId, participant;
             if (info.message.extendedTextMessage) {
               stanzaId = info.message.extendedTextMessage.contextInfo.stanzaId;
@@ -1203,58 +1261,153 @@ async function NazuninhaBotExec(nazu, info, store, groupCache) {
             } else if (info.message.viewOnceMessage) {
               stanzaId = info.key.id;
               participant = info.key.participant || menc_prt;
-            };
+            }
             try {
-              await nazu.sendMessage(from, { delete: { remoteJid: from, fromMe: false, id: stanzaId, participant: participant } });
+              await nazu.sendMessage(from, {
+                delete: { remoteJid: from, fromMe: false, id: stanzaId, participant: participant }
+              });
             } catch (error) {
               console.error(error);
-            };
-          } else if(respAssist.acao === 'ASSISTIR_FILME') {
-            if(respAssist.dados && respAssist.dados.filme) {
-              await reply(respAssist.mensagem_aguarde);
-              datyz = await FilmesDL(respAssist.dados.filme);
-              if(!datyz || !datyz.url) return;
-              await nazu.sendMessage(from, {image: { url: datyz.img },caption: `Aqui está o que encontrei! 🎬\n\n*Nome*: ${datyz.name}\n\nSe tudo estiver certo, você pode assistir no link abaixo:\n${datyz.url}`}, { quoted: info });
-            };
-          } else if(respAssist.acao === 'CONSULTAR_COGNIMAI') {
-            const resultPriv = await ia.makeCognimaRequest('cognimai', budy2.replaceAll('@'+nazu.user.id.split(':')[0], ''), `cog_${sender.split('@')[0]}`);
-            if (!resultPriv.success) return;
+            }
+            break;
+
+          case 'ASSISTIR_FILME':
+            if (dados && dados.filme) {
+              const datyz = await FilmesDL(dados.filme);
+              if (!datyz || !datyz.url) {
+                await reply('❌ Não encontrei o filme, tenta outro! 😕');
+                continue;
+              }
+              await nazu.sendMessage(from, {
+                image: { url: datyz.img },
+                caption: `Aqui está o que encontrei! 🎬\n\n*Nome*: ${datyz.name}\n\nSe tudo estiver certo, você pode assistir no link abaixo:\n${datyz.url}`
+              }, { quoted: info });
+            }
+            break;
+
+          case 'CONSULTAR_COGNIMAI':
+            const resultPriv = await ia.makeCognimaRequest('cognimai', budy2.replaceAll('@' + nazu.user.id.split(':')[0], ''), `cog_${sender.split('@')[0]}`);
+            if (!resultPriv.success) continue;
             await reply(resultPriv.reply);
-          } else if(respAssist.acao === 'CONVERSAR_COMO_HUMANO') {
-            const resultPriv = await ia.makeCognimaRequest('nazuninha', budy2.replaceAll('@'+nazu.user.id.split(':')[0], ''), `nazuninha_${sender.split('@')[0]}`);
-            if (!resultPriv.success) return;
-            await reply(resultPriv.reply);
-          } else if(respAssist.acao === 'ENVIAR_LEMBRETE') {
-            if(respAssist.dados && respAssist.dados.lembrete && respAssist.dados.destino && respAssist.dados.data_hora ) {
-              await reply(respAssist.mensagem_aguarde);
-              const Data = respAssist.dados.data_hora;
-              const JsonAc = { tipo: 'lembrete', texto: respAssist.dados.lembrete, destino: respAssist.dados.destino, from, sender, data: { ano: Data.split('-')[0], mes: Data.split('-')[1], dia: Data.split('-').pop().split(' ')[0] }, hora: { hora: Data.split(' ').pop().split(':')[0], minuto: Data.split(':').pop() } };
-              const DIR_PROGRAM = pathz.join(DATABASE_DIR, 'prog_actions.json');
+            break;
+
+          case 'CONVERSAR_COMO_HUMANO':
+            const resultConv = await ia.makeCognimaRequest('nazuninha', budy2.replaceAll('@' + nazu.user.id.split(':')[0], ''), `nazuninha_${sender.split('@')[0]}`);
+            if (!resultConv.success) continue;
+            await reply(resultConv.reply);
+            break;
+
+          case 'ENVIAR_LEMBRETE':
+            if (dados && dados.lembrete && dados.destino && dados.data_hora) {
+              const Data = dados.data_hora;
+              const JsonAc = {
+                tipo: 'lembrete',
+                texto: dados.lembrete,
+                destino: dados.destino,
+                from,
+                sender,
+                data: {
+                  ano: Data.split('-')[0],
+                  mes: Data.split('-')[1],
+                  dia: Data.split('-').pop().split(' ')[0]
+                },
+                hora: {
+                  hora: Data.split(' ').pop().split(':')[0],
+                  minuto: Data.split(':').pop()
+                }
+              };
               if (!fs.existsSync(DIR_PROGRAM)) {
                 await fs.writeFileSync(DIR_PROGRAM, JSON.stringify([], null, 2));
-              };
+              }
               const ACTIONS = JSON.parse(fs.readFileSync(DIR_PROGRAM, 'utf-8'));
               ACTIONS.push(JsonAc);
               await fs.writeFileSync(DIR_PROGRAM, JSON.stringify(ACTIONS, null, 2));
-            };
-          } else if(respAssist.acao === 'PROGRAMAR_GRUPO') {
-            if(respAssist.dados && respAssist.dados.acao && respAssist.dados.data_hora ) {
-              if (!isGroupAdmin && !isOwner) return reply('Apenas admins me dão ordem para abrir ou fechar o grupo 🙄');
-              await reply(respAssist.mensagem_aguarde);
-              const Data = respAssist.dados.data_hora;
-              const JsonAc = { tipo: 'grupo', acao: respAssist.dados.acao, from, sender, data: { ano: Data.split('-')[0], mes: Data.split('-')[1], dia: Data.split('-').pop().split(' ')[0] }, hora: { hora: Data.split(' ').pop().split(':')[0], minuto: Data.split(':').pop() } };
-              const DIR_PROGRAM = pathz.join(DATABASE_DIR, 'prog_actions.json');
+            }
+            break;
+
+          case 'PROGRAMAR_GRUPO':
+            if (dados && dados.acao && dados.data_hora) {
+              if (!isGroupAdmin && !isOwner) {
+                await reply('Apenas admins me dão ordem para abrir ou fechar o grupo 🙄');
+                continue;
+              }
+              const Data = dados.data_hora;
+              const JsonAc = {
+                tipo: 'grupo',
+                acao: dados.acao,
+                from,
+                sender,
+                data: {
+                  ano: Data.split('-')[0],
+                  mes: Data.split('-')[1],
+                  dia: Data.split('-').pop().split(' ')[0]
+                },
+                hora: {
+                  hora: Data.split(' ').pop().split(':')[0],
+                  minuto: Data.split(':').pop()
+                }
+              };
               if (!fs.existsSync(DIR_PROGRAM)) {
                 await fs.writeFileSync(DIR_PROGRAM, JSON.stringify([], null, 2));
-              };
+              }
               const ACTIONS = JSON.parse(fs.readFileSync(DIR_PROGRAM, 'utf-8'));
               ACTIONS.push(JsonAc);
               await fs.writeFileSync(DIR_PROGRAM, JSON.stringify(ACTIONS, null, 2));
-            };
-          };
-        };
-      };
-    };
+            }
+            break;
+
+          case 'PROGRAMAR_ACAO_REPETIDA':
+            if (dados && dados.acao_a_executar && dados.dados_acao && dados.frequencia && dados.hora) {
+              const JsonAc = {
+                tipo: 'acao_repetida',
+                acao: dados.acao_a_executar,
+                dados_acao: dados.dados_acao,
+                frequencia: dados.frequencia,
+                hora: {
+                  hora: dados.hora.split(':')[0],
+                  minuto: dados.hora.split(':')[1]
+                },
+                dia_da_semana: dados.dia_da_semana || null,
+                dia_do_mes: dados.dia_do_mes || null,
+                from,
+                sender
+              };
+              if (!fs.existsSync(DIR_PROGRAM)) {
+                await fs.writeFileSync(DIR_PROGRAM, JSON.stringify([], null, 2));
+              }
+              const ACTIONS = JSON.parse(fs.readFileSync(DIR_PROGRAM, 'utf-8'));
+              ACTIONS.push(JsonAc);
+              await fs.writeFileSync(DIR_PROGRAM, JSON.stringify(ACTIONS, null, 2));
+            }
+            break;
+
+          case 'EXCLUIR_ACAO_PROGRAMADA':
+            if (dados && dados.tipo && dados.id) {
+              if (!fs.existsSync(DIR_PROGRAM)) {
+                await reply('Nenhuma ação programada encontrada! 😕');
+                continue;
+              }
+              let ACTIONS = JSON.parse(fs.readFileSync(DIR_PROGRAM, 'utf-8'));
+              const initialLength = ACTIONS.length;
+              ACTIONS = ACTIONS.filter(action => action.id !== dados.id || action.tipo !== dados.tipo);
+              if (ACTIONS.length < initialLength) {
+                await fs.writeFileSync(DIR_PROGRAM, JSON.stringify(ACTIONS, null, 2));
+              } else {
+                await reply('Ação programada não encontrada! 😕');
+              }
+            }
+            break;
+        }
+      }
+
+      if (respAssist.mensagem_sucesso) {
+        await reply(respAssist.mensagem_sucesso);
+      }
+    } else {
+      await reply('Ops, algo deu errado na resposta da IA! 😕 Tenta de novo?');
+    }
+  }
+}
     
   
   //ANTI FLOOD DE MENSAGENS
@@ -5476,8 +5629,6 @@ function getDiskSpaceInfo() {
 
 
 cron.schedule('* * * * *', () => {
-  const DIR_PROGRAM = pathz.join(DATABASE_DIR, 'prog_actions.json');
-  
   try {
     if (!fs.existsSync(DIR_PROGRAM)) {
       fs.writeFileSync(DIR_PROGRAM, JSON.stringify([], null, 2));
@@ -5500,44 +5651,75 @@ cron.schedule('* * * * *', () => {
       month: nowBRT.getUTCMonth() + 1,
       day: nowBRT.getUTCDate(),
       hour: nowBRT.getUTCHours(),
-      minute: nowBRT.getUTCMinutes()
+      minute: nowBRT.getUTCMinutes(),
+      dayOfWeek: ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'][nowBRT.getUTCDay()]
     };
 
-    for (let i = actions.length - 1; i >= 0; i--) {
+    let updatedActions = [...actions];
+    let actionsToRemove = [];
+
+    for (let i = 0; i < actions.length; i++) {
       const action = actions[i];
 
-      if (
-        Number(action.data.ano) !== current.year ||
-        Number(action.data.mes) !== current.month ||
-        Number(action.data.dia) !== current.day ||
-        Number(action.hora.hora) > current.hour ||
-        (Number(action.hora.hora) === current.hour && Number(action.hora.minuto) > current.minute)
-      ) {
-        continue;
+      let shouldExecute = false;
+
+      if (action.tipo === 'acao_repetida') {
+        const [actionHour, actionMinute] = [Number(action.hora.hora), Number(action.hora.minuto)];
+        if (actionHour === current.hour && actionMinute === current.minute) {
+          if (action.frequencia === 'diaria') {
+            shouldExecute = true;
+          } else if (action.frequencia === 'semanal' && action.dia_da_semana === current.dayOfWeek) {
+            shouldExecute = true;
+          } else if (action.frequencia === 'mensal' && Number(action.dia_do_mes) === current.day) {
+            shouldExecute = true;
+          }
+        }
+      } else if (action.tipo === 'lembrete' || action.tipo === 'grupo') {
+        if (
+          Number(action.data.ano) === current.year &&
+          Number(action.data.mes) === current.month &&
+          Number(action.data.dia) === current.day &&
+          Number(action.hora.hora) === current.hour &&
+          Number(action.hora.minuto) === current.minute
+        ) {
+          shouldExecute = true;
+          actionsToRemove.push(i);
+        }
       }
+
+      if (!shouldExecute) continue;
 
       try {
         if (action.tipo === 'lembrete') {
           const destino = action.destino === 'privado' ? action.sender : action.from;
           const mention = action.sender.startsWith('@') ? action.sender : `@${action.sender}`;
-          SocketActions.sendMessage(destino, {
-            text: `${action.texto}\n\n@${action.sender.split('@')[0]}`,
+          await SocketActions.sendMessage(destino, {
+            text: `${action.texto}\n\n${mention}`,
             mentions: [action.sender]
           });
         } else if (action.tipo === 'grupo') {
-          SocketActions.groupSettingUpdate(
+          await SocketActions.groupSettingUpdate(
             action.from,
             action.acao === 'abrir' ? 'not_announcement' : 'announcement'
           );
+        } else if (action.tipo === 'acao_repetida') {
+          if (action.acao === 'ENVIAR_LEMBRETE') {
+            const destino = action.dados_acao.destino === 'privado' ? action.sender : action.from;
+            const mention = action.sender.startsWith('@') ? action.sender : `@${action.sender}`;
+            await SocketActions.sendMessage(destino, {
+              text: `${action.dados_acao.lembrete}\n\n${mention}`,
+              mentions: [action.sender]
+            });
+          }
         }
-
-        actions.splice(i, 1);
       } catch (err) {
         console.error(`Erro ao processar ação ${action.tipo}:`, err);
       }
     }
 
-    fs.writeFileSync(DIR_PROGRAM, JSON.stringify(actions, null, 2));
+    updatedActions = updatedActions.filter((_, index) => !actionsToRemove.includes(index));
+
+    fs.writeFileSync(DIR_PROGRAM, JSON.stringify(updatedActions, null, 2));
   } catch (err) {
     console.error('Erro na execução do cron:', err);
   }
