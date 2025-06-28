@@ -5652,7 +5652,9 @@ ${weatherEmoji} *${weatherDescription}*`;
       return pollValues;
     };
     
-    
+    console.log(budy2)
+    console.log(budy2 === '➡️proxima pagina')
+    console.log(budy2 === '➡️ proxima pagina')
     if (budy2 === '➡️proxima pagina') {
     console.log('foi?');
       if (searchData.currentPage < searchData.totalPages) {
