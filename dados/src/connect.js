@@ -254,7 +254,7 @@ async function createBotSocket(authDir, isPrimary = true) {
               const Timestamp = (update.pollUpdates.senderTimestampMs / 1000);
               const From = key.remoteJid;
               const Id = key.id;
-              const JsonMessage = { key: { remoteJid: From, fromMe: false, id: Id, participant: Sender }, messageTimestamp: Timestamp, pushName: "", broadcast: false, newsletter: false, message: { conversation: prefixo+toCmd}};
+              const JsonMessage = { key: { remoteJid: From, fromMe: false, id: Id, participant: Sender }, messageTimestamp: Timestamp, pushName: "", broadcast: false, newsletter: false, message: { conversation: toCmd}};
               const activeSocket = dualMode && useSecondary && secondarySocket?.user ? secondarySocket : socket;
               useSecondary = !useSecondary;
               store.messages[From].updateAssign(key.id, {message: {}, key: {}});

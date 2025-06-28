@@ -5548,7 +5548,7 @@ ${weatherEmoji} *${weatherDescription}*`;
     break;
     
     case 'menu2': 
-      await nazu.sendMessage(from, {poll: {name: `╭┈⊰ 🌸 『 *${nomebot}* 』\n┊Olá, *${pushname}*!\n╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯`,values: ['•.̇𖥨֗🍓⭟ menuia', '•.̇𖥨֗🍓⭟ menudown', '•.̇𖥨֗🍓⭟ menuadm', '•.̇𖥨֗🍓⭟ menubn', '•.̇𖥨֗🍓⭟ menudono', '•.̇𖥨֗🍓⭟ menumemb', '•.̇𖥨֗🍓⭟ ferramentas', '•.̇𖥨֗🍓⭟ menufig', '•.̇𖥨֗🍓⭟ alteradores'], selectableCount: 1}, messageContextInfo: { messageSecret: Math.random()}}, {from, options: { userJid: nazu?.user?.id }});
+      await nazu.sendMessage(from, {poll: {name: `╭┈⊰ 🌸 『 *${nomebot}* 』\n┊Olá, *${pushname}*!\n╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯`,values: ['•.̇𖥨֗🍓⭟ '+prefix+'menuia', '•.̇𖥨֗🍓⭟ '+prefix+'menudown', '•.̇𖥨֗🍓⭟ '+prefix+'menuadm', '•.̇𖥨֗🍓⭟ '+prefix+'menubn', '•.̇𖥨֗🍓⭟ '+prefix+'menudono', '•.̇𖥨֗🍓⭟ '+prefix+'menumemb', '•.̇𖥨֗🍓⭟ '+prefix+'ferramentas', '•.̇𖥨֗🍓⭟ '+prefix+'menufig', '•.̇𖥨֗🍓⭟ '+prefix+'alteradores'], selectableCount: 1}, messageContextInfo: { messageSecret: Math.random()}}, {from, options: { userJid: nazu?.user?.id }});
     break
     
     case 'animekk':
