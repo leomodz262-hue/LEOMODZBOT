@@ -795,22 +795,6 @@ const loadAnimeSearchData = (userId) => {
   }
 };
 
-const getPollValues = (page) => {
-      const start = (page - 1) * pageSize;
-      const end = start + pageSize;
-      const pageResults = searchResults.slice(start, end);
-      const pollValues = pageResults.map((anime, index) => {
-        const prefix = ['`', '•', '°', '⁕', '»', '«', '⁑', '※', '⁂', '⁺', '⁻'][index] || '•';
-        return `${prefix} ${anime.animeName}`;
-      });
-      if (totalPages > 1 && page < totalPages) {
-        pollValues.push('➡️ Próxima página');
-      }
-      if (page > 1) {
-        pollValues.push('⬅️ Página anterior');
-      }
-      return pollValues;
-    };
 
     const getMediaInfo = (message) => {
       if (!message) return null;
@@ -5590,6 +5574,23 @@ ${weatherEmoji} *${weatherDescription}*`;
     };
     saveAnimeSearchData(userId, searchData);
 
+    const getPollValues = (page) => {
+      const start = (page - 1) * pageSize;
+      const end = start + pageSize;
+      const pageResults = searchResults.slice(start, end);
+      const pollValues = pageResults.map((anime, index) => {
+        const prefix = ['`', '•', '°', '⁕', '»', '«', '⁑', '※', '⁂', '⁺', '⁻'][index] || '•';
+        return `${prefix} ${anime.animeName}`;
+      });
+      if (totalPages > 1 && page < totalPages) {
+        pollValues.push('➡️ Próxima página');
+      }
+      if (page > 1) {
+        pollValues.push('⬅️ Página anterior');
+      }
+      return pollValues;
+    };
+
     const pollMessage = `🔎 Resultados da pesquisa por "${q}"\n📃 Página ${currentPage} de ${totalPages}\n\nEscolha um anime:`;
     if (isGroup) {
       await reply('📬 Resultados da pesquisa de anime enviados no seu privado!');
@@ -5630,6 +5631,28 @@ ${weatherEmoji} *${weatherDescription}*`;
     const prefixRegex = /^[`•°⁕»«⁑※⁂➡️⬅️⁺⁻]\s+/;
     const cleanedMessage = body.trim().replace(prefixRegex, '');
     
+    
+    const pageSize = 11;
+    const start = (searchData.currentPage - 1) * pageSize;
+    
+    const getPollValues = (page) => {
+      const start = (page - 1) * pageSize;
+      const end = start + pageSize;
+      const pageResults = searchData.results.slice(start, end);
+      const pollValues = pageResults.map((anime, index) => {
+        const prefix = ['`', '•', '°', '⁕', '»', '«', '⁑', '※', '⁂', '⁺', '⁻'][index] || '•';
+        return `${prefix} ${anime.animeName}`;
+      });
+      if (totalPages > 1 && page < totalPages) {
+        pollValues.push('➡️ Próxima página');
+      }
+      if (page > 1) {
+        pollValues.push('⬅️ Página anterior');
+      }
+      return pollValues;
+    };
+    
+    
     if (budy2 === '➡️proxima pagina') {
       if (searchData.currentPage < searchData.totalPages) {
         searchData.currentPage++;
@@ -5663,9 +5686,7 @@ ${weatherEmoji} *${weatherDescription}*`;
       }
       return;
     }
-
-    const pageSize = 11;
-    const start = (searchData.currentPage - 1) * pageSize;
+    
     const selectedAnime = searchData.results.find(anime => anime.animeName === cleanedMessage);
 
     if (selectedAnime) {
