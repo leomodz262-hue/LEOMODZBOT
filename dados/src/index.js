@@ -5846,7 +5846,7 @@ ${weatherEmoji} *${weatherDescription}*`;
     }
 
     if (searchData.episodes) {
-      const episodeIndex = parseInt(cleanedMessage) - 1;
+      const episodeIndex = parseInt(cleanedMessage.replace(/\D/g, '')) - 1;
       if (episodeIndex >= 0 && episodeIndex < searchData.episodes.length) {
         const episodioUrl = searchData.episodes[episodeIndex];
         const videoUrl = await anime.getUrl(episodioUrl);
