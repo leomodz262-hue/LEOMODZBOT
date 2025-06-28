@@ -5561,7 +5561,7 @@ ${weatherEmoji} *${weatherDescription}*`;
     }
 
     const userId = sender;
-    const pageSize = 11;
+    const pageSize = 10;
     const totalPages = Math.ceil(searchResults.length / pageSize);
     let currentPage = 1;
 
@@ -5663,7 +5663,7 @@ ${weatherEmoji} *${weatherDescription}*`;
     const prefixRegex = /^[`•°⁕»«⁑※⁂➡️⬅️⁺⁻]\s+/;
     const cleanedMessage = body.trim().replace(prefixRegex, '');
 
-    const pageSize = 11;
+    const pageSize = 10;
     const animeTotalPages = Math.ceil(searchData.results.length / pageSize);
 
     const getAnimePollValues = (page) => {
@@ -5721,7 +5721,7 @@ ${weatherEmoji} *${weatherDescription}*`;
       if (searchData.currentEpisodePage < searchData.episodeTotalPages) {
         searchData.currentEpisodePage++;
         saveAnimeSearchData(userId, searchData);
-        const episodePageSize = 11;
+        const episodePageSize = 10;
         const start = (searchData.currentEpisodePage - 1) * episodePageSize;
         const end = start + episodePageSize;
         const pageEpisodes = searchData.episodes.slice(start, end);
@@ -5749,7 +5749,7 @@ ${weatherEmoji} *${weatherDescription}*`;
       if (searchData.currentEpisodePage > 1) {
         searchData.currentEpisodePage--;
         saveAnimeSearchData(userId, searchData);
-        const episodePageSize = 11;
+        const episodePageSize = 10;
         const start = (searchData.currentEpisodePage - 1) * episodePageSize;
         const end = start + episodePageSize;
         const pageEpisodes = searchData.episodes.slice(start, end);
@@ -5781,7 +5781,7 @@ ${weatherEmoji} *${weatherDescription}*`;
         await nazu.sendMessage(sender, { text: `Aqui está o link para assistir: ${videoUrl.links.SD}` });
         saveAnimeSearchData(userId, null);
       } else {
-        const episodePageSize = 11;
+        const episodePageSize = 10;
         const episodeTotalPages = Math.ceil(episodes.length / episodePageSize);
         searchData.episodes = episodes;
         searchData.currentEpisodePage = 1;
