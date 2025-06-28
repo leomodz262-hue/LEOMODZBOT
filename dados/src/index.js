@@ -389,7 +389,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache) {
   var config = JSON.parse(fs.readFileSync(__dirname+'/config.json'));
   var { numerodono, nomedono, nomebot, prefixo, debug } = config;
 
-  const { youtube, tiktok, pinterest, igdl, sendSticker, FilmesDL, styleText, emojiMix, upload, mcPlugin, tictactoe, toolsJson, vabJson, apkMod, google, Lyrics, commandStats, ia, VerifyUpdate } = await require(__dirname+'/funcs/exports.js');
+  const { youtube, tiktok, pinterest, igdl, sendSticker, FilmesDL, styleText, emojiMix, upload, mcPlugin, tictactoe, toolsJson, vabJson, apkMod, google, Lyrics, commandStats, ia, VerifyUpdate, anime } = await require(__dirname+'/funcs/exports.js');
     
   const antipvData = loadJsonFile(DATABASE_DIR + '/antipv.json');
   const premiumListaZinha = loadJsonFile(DONO_DIR + '/premium.json');
