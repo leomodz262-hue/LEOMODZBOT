@@ -5701,7 +5701,7 @@ cron.schedule('* * * * *', async () => {
         } else if (action.tipo === 'acao_repetida') {
           if (action.acao === 'ENVIAR_LEMBRETE') {
             const destino = action.dados_acao.destino === 'privado' ? action.sender : action.from;
-            const mention = action.sender.startsWith('@') ? action.sender : `@${action.sender}`;
+            const mention = action.sender.startsWith('@') ? action.sender : `@${action.sender.split('@')[0]}`;
             await SocketActions.sendMessage(destino, {
               text: `${action.dados_acao.lembrete}\n\n${mention}`,
               mentions: [action.sender]
