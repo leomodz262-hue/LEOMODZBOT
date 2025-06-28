@@ -36,6 +36,7 @@ const GRUPOS_DIR = DATABASE_DIR + '/grupos';
 const USERS_DIR = DATABASE_DIR + '/users';
 const DONO_DIR = DATABASE_DIR + '/dono';
 const DIR_PROGRAM = pathz.join(DATABASE_DIR, 'prog_actions.json');
+const ANIME_SEARCH_DIR = pathz.join(DATABASE_DIR, 'anime_search');
 
 
 function formatUptime(seconds, longFormat = false, showZero = false) {
@@ -101,6 +102,7 @@ const loadJsonFile = (path, defaultValue = {}) => {
 ensureDirectoryExists(GRUPOS_DIR);
 ensureDirectoryExists(USERS_DIR);
 ensureDirectoryExists(DONO_DIR);
+ensureDirectoryExists(ANIME_SEARCH_DIR);
 
 
 ensureJsonFileExists(DATABASE_DIR + '/antiflood.json');
@@ -771,6 +773,27 @@ async function NazuninhaBotExec(nazu, info, store, groupCache) {
         throw error;
       }
     }
+    
+    const saveAnimeSearchData = (userId, searchData) => {
+  try {
+    const filePath = pathz.join(ANIME_SEARCH_DIR, `${userId}.json`);
+    fs.writeFileSync(filePath, JSON.stringify(searchData, null, 2));
+    return true;
+  } catch (error) {
+    console.error(`Erro ao salvar dados de pesquisa de anime para ${userId}:`, error);
+    return false;
+  }
+};
+
+const loadAnimeSearchData = (userId) => {
+  try {
+    const filePath = pathz.join(ANIME_SEARCH_DIR, `${userId}.json`);
+    return fs.existsSync(filePath) ? JSON.parse(fs.readFileSync(filePath, 'utf-8')) : null;
+  } catch (error) {
+    console.error(`Erro ao carregar dados de pesquisa de anime para ${userId}:`, error);
+    return null;
+  }
+};
 
 
     const getMediaInfo = (message) => {
@@ -5527,6 +5550,65 @@ ${weatherEmoji} *${weatherDescription}*`;
     case 'menu2': 
       await nazu.sendMessage(from, {poll: {name: `╭┈⊰ 🌸 『 *${nomebot}* 』\n┊Olá, *${pushname}*!\n╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯`,values: ['•.̇𖥨֗🍓⭟ menuia', '•.̇𖥨֗🍓⭟ menudown', '•.̇𖥨֗🍓⭟ menuadm', '•.̇𖥨֗🍓⭟ menubn', '•.̇𖥨֗🍓⭟ menudono', '•.̇𖥨֗🍓⭟ menumemb', '•.̇𖥨֗🍓⭟ ferramentas', '•.̇𖥨֗🍓⭟ menufig', '•.̇𖥨֗🍓⭟ alteradores'], selectableCount: 1}, messageContextInfo: { messageSecret: Math.random()}}, {from, options: { userJid: nazu?.user?.id }});
     break
+    
+    case 'animekk':
+  try {
+    if (!q) return reply('Digite o nome do anime para pesquisar. Ex: !anime Naruto');
+
+    const searchResults = await anime.search(q);
+    if (!searchResults || searchResults.length === 0) {
+      return reply('Nenhum anime encontrado com esse nome. 😕 Tente outro termo!');
+    }
+
+    const userId = sender;
+    const pageSize = 11;
+    const totalPages = Math.ceil(searchResults.length / pageSize);
+    let currentPage = 1;
+
+    const searchData = {
+      query: q,
+      results: searchResults,
+      currentPage: currentPage,
+      totalPages: totalPages,
+      timestamp: Date.now()
+    };
+    saveAnimeSearchData(userId, searchData);
+
+    const getPollValues = (page) => {
+      const start = (page - 1) * pageSize;
+      const end = start + pageSize;
+      const pageResults = searchResults.slice(start, end);
+      const pollValues = pageResults.map((anime, index) => {
+        const prefix = ['`', '•', '°', '⁕', '»', '«', '⁑', '※', '⁂', '⁺', '⁻'][index] || '•';
+        return `${prefix} ${anime.animeName}`;
+      });
+      if (totalPages > 1 && page < totalPages) {
+        pollValues.push('➡️ Próxima página');
+      }
+      if (page > 1) {
+        pollValues.push('⬅️ Página anterior');
+      }
+      return pollValues;
+    };
+
+    const pollMessage = `🔎 Resultados da pesquisa por "${q}"\n📃 Página ${currentPage} de ${totalPages}\n\nEscolha um anime:`;
+    if (isGroup) {
+      await reply('📬 Resultados da pesquisa de anime enviados no seu privado!');
+    }
+    await nazu.sendMessage(sender, {
+      poll: {
+        name: pollMessage,
+        values: getPollValues(currentPage),
+        selectableCount: 1
+      },
+      messageContextInfo: { messageSecret: Math.random() }
+    }, { options: { userJid: nazu?.user?.id } });
+
+  } catch (e) {
+    console.error('Erro no comando anime:', e);
+    await reply("Ocorreu um erro ao pesquisar o anime 💔");
+  }
+  break;
     
  default:
   if(isCmd) await nazu.react('❌');
