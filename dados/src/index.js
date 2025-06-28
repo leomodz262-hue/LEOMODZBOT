@@ -5850,6 +5850,7 @@ ${weatherEmoji} *${weatherDescription}*`;
       if (episodeIndex >= 0 && episodeIndex < searchData.episodes.length) {
         const episodioUrl = searchData.episodes[episodeIndex];
         const videoUrl = await anime.getUrl(episodioUrl);
+        console.log(videoUrl);
         await nazu.sendMessage(sender, { text: `Aqui está o link para assistir: ${videoUrl.links.SD}` });
         saveAnimeSearchData(userId, null);
         return;

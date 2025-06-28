@@ -185,7 +185,6 @@ async function menubn(prefix, botName = "MeuBot", userName = "Usuário", isLiteM
 ╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯
 `;
 
-  if (!isLiteMode) {
     menuContent += `
 ╭┈❪🍧ฺꕸ▸ *RANKS - M*
 ┊
@@ -241,7 +240,6 @@ async function menubn(prefix, botName = "MeuBot", userName = "Usuário", isLiteM
 ┊•.̇𖥨֗🍓⭟${prefix}rankpoderosa
 ┊•.̇𖥨֗🍓⭟${prefix}rankvencedora
 `;
-  }
 
   menuContent += `╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯`;
 
