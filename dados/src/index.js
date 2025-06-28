@@ -2315,23 +2315,27 @@ case 'ytmp4':
     reply("ocorreu um erro 💔");
   }
   break;
-    
-  case 'pinterest': case 'pin': case 'pinterestdl': case 'pinterestsearch':
-   try {
-    if (!q) return reply(`Digite um nome ou envie um link do Pinterest.\n> Ex: ${prefix}${command} Gatos\n> Ex: ${prefix}${command} https://www.pinterest.com/pin/123456789/`);  
-    await reply('Aguarde um momentinho... ☀️');
-    let datinha = await (/^https?:\/\/(?:[a-zA-Z0-9-]+\.)?pinterest\.\w{2,6}(?:\.\w{2})?\/pin\/\d+|https?:\/\/pin\.it\/[a-zA-Z0-9]+/.test(q) ? pinterest.dl(q) : pinterest.search(q));
-    if (!datinha.ok) return reply(datinha.msg);
-    slakk = [];
-    for (const urlz of datinha.urls) {
-     slakk.push({[datinha.type]: {url: urlz}});
+
+  case 'pinterest':
+  try {
+    if (!q) return reply('Digite o termo para pesquisar no Pinterest. Exemplo: '+prefix+'pinterest gatinhos /3');
+    const [searchTerm, limitStr] = q.split('/').map(s => s.trim());
+    let maxImages = 5;
+    if (limitStr && !isNaN(parseInt(limitStr))) {
+      maxImages = Math.max(1, Math.min(parseInt(limitStr), 10));
     };
-    await nazu.sendAlbumMessage(from, slakk, { quoted: info });
-   } catch (e) {
-    console.error(e);
-    reply("ocorreu um erro 💔");
-   }
-   break;
+    const datinha = await (/^https?:\/\/(?:[a-zA-Z0-9-]+\.)?pinterest\.\w{2,6}(?:\.\w{2})?\/pin\/\d+|https?:\/\/pin\.it\/[a-zA-Z0-9]+/.test(searchTerm) ? pinterest.dl(searchTerm) : pinterest.search(searchTerm));
+    if (!datinha.ok || !datinha.urls || datinha.urls.length === 0) {
+      return reply('Nenhuma imagem encontrada para o termo pesquisado. 😕');
+    };
+    const imagesToSend = datinha.urls.slice(0, maxImages).map(url => ({ image: { url }, caption: `📌 Resultado da pesquisa por "${searchTerm}"` }));
+    await nazu.sendAlbum(from, imagesToSend, { quoted: info });
+    await reply(`✅ Enviadas ${imagesToSend.length} imagem${imagesToSend.length > 1 ? 'ns' : ''} do Pinterest em um álbum!`);
+  } catch (e) {
+    console.error('Erro no comando pinterest:', e);
+    await reply("Ocorreu um erro ao pesquisar no Pinterest 💔");
+  }
+  break;
    
   case 'menu': case 'help':
     try {
