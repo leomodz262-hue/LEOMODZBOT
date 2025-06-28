@@ -1909,31 +1909,38 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
 
   case 'listaralugueis': case 'aluguelist': case 'listaluguel': case 'listaaluguel':
   try {
-    if (!isOwnerOrSub) {
-      await reply('🚫 Apenas o dono ou subdonos podem usar este comando.');
-      return;
-    };
+    if (!isOwner) return reply('🚫 Este comando é apenas para o dono do bot!');
+    
     const rentalData = loadRentalData();
-    const activeRentals = [];
-    for (const groupId in rentalData.groups) {
-      const groupInfo = rentalData.groups[groupId];
-      if (groupInfo.expiresAt === 'permanent') {
-        activeRentals.push(`${groupId} - Permanente`);
-      } else if (groupInfo.expiresAt && new Date(groupInfo.expiresAt) > new Date()) {
-        const expiresAt = new Date(groupInfo.expiresAt).toLocaleDateString('pt-BR');
-        activeRentals.push(`${groupId} - Expira em: ${expiresAt}`);
+    const globalMode = rentalData.globalMode ? '🟢 Ativo' : '🔴 Desativado';
+    const groupRentals = rentalData.groups || {};
+    const groupCount = Object.keys(groupRentals).length;
+
+    let message = `╭───「 *Lista de Aluguéis* 」───╮\n│ 🌍 *Modo Aluguel Global*: ${globalMode}\n│ 📊 *Total de Grupos*: ${groupCount}\n╰─────────────────╯\n`;
+
+    if (groupCount === 0) {
+      message += '📪 Nenhum grupo com aluguel ativo no momento.';
+    } else {
+      message += '📋 *Grupos com Aluguel Ativo*:\n\n';
+      let index = 1;
+      for (const [groupId, info] of Object.entries(groupRentals)) {
+        const groupMetadata = await nazu.groupMetadata(groupId).catch(() => ({ subject: 'Desconhecido' }));
+        const groupName = groupMetadata.subject || 'Sem Nome';
+        const status = info.expiresAt === 'permanent' ? 'Permanente' : new Date(info.expiresAt) > new Date() ? 'Ativo' : 'Expirado';
+        const expires = info.expiresAt === 'permanent' ? '∞ Permanente' : info.expiresAt ? new Date(info.expiresAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'N/A';
+        
+        message += `🔹 *${index}. ${groupName}*\n`;
+        message += `   - *Status*: ${status}\n`;
+        message += `   - *Expira em*: ${expires}\n\n`;
+        index++;
       }
     }
-    if (activeRentals.length === 0) {
-      await reply('📋 Não há aluguéis ativos no momento.');
-    } else {
-      const message = '📋 *Aluguéis Ativos* 📋\n\n' + activeRentals.join('\n');
-      await reply(message);
-    }
+
+    await reply(message);
   } catch (e) {
-    console.error('Erro no comando listaralugueis:', e);
-    await reply('Ocorreu um erro ao listar os aluguéis ativos 💔');
-  };
+    console.error('Erro no comando listrentals:', e);
+    await reply("Ocorreu um erro ao listar os aluguéis 💔");
+  }
   break;
   
   case 'addaluguel':
