@@ -249,7 +249,7 @@ async function createBotSocket(authDir, isPrimary = true) {
               });
               const votedOption = pollResult.find(v => v.voters.length !== 0);
               if (!votedOption) return;
-              const toCmd = votedOption.name;
+              const toCmd = votedOption.name.replaceAll('•.̇𖥨֗🍓⭟ ', '');
               const Sender = votedOption.voters[0];
               const Timestamp = (update.pollUpdates.senderTimestampMs / 1000);
               const From = key.remoteJid;

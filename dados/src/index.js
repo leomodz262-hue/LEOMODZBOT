@@ -5376,8 +5376,8 @@ ${weatherEmoji} *${weatherDescription}*`;
     }
     break;
     
-    case 'testkk': 
-      await nazu.sendMessage(from, {poll: {name: `Eu sla man`,values: ['statusbot', 'statusgp'], selectableCount: 1}, messageContextInfo: { messageSecret: Math.random()}}, {from, options: { userJid: nazu?.user?.id }});
+    case 'menu2': 
+      await nazu.sendMessage(from, {poll: {name: `╭┈⊰ 🌸 『 *${nomebot}* 』\n┊Olá, *${pushname}*!\n╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯`,values: ['•.̇𖥨֗🍓⭟ menuia', '•.̇𖥨֗🍓⭟ menudown', '•.̇𖥨֗🍓⭟ menuadm', '•.̇𖥨֗🍓⭟ menubn', '•.̇𖥨֗🍓⭟ menudono', '•.̇𖥨֗🍓⭟ menumemb', '•.̇𖥨֗🍓⭟ ferramentas', '•.̇𖥨֗🍓⭟ menufig', '•.̇𖥨֗🍓⭟ alteradores'], selectableCount: 1}, messageContextInfo: { messageSecret: Math.random()}}, {from, options: { userJid: nazu?.user?.id }});
     break
     
  default:
