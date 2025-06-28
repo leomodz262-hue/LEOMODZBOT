@@ -5631,7 +5631,7 @@ ${weatherEmoji} *${weatherDescription}*`;
     const prefixRegex = /^[`•°⁕»«⁑※⁂➡️⬅️⁺⁻]\s+/;
     const cleanedMessage = body.trim().replace(prefixRegex, '');
     
-    if (cleanedMessage === 'Próxima página') {
+    if (budy2 === '➡️proxima pagina') {
       if (searchData.currentPage < searchData.totalPages) {
         searchData.currentPage++;
         saveAnimeSearchData(userId, searchData);
@@ -5648,7 +5648,7 @@ ${weatherEmoji} *${weatherDescription}*`;
       return;
     }
 
-    if (cleanedMessage === 'Página anterior') {
+    if (budy2 === '⬅️pagina anterior') {
       if (searchData.currentPage > 1) {
         searchData.currentPage--;
         saveAnimeSearchData(userId, searchData);
