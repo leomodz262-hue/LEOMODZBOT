@@ -53,6 +53,7 @@ async function menuDono(prefix, botName = "MeuBot", userName = "Usuário") {
 ┊•.̇𖥨֗🍓⭟${prefix}antipv
 ┊•.̇𖥨֗🍓⭟${prefix}antipv2
 ┊•.̇𖥨֗🍓⭟${prefix}antipv3
+┊•.̇𖥨֗🍓⭟${prefix}viewmsg
 ┊•.̇𖥨֗🍓⭟${prefix}tm
 ┊•.̇𖥨֗🍓⭟${prefix}cases
 ┊•.̇𖥨֗🍓⭟${prefix}getcase

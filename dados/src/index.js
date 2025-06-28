@@ -1081,7 +1081,7 @@ const loadAnimeSearchData = (userId) => {
 
     const botStateFile = __dirname + '/../database/botState.json';
     if (botState.status === 'off' && !isOwner) return;
-
+    if (botState.viewMessages) nazu.readMessages([info.key]);
 
     try {
       const timestamp = new Date().toLocaleTimeString('pt-BR', { hour12: false });
@@ -1856,6 +1856,30 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
     }
     break;
   
+  case 'viewmsg':
+  try {
+    if (!isOwner) return reply('🚫 Este comando é apenas para o dono do bot!');
+    if (!q) return reply(`Por favor, use: ${prefix}viewmsg [on/off]`);
+    const botStateFile = DATABASE_DIR + '/botState.json';
+    let botState = loadJsonFile(botStateFile, { status: 'on', viewMessages: true });
+    
+    if (q.toLowerCase() === 'on') {
+      botState.viewMessages = true;
+      fs.writeFileSync(botStateFile, JSON.stringify(botState, null, 2));
+      await reply('✅ Visualização de mensagens ativada!');
+    } else if (q.toLowerCase() === 'off') {
+      botState.viewMessages = false;
+      fs.writeFileSync(botStateFile, JSON.stringify(botState, null, 2));
+      await reply('✅ Visualização de mensagens desativada!');
+    } else {
+      return reply('🤔 Use "on" para ativar ou "off" para desativar.');
+    }
+  } catch (e) {
+    console.error('Erro no comando viewmsg:', e);
+    await reply('😥 Ocorreu um erro ao alterar a visualização de mensagens.');
+  }
+  break;
+
   case 'modoaluguel':
     if (!isOwner || (isOwner && isSubOwner)) return reply("🚫 Apenas o Dono principal pode gerenciar o modo de aluguel!");
     try {
