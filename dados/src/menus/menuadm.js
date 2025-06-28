@@ -86,6 +86,7 @@ async function menuadm(prefix, botName = "MeuBot", userName = "Usuário", isLite
 ┊•.̇𖥨֗🍓⭟${prefix}rmfotobv
 ┊•.̇𖥨֗🍓⭟${prefix}fotosaiu
 ┊•.̇𖥨֗🍓⭟${prefix}rmfotosaiu
+┊•.̇𖥨֗🍓⭟${prefix}setprefix
 ╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯
 `;
 }

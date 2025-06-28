@@ -448,9 +448,38 @@ async function NazuninhaBotExec(nazu, info, store, groupCache) {
     const menc_jid2 = info.message?.extendedTextMessage?.contextInfo?.mentionedJid;
     const menc_os2 = q.includes("@") ? menc_jid : menc_prt;
     const sender_ou_n = q.includes("@") ? menc_jid : (menc_prt || sender);
-
-    const isCmd = body.trim().startsWith(prefix);
-    const command = isCmd ? (budy2.trim().slice(1).split(/ +/).shift().trim().replace(/\s+/g, '')).replaceAll(' ', '') : null;
+    
+    const groupFile = pathz.join(__dirname, '..', 'database', 'grupos', `${from}.json`);
+    let groupData = {};
+    if (isGroup) {
+      if (!fs.existsSync(groupFile)) {
+        fs.writeFileSync(groupFile, JSON.stringify({ 
+          mark: {},
+          createdAt: new Date().toISOString(),
+          groupName: groupName
+        }, null, 2));
+      };
+      
+      try {
+        groupData = JSON.parse(fs.readFileSync(groupFile));
+      } catch (error) {
+        console.error(`Erro ao carregar dados do grupo ${from}:`, error);
+        groupData = { mark: {} };
+      };
+    
+      groupData.moderators = groupData.moderators || [];
+      groupData.allowedModCommands = groupData.allowedModCommands || [];
+      groupData.mutedUsers = groupData.mutedUsers || {};
+    
+      if (groupName && groupData.groupName !== groupName) {
+        groupData.groupName = groupName;
+        fs.writeFileSync(groupFile, JSON.stringify(groupData, null, 2));
+      };
+    };
+    
+    const groupPrefix = groupData.customPrefix || prefixo;
+    const isCmd = body.trim().startsWith(groupPrefix);
+    const command = isCmd ? (normalizar(body.trim().slice(groupPrefix.length).split(/ +/).shift().trim())).replace(/\s+/g, '') : null;
  
     if (!isGroup) {
       if (antipvData.mode === 'antipv' && !isOwner) {
@@ -480,34 +509,6 @@ async function NazuninhaBotExec(nazu, info, store, groupCache) {
   
     const botNumber = nazu.user.id.split(':')[0] + '@s.whatsapp.net';
     const isBotAdmin = !isGroup ? false : groupAdmins.includes(botNumber);
-  
-    const groupFile = pathz.join(__dirname, '..', 'database', 'grupos', `${from}.json`);
-    let groupData = {};
-    if (isGroup) {
-      if (!fs.existsSync(groupFile)) {
-        fs.writeFileSync(groupFile, JSON.stringify({ 
-          mark: {},
-          createdAt: new Date().toISOString(),
-          groupName: groupName
-        }, null, 2));
-      };
-      
-      try {
-        groupData = JSON.parse(fs.readFileSync(groupFile));
-      } catch (error) {
-        console.error(`Erro ao carregar dados do grupo ${from}:`, error);
-        groupData = { mark: {} };
-      };
-    
-      groupData.moderators = groupData.moderators || [];
-      groupData.allowedModCommands = groupData.allowedModCommands || [];
-      groupData.mutedUsers = groupData.mutedUsers || {};
-    
-      if (groupName && groupData.groupName !== groupName) {
-        groupData.groupName = groupName;
-        fs.writeFileSync(groupFile, JSON.stringify(groupData, null, 2));
-      };
-    };
   
     let isGroupAdmin = false;
     if (isGroup) {
@@ -4137,6 +4138,30 @@ case 'dellimitmessage':
   } catch (e) {
     console.error('Erro no comando dellimitmessage:', e);
     await reply("🐝 Oh não! Aconteceu um errinho inesperado aqui. Tente de novo daqui a pouquinho, por favor! 🥺");
+  }
+  break;
+
+  case 'setprefix':
+  try {
+    if (!isGroup) return reply("Este comando só funciona em grupos.");
+    if (!isGroupAdmin) return reply("Apenas administradores podem alterar o prefixo.");
+    if (!q) return reply(`Por favor, forneça o novo prefixo. Exemplo: ${groupPrefix}setprefix !`);
+    
+    const newPrefix = q.trim();
+    if (newPrefix.length > 1) {
+      return reply("🤔 O prefixo deve ter no máximo 1 digito.");
+    };
+    
+    if (newPrefix.includes(' ')) {
+      return reply("🤔 O prefixo não pode conter espaços.");
+    };
+
+    groupData.customPrefix = newPrefix;
+    fs.writeFileSync(groupFile, JSON.stringify(groupData, null, 2));
+    await reply(`✅ Prefixo do bot alterado para "${newPrefix}" neste grupo!`);
+  } catch (e) {
+    console.error('Erro no comando setprefix:', e);
+    await reply("Ocorreu um erro ao alterar o prefixo 💔");
   }
   break;
   
