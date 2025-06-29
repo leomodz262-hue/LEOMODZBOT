@@ -1916,7 +1916,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
     const groupRentals = rentalData.groups || {};
     const groupCount = Object.keys(groupRentals).length;
 
-    let message = `╭───「 *Lista de Aluguéis* 」───╮\n│ 🌍 *Modo Aluguel Global*: ${globalMode}\n│ 📊 *Total de Grupos*: ${groupCount}\n╰─────────────────╯\n`;
+    let message = `╭───「 *Lista de Aluguéis* 」───╮\n│ 🌍 *Modo Aluguel Global*: ${globalMode}\n│ 📊 *Total de Grupos*: ${groupCount}\n╰────────────────╯\n`;
 
     if (groupCount === 0) {
       message += '📪 Nenhum grupo com aluguel ativo no momento.';
