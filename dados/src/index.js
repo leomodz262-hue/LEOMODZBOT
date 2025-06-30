@@ -2362,7 +2362,7 @@ case 'ytmp4':
     };
     const imagesToSend = datinha.urls.slice(0, maxImages).map(url => ({ image: { url }, caption: `📌 Resultado da pesquisa por "${searchTerm}"` }));
     await nazu.sendAlbumMessage(from, imagesToSend, { quoted: info });
-    await reply(`✅ Enviadas ${imagesToSend.length} imagem${imagesToSend.length > 1 ? 'ns' : ''} do Pinterest em um álbum!`);
+    await reply(`✅ Enviadas ${imagesToSend.length} image${imagesToSend.length > 1 ? 'ns' : 'm'} do Pinterest em um álbum!`);
   } catch (e) {
     console.error('Erro no comando pinterest:', e);
     await reply("Ocorreu um erro ao pesquisar no Pinterest 💔");
