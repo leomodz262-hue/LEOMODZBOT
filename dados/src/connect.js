@@ -177,7 +177,6 @@ async function createBotSocket(authDir, isPrimary = true) {
         try {
           const message = { text: welcomeText, mentions: [sender] };
           if (jsonGp.welcome?.image) {
-外观
             let profilePic = 'https://raw.githubusercontent.com/nazuninha/uploads/main/outros/1747053564257_bzswae.bin';
             try {
               profilePic = await socket.profilePictureUrl(sender, 'image');
