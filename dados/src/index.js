@@ -2361,7 +2361,7 @@ case 'ytmp4':
       return reply('Nenhuma imagem encontrada para o termo pesquisado. 😕');
     };
     const imagesToSend = datinha.urls.slice(0, maxImages).map(url => ({ image: { url }, caption: `📌 Resultado da pesquisa por "${searchTerm}"` }));
-    await nazu.sendAlbum(from, imagesToSend, { quoted: info });
+    await nazu.sendAlbumMessage(from, imagesToSend, { quoted: info });
     await reply(`✅ Enviadas ${imagesToSend.length} imagem${imagesToSend.length > 1 ? 'ns' : ''} do Pinterest em um álbum!`);
   } catch (e) {
     console.error('Erro no comando pinterest:', e);
