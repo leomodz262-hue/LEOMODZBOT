@@ -827,7 +827,7 @@ const loadAnimeSearchData = (userId) => {
     }
 
 
-    if (isGroup && isAntiPorn) {
+    if (isGroup && isAntiPorn && !info.key.fromMe) {
       const mediaInfo = getMediaInfo(info.message);
       if (mediaInfo && mediaInfo.type === 'image') {
         try {
@@ -2348,7 +2348,7 @@ case 'ytmp4':
   }
   break;
 
-  case 'pinterest':
+  case 'pinterest': case 'pin':
   try {
     if (!q) return reply('Digite o termo para pesquisar no Pinterest. Exemplo: '+prefix+'pinterest gatinhos /3');
     const [searchTerm, limitStr] = q.split('/').map(s => s.trim());
@@ -5780,8 +5780,8 @@ ${weatherEmoji} *${weatherDescription}*`;
   break;
     
  default:
-  if(isCmd) await nazu.react('❌');
   if (!isCmd && isAutoRepo) {
+    if(isCmd) await nazu.react('❌');
     if (['prefix', 'prefixo'].includes(budy2)) {
       await reply(`✨ Aqui está o meu prefixo para usar os comandos: 『 ${prefix} 』 ✨`);
     } else if (['b dia', 'bom dia'].includes(budy2)) {
