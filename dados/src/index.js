@@ -2,7 +2,7 @@
 // Nazuna Bot - Index principal
 // Criado por: Hiudy
 // Versão: 4.0.0
-// Atualizado: 26/06/2025
+// Atualizado: 30/06/2025
 // ====================
 
 
@@ -3450,8 +3450,10 @@ break;
   }
   break;
   
-  case 'ping':
+case 'ping':
   try {
+
+    const nodeVersao = process.version;
 
     const timestamp = Date.now();
     const speedConverted = (timestamp - (info.messageTimestamp * 1000)) / 1000;
@@ -3469,25 +3471,49 @@ break;
       const preenchido = Math.round((porcentagem / 100) * tamanho);
       return '█'.repeat(preenchido) + '░'.repeat(tamanho - preenchido);
     };
-    
+
     const ramBarra = criarBarra(ramUsadaPorcentagem);
 
-    const cpuInfo = os.cpus()[0];
-    const cpuModel = cpuInfo.model.replace(/\(R\)/g, '®').replace(/\(TM\)/g, '™');
-    const cpuCores = os.cpus().length;
-    const cpuLoad = os.loadavg()[0].toFixed(2);
-    const nodeVersao = process.version;
-    
+    const isAndroid = () =>
+      process.platform === 'android' || process.env.TERMUX_VERSION || fs.existsSync('/system/build.prop');
+
+    let cpuModel = 'Desconhecido';
+    let cpuCores = 'N/A';
+    let cpuLoad = null;
+
+    const cpus = os.cpus?.() || [];
+    if (!isAndroid()) {
+      if (cpus.length > 0) {
+        const cpuInfo = cpus[0];
+        cpuModel = (cpuInfo.model ?? '').replace(/\(R\)/g, '®').replace(/\(TM\)/g, '™') || 'Desconhecido';
+        cpuCores = cpus.length;
+        cpuLoad = (os.loadavg?.()[0] ?? 0).toFixed(2);
+      }
+    } else {
+      try {
+        const info = fs.readFileSync('/proc/cpuinfo', 'utf8');
+        const match = info.match(/^Hardware\s*:\s*(.+)$/m) || info.match(/^model name\s*:\s*(.+)$/m);
+        if (match) cpuModel = match[1].trim();
+        const matches = info.match(/^processor\s*:/gm);
+        if (matches) cpuCores = matches.length;
+      } catch { }
+    }
+
     const getGroups = await nazu.groupFetchAllParticipating();
     const totalGrupos = Object.keys(getGroups).length;
 
-    const diskSpace = await getDiskSpaceInfo();
-    const diskUsedPercentage = parseFloat(diskSpace.percentUsed);
-    const diskBarra = criarBarra(diskUsedPercentage);
-    
+    let diskSpace = null;
+    let diskBarra = null;
+
+    if (!isAndroid()) {
+      diskSpace = await getDiskSpaceInfo();
+      const diskUsedPercentage = parseFloat(diskSpace.percentUsed);
+      diskBarra = criarBarra(diskUsedPercentage);
+    }
+
     let statusEmoji = '🟢';
     let statusTexto = 'Excelente';
-    
+
     if (speedConverted > 2) {
       statusEmoji = '🟡';
       statusTexto = 'Bom';
@@ -3501,7 +3527,7 @@ break;
       statusTexto = 'Ruim';
     }
 
-    const mensagem = `
+    let mensagem = `
 ╭━━「 ${statusEmoji} *STATUS DO BOT* ${statusEmoji} 」
 ┊
 ┊ 🤖 *Informações do Bot*
@@ -3521,17 +3547,26 @@ break;
 ┊ ├ 🔩 Arquitetura: *${os.arch()}*
 ┊ ├ 🧠 Processador: *${cpuModel}*
 ┊ ├ 📊 Núcleos: *${cpuCores}*
-┊ ├ ⚙️ Carga CPU: *${cpuLoad}%*
-┊ ╰ ⏱️ Uptime: *${uptimeSistema}*
-┊
-┊ 📊 *Recursos*
-┊ ├ ${ramBarra} RAM: *${ramSistemaUsadaGb}/${ramTotalGb} GB (${ramUsadaPorcentagem}%)*
-┊ ├ 💾 RAM Bot: *${ramBotProcessoMb} MB*
-┊ ├ ${diskBarra} Disco: *${diskSpace.usedGb}/${diskSpace.totalGb} GB (${diskSpace.percentUsed})*
-┊ ╰ 🔄 Node.js: *${nodeVersao}*
-┊
-╰━━「 ${nomebot} 」
-    `.trim();
+`;
+
+    if (!isAndroid() && cpuLoad !== null) {
+      mensagem += `┊ ├ ⚙️ Carga CPU: *${cpuLoad}%*\n`;
+    }
+
+    mensagem += `┊ ╰ ⏱️ Uptime: *${uptimeSistema}*\n\n`;
+
+    mensagem += `┊ 📊 *Recursos*\n`;
+    mensagem += `┊ ├ ${ramBarra} RAM: *${ramSistemaUsadaGb}/${ramTotalGb} GB (${ramUsadaPorcentagem}%)*\n`;
+    mensagem += `┊ ├ 💾 RAM Bot: *${ramBotProcessoMb} MB*\n`;
+
+    if (!isAndroid() && diskBarra !== null && diskSpace !== null) {
+      mensagem += `┊ ├ ${diskBarra} Disco: *${diskSpace.usedGb}/${diskSpace.totalGb} GB (${diskSpace.percentUsed})*\n`;
+    }
+
+    mensagem += `┊ ╰ 🔄 Node.js: *${nodeVersao}*\n`;
+    mensagem += `┊\n╰━━「 ${nomebot} 」`;
+
+    mensagem = mensagem.trim();
 
     const pingImageUrl = `https://api.cognima.com.br/api/banner/counter?key=CognimaTeamFreeKey&num=${String(speedConverted.toFixed(3)).replace('.', '')}&theme=original`;
 
@@ -3542,7 +3577,7 @@ break;
     await reply("❌ Ocorreu um erro ao processar o comando ping");
   };
   break;
-  
+
   case 'toimg':
   if(!isQuotedSticker) return reply('Por favor, *mencione um sticker* para executar o comando.');
   try {
