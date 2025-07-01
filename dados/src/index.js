@@ -3452,7 +3452,6 @@ break;
   
 case 'ping':
   try {
-    const fs = require('fs');
 
     const nodeVersao = process.version;
 
