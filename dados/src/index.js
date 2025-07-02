@@ -38,6 +38,7 @@ const DONO_DIR = DATABASE_DIR + '/dono';
 const DIR_PROGRAM = pathz.join(DATABASE_DIR, 'prog_actions.json');
 const ANIME_SEARCH_DIR = pathz.join(DATABASE_DIR, 'anime_search');
 const PARCERIAS_DIR = pathz.join(DATABASE_DIR, 'parcerias');
+const LEVELING_FILE = pathz.join(DATABASE_DIR, 'leveling.json');
 
 
 function formatUptime(seconds, longFormat = false, showZero = false) {
@@ -114,6 +115,34 @@ ensureJsonFileExists(DONO_DIR + '/premium.json');
 ensureJsonFileExists(DONO_DIR + '/bangp.json');
 ensureJsonFileExists(DATABASE_DIR + '/globalBlocks.json', { commands: {}, users: {} });
 ensureJsonFileExists(DATABASE_DIR + '/botState.json', { status: 'on' });
+ensureJsonFileExists(LEVELING_FILE, {
+  users: {},
+  patents: [
+    { name: "Iniciante", minLevel: 1 },
+    { name: "Aprendiz", minLevel: 2 },
+    { name: "Explorador", minLevel: 5 },
+    { name: "Aventureiro", minLevel: 10 },
+    { name: "Veterano", minLevel: 15 },
+    { name: "Mestre", minLevel: 20 },
+    { name: "Lenda", minLevel: 25 },
+    { name: "Herói", minLevel: 30 },
+    { name: "Conquistador", minLevel: 35 },
+    { name: "Imperador", minLevel: 40 },
+    { name: "Deus", minLevel: 50 },
+    { name: "Titã", minLevel: 60 },
+    { name: "Soberano", minLevel: 70 },
+    { name: "Celestial", minLevel: 80 },
+    { name: "Imortal", minLevel: 90 },
+    { name: "Divindade", minLevel: 100 },
+    { name: "Cosmico", minLevel: 120 },
+    { name: "Eterno", minLevel: 140 },
+    { name: "Supremo", minLevel: 160 },
+    { name: "Omnipotente", minLevel: 180 },
+    { name: "Transcendente", minLevel: 200 },
+    { name: "Absoluto", minLevel: 250 },
+    { name: "Infinito", minLevel: 300 }
+  ]
+});
 
 
 const SUBDONOS_FILE = pathz.join(DONO_DIR, 'subdonos.json');
@@ -400,6 +429,42 @@ const saveParceriasData = (groupId, data) => {
   }
 };
 
+function calculateNextLevelXp(level) {
+  return Math.floor(100 * Math.pow(1.1, level - 1));
+}
+
+function getPatent(level, patents) {
+  for (let i = patents.length - 1; i >= 0; i--) {
+    if (level >= patents[i].minLevel) {
+      return patents[i].name;
+    }
+  }
+  return "Iniciante";
+}
+
+function checkLevelUp(userId, userData, levelingData, nazu, from) {
+  const nextLevelXp = calculateNextLevelXp(userData.level);
+  if (userData.xp >= nextLevelXp) {
+    userData.level++;
+    userData.xp -= nextLevelXp;
+    userData.patent = getPatent(userData.level, levelingData.patents);
+    fs.writeFileSync(LEVELING_FILE, JSON.stringify(levelingData, null, 2));
+    nazu.sendMessage(from, {
+      text: `🎉 @${userId.split('@')[0]} subiu para o nível ${userData.level}!\n🔹 XP atual: ${userData.xp}\n🎖️ Nova patente: ${userData.patent}`,
+      mentions: [userId]
+    });
+  }
+}
+
+function checkLevelDown(userId, userData, levelingData) {
+  while (userData.xp < 0 && userData.level > 1) {
+    userData.level--;
+    const prevLevelXp = calculateNextLevelXp(userData.level - 1);
+    userData.xp += prevLevelXp;
+  }
+  if (userData.xp < 0) userData.xp = 0;
+  userData.patent = getPatent(userData.level, levelingData.patents);
+}
 
 async function NazuninhaBotExec(nazu, info, store, groupCache) {
   SocketActions = nazu;
@@ -469,6 +534,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache) {
     let groupData = {};
     const groupMetadata = !isGroup ? {} : await nazu.groupMetadata(from).catch(() => ({}));
     const groupName = groupMetadata?.subject || '';
+    
     if (isGroup) {
       if (!fs.existsSync(groupFile)) {
         fs.writeFileSync(groupFile, JSON.stringify({ 
@@ -488,7 +554,8 @@ async function NazuninhaBotExec(nazu, info, store, groupCache) {
       groupData.moderators = groupData.moderators || [];
       groupData.allowedModCommands = groupData.allowedModCommands || [];
       groupData.mutedUsers = groupData.mutedUsers || {};
-    
+      groupData.levelingEnabled = groupData.levelingEnabled || false;
+      
       if (groupName && groupData.groupName !== groupName) {
         groupData.groupName = groupName;
         fs.writeFileSync(groupFile, JSON.stringify(groupData, null, 2));
@@ -643,6 +710,21 @@ async function NazuninhaBotExec(nazu, info, store, groupCache) {
       } catch (error) {
         console.error("Erro no sistema de contagem de mensagens:", error);
       };
+    };
+    
+    if (isGroup && groupData.levelingEnabled) {
+      const levelingData = loadJsonFile(LEVELING_FILE);
+      levelingData.users[sender] = levelingData.users[sender] || { level: 1, xp: 0, patent: "Iniciante", messages: 0, commands: 0 };
+      const userData = levelingData.users[sender];
+      userData.messages++;
+      if (isCmd) {
+        userData.commands++;
+        userData.xp += 10;
+      } else {
+        userData.xp += 5;
+      }
+      checkLevelUp(sender, userData, levelingData, nazu, from);
+      fs.writeFileSync(LEVELING_FILE, JSON.stringify(levelingData, null, 2));
     };
  
     async function reply(text, options = {}) {
@@ -2009,6 +2091,60 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
     console.error('Erro no comando listrentals:', e);
     await reply("Ocorreu um erro ao listar os aluguéis 💔");
   }
+  break;
+  
+  case 'leveling':
+  if (!isGroup) return reply("Este comando só funciona em grupos.");
+  if (!isGroupAdmin) return reply("Apenas administradores podem usar este comando.");
+  groupData.levelingEnabled = !groupData.levelingEnabled;
+  fs.writeFileSync(groupFile, JSON.stringify(groupData, null, 2));
+  await reply(`🎚️ Sistema de leveling ${groupData.levelingEnabled ? 'ativado' : 'desativado'}!`);
+  break;
+
+case 'level':
+  const levelingDataLevel = loadJsonFile(LEVELING_FILE);
+  const userDataLevel = levelingDataLevel.users[sender] || { level: 1, xp: 0, patent: "Iniciante", messages: 0, commands: 0 };
+  const nextLevelXp = calculateNextLevelXp(userDataLevel.level);
+  const xpToNextLevel = nextLevelXp - userDataLevel.xp;
+  await reply(`🎚️ *Seu Nível*\n\n` + `🏅 *Nível:* ${userDataLevel.level}\n` + `🔹 *XP:* ${userDataLevel.xp} / ${nextLevelXp}\n` + `🎖️ *Patente:* ${userDataLevel.patent}\n` + `📈 *Falta para o próximo nível:* ${xpToNextLevel} XP\n`);
+  break;
+
+case 'addxp':
+  if (!isOwner) return reply("Apenas o dono pode usar este comando.");
+  if (!menc_os2 || !q) return reply("Marque um usuário e especifique a quantidade de XP.");
+  const xpToAdd = parseInt(q);
+  if (isNaN(xpToAdd)) return reply("Quantidade de XP inválida.");
+  const levelingDataAdd = loadJsonFile(LEVELING_FILE);
+  const userDataAdd = levelingDataAdd.users[menc_os2] || { level: 1, xp: 0, patent: "Iniciante", messages: 0, commands: 0 };
+  userDataAdd.xp += xpToAdd;
+  checkLevelUp(menc_os2, userDataAdd, levelingDataAdd, nazu, from);
+  fs.writeFileSync(LEVELING_FILE, JSON.stringify(levelingDataAdd, null, 2));
+  await reply(`✅ Adicionado ${xpToAdd} XP para @${menc_os2.split('@')[0]}`, { mentions: [menc_os2] });
+  break;
+
+case 'delxp':
+  if (!isOwner) return reply("Apenas o dono pode usar este comando.");
+  if (!menc_os2 || !q) return reply("Marque um usuário e especifique a quantidade de XP.");
+  const xpToRemove = parseInt(q);
+  if (isNaN(xpToRemove)) return reply("Quantidade de XP inválida.");
+  const levelingDataDel = loadJsonFile(LEVELING_FILE);
+  const userDataDel = levelingDataDel.users[menc_os2] || { level: 1, xp: 0, patent: "Iniciante", messages: 0, commands: 0 };
+  userDataDel.xp = Math.max(0, userDataDel.xp - xpToRemove);
+  checkLevelDown(menc_os2, userDataDel, levelingDataDel);
+  fs.writeFileSync(LEVELING_FILE, JSON.stringify(levelingDataDel, null, 2));
+  await reply(`✅ Removido ${xpToRemove} XP de @${menc_os2.split('@')[0]}`, { mentions: [menc_os2] });
+  break;
+
+case 'ranklevel':
+  const levelingDataRank = loadJsonFile(LEVELING_FILE);
+  const sortedUsers = Object.entries(levelingDataRank.users)
+    .sort((a, b) => b[1].level - a[1].level || b[1].xp - a[1].xp)
+    .slice(0, 10);
+  let rankMessage = '🏆 *Ranking Global de Níveis*\n\n';
+  sortedUsers.forEach(([userId, data], index) => {
+    rankMessage += `${index + 1}. @${userId.split('@')[0]} - Nível ${data.level} (XP: ${data.xp})\n`;
+  });
+  await reply(rankMessage, { mentions: sortedUsers.map(([userId]) => userId) });
   break;
   
   case 'addaluguel':
