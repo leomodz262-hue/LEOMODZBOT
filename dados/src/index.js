@@ -1513,8 +1513,10 @@ if (budy2.includes('@' + nazu.user.id.split(':')[0]) && !isCmd && !info.key.from
   };
 };
 
+typeMessage = body.substr(0, 50).replace(/\n/g, '');
+
 //ANTI FIGURINHAS
-if (isGroup && groupData.antifig && groupData.antifig.enabled && type === 'stickerMessage' && !isGroupAdmin && !info.key.fromMe) {
+if (isGroup && groupData.antifig && groupData.antifig.enabled && typeMessage === 'Sticker' && !isGroupAdmin && !info.key.fromMe) {
   try {
     await nazu.sendMessage(from, { delete: { remoteJid: from, fromMe: false, id: info.key.id, participant: sender } });
     groupData.warnings = groupData.warnings || {};
