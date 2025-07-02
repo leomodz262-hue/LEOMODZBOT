@@ -56,11 +56,19 @@ async function menuadm(prefix, botName = "MeuBot", userName = "Usuário", isLite
 ┊•.̇𖥨֗🍓⭟${prefix}listmodcmds
 ╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯
 
+╭┈❪🍧ฺꕸ▸ *PARCERIAS*
+┊
+┊•.̇𖥨֗🍓⭟${prefix}parcerias
+┊•.̇𖥨֗🍓⭟${prefix}addparceria
+┊•.̇𖥨֗🍓⭟${prefix}delparceria
+╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯
+
 ╭┈❪🍧ฺꕸ▸ *ATIVAÇÕES*
 ┊
 ┊•.̇𖥨֗🍓⭟${prefix}autodl
 ┊•.̇𖥨֗🍓⭟${prefix}modobn
 ┊•.̇𖥨֗🍓⭟${prefix}modonsfw
+┊•.̇𖥨֗🍓⭟${prefix}modoparceria
 ┊•.̇𖥨֗🍓⭟${prefix}bemvindo
 ┊•.̇𖥨֗🍓⭟${prefix}saida
 ┊•.̇𖥨֗🍓⭟${prefix}autosticker

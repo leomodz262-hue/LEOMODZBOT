@@ -37,6 +37,7 @@ const USERS_DIR = DATABASE_DIR + '/users';
 const DONO_DIR = DATABASE_DIR + '/dono';
 const DIR_PROGRAM = pathz.join(DATABASE_DIR, 'prog_actions.json');
 const ANIME_SEARCH_DIR = pathz.join(DATABASE_DIR, 'anime_search');
+const PARCERIAS_DIR = pathz.join(DATABASE_DIR, 'parcerias');
 
 
 function formatUptime(seconds, longFormat = false, showZero = false) {
@@ -103,6 +104,7 @@ ensureDirectoryExists(GRUPOS_DIR);
 ensureDirectoryExists(USERS_DIR);
 ensureDirectoryExists(DONO_DIR);
 ensureDirectoryExists(ANIME_SEARCH_DIR);
+ensureDirectoryExists(PARCERIAS_DIR);
 
 
 ensureJsonFileExists(DATABASE_DIR + '/antiflood.json');
@@ -382,6 +384,22 @@ const isModoLiteActive = (groupData, modoLiteGlobalConfig) => {
   return isModoLiteGlobal;
 };
 
+const loadParceriasData = (groupId) => {
+  const filePath = pathz.join(PARCERIAS_DIR, `${groupId}.json`);
+  return loadJsonFile(filePath, { active: false, partners: {} });
+};
+
+const saveParceriasData = (groupId, data) => {
+  const filePath = pathz.join(PARCERIAS_DIR, `${groupId}.json`);
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+    return true;
+  } catch (error) {
+    console.error(`Erro ao salvar dados de parcerias para ${groupId}:`, error);
+    return false;
+  }
+};
+
 
 async function NazuninhaBotExec(nazu, info, store, groupCache) {
   SocketActions = nazu;
@@ -477,6 +495,11 @@ async function NazuninhaBotExec(nazu, info, store, groupCache) {
         groupData.groupName = groupName;
         fs.writeFileSync(groupFile, JSON.stringify(groupData, null, 2));
       };
+    };
+    
+    let parceriasData = {};
+    if (isGroup) {
+      parceriasData = loadParceriasData(from);
     };
     
     const groupPrefix = groupData.customPrefix || prefixo;
@@ -1166,7 +1189,7 @@ const loadAnimeSearchData = (userId) => {
  
     if(budy2.match(/^(\d+)d(\d+)$/))reply(+budy2.match(/^(\d+)d(\d+)$/)[1]>50||+budy2.match(/^(\d+)d(\d+)$/)[2]>100?"❌ Limite: max 50 dados e 100 lados":"🎲 Rolando "+budy2.match(/^(\d+)d(\d+)$/)[1]+"d"+budy2.match(/^(\d+)d(\d+)$/)[2]+"...\n🎯 Resultados: "+(r=[...Array(+budy2.match(/^(\d+)d(\d+)$/)[1])].map(_=>1+Math.floor(Math.random()*+budy2.match(/^(\d+)d(\d+)$/)[2]))).join(", ")+"\n📊 Total: "+r.reduce((a,b)=>a+b,0));
 
-if (budy2.includes('@' + nazu.user.id.split(':')[0]) && !isCmd) {
+if (budy2.includes('@' + nazu.user.id.split(':')[0]) && !isCmd && !info.key.fromMe) {
   if (budy2.replaceAll('@' + nazu.user.id.split(':')[0], '').length > 2) {
     const jSoNzIn = {
       mensagem_original: budy2.replaceAll('@' + nazu.user.id.split(':')[0], '').trim(),
@@ -1431,7 +1454,7 @@ if (budy2.includes('@' + nazu.user.id.split(':')[0]) && !isCmd) {
     
   
   //ANTI FLOOD DE MENSAGENS
-   if (isGroup && groupData.messageLimit?.enabled && !isGroupAdmin && !isOwnerOrSub) {
+   if (isGroup && groupData.messageLimit?.enabled && !isGroupAdmin && !isOwnerOrSub && !info.key.fromMe) {
   try {
     groupData.messageLimit.warnings = groupData.messageLimit.warnings || {};
     groupData.messageLimit.users = groupData.messageLimit.users || {};
@@ -1472,6 +1495,22 @@ if (budy2.includes('@' + nazu.user.id.split(':')[0]) && !isCmd) {
     console.error("Erro no sistema de limite de mensagens:", e);
   }
 }
+  
+  if (isGroup && parceriasData.active && !isGroupAdmin && body.includes('chat.whatsapp.com') && !info.key.fromMe) {
+  if (parceriasData.partners[sender]) {
+    const partnerData = parceriasData.partners[sender];
+    if (partnerData.count < partnerData.limit) {
+      partnerData.count++;
+      saveParceriasData(from, parceriasData);
+    } else {
+      await nazu.sendMessage(from, { delete: info.key });
+      await reply(`@${sender.split('@')[0]}, você atingiu o limite de ${partnerData.limit} links de grupos.`, { mentions: [sender] });
+    }
+  } else {
+    await nazu.sendMessage(from, { delete: info.key });
+    await reply(`@${sender.split('@')[0]}, você não é um parceiro e não pode enviar links de grupos.`, { mentions: [sender] });
+  };
+};
 
   switch(command) {
   
@@ -3452,7 +3491,6 @@ break;
   
 case 'ping':
   try {
-
     const nodeVersao = process.version;
 
     const timestamp = Date.now();
@@ -4529,7 +4567,95 @@ case 'removerfotosaiu': case 'rmfotosaiu': case 'delfotosaiu':
      };
    };
    break;
+  
+  case 'parcerias':
+  try {
+    if (!isGroup) return reply("Este comando só funciona em grupos.");
+    if (!isGroupAdmin) return reply("Apenas administradores podem usar este comando.");
+    if (!parceriasData.active) {
+      return reply("O sistema de parcerias não está ativo neste grupo.");
+    }
+    if (Object.keys(parceriasData.partners).length === 0) {
+      return reply("Não há parcerias ativas neste grupo.");
+    }
+    let message = "📋 *Lista de Parcerias Ativas* 📋\n\n";
+    for (const [userId, data] of Object.entries(parceriasData.partners)) {
+      message += `👤 @${userId.split('@')[0]} - Limite: ${data.limit} links | Enviados: ${data.count}\n`;
+    }
+    await reply(message, { mentions: Object.keys(parceriasData.partners) });
+  } catch (e) {
+    console.error('Erro no comando parcerias:', e);
+    await reply("Ocorreu um erro ao listar as parcerias 💔");
+  }
+  break;
 
+case 'addparceria':
+  try {
+    if (!isGroup) return reply("Este comando só funciona em grupos.");
+    if (!isGroupAdmin) return reply("Apenas administradores podem usar este comando.");
+    if (!q) return reply(`Uso: ${prefix}addparceria @usuário limite ou marcando uma mensagem com ${prefix}addparceria limite`);
+    let userId, limit;
+    if (menc_os2) {
+      userId = menc_os2;
+      limit = parseInt(args[1]);
+    } else if (isQuotedMsg) {
+      userId = info.message.extendedTextMessage.contextInfo.participant;
+      limit = parseInt(q);
+    } else {
+      return reply("Por favor, marque um usuário ou responda a uma mensagem.");
+    }
+    if (!userId || isNaN(limit) || limit < 1) {
+      return reply("Uso inválido. Certifique-se de marcar um usuário e especificar um limite válido (número maior que 0).");
+    }
+    if (!AllgroupMembers.includes(userId)) {
+      return reply(`@${userId.split('@')[0]} não está no grupo.`, { mentions: [userId] });
+    }
+    parceriasData.partners[userId] = { limit, count: 0 };
+    saveParceriasData(from, parceriasData);
+    await reply(`✅ @${userId.split('@')[0]} foi adicionado como parceiro com limite de ${limit} links de grupos.`, { mentions: [userId] });
+  } catch (e) {
+    console.error('Erro no comando addparceria:', e);
+    await reply("Ocorreu um erro ao adicionar a parceria 💔");
+  }
+  break;
+
+case 'delparceria':
+  try {
+    if (!isGroup) return reply("Este comando só funciona em grupos.");
+    if (!isGroupAdmin) return reply("Apenas administradores podem usar este comando.");
+    let userId;
+    if (menc_os2) {
+      userId = menc_os2;
+    } else if (isQuotedMsg) {
+      userId = info.message.extendedTextMessage.contextInfo.participant;
+    } else {
+      return reply("Por favor, marque um usuário ou responda a uma mensagem.");
+    }
+    if (!parceriasData.partners[userId]) {
+      return reply(`@${userId.split('@')[0]} não é um parceiro.`, { mentions: [userId] });
+    }
+    delete parceriasData.partners[userId];
+    saveParceriasData(from, parceriasData);
+    await reply(`✅ @${userId.split('@')[0]} não é mais um parceiro.`, { mentions: [userId] });
+  } catch (e) {
+    console.error('Erro no comando delparceria:', e);
+    await reply("Ocorreu um erro ao remover a parceria 💔");
+  }
+  break;
+
+case 'modoparceria':
+  try {
+    if (!isGroup) return reply("Este comando só funciona em grupos.");
+    if (!isGroupAdmin) return reply("Apenas administradores podem usar este comando.");
+    parceriasData.active = !parceriasData.active;
+    saveParceriasData(from, parceriasData);
+    await reply(`✅ Sistema de parcerias ${parceriasData.active ? 'ativado' : 'desativado'} com sucesso!`);
+  } catch (e) {
+    console.error('Erro no comando modoparceria:', e);
+    await reply("Ocorreu um erro ao alterar o modo de parcerias 💔");
+  }
+  break;
+  
   case 'addblacklist':
   try {
     if (!isGroup) return reply("Isso só pode ser usado em grupo 💔");
@@ -5827,210 +5953,6 @@ ${weatherEmoji} *${weatherDescription}*`;
       await reply('🌅 Boa tarde! Como posso te ajudar a tornar o dia ainda melhor? 😄');
     };
   };
-  
-  if (!isCmd) {
-  const userId = sender;
-  const searchData = loadAnimeSearchData(userId);
-  if (searchData && searchData.results) {
-    const prefixRegex = /^[`•°⁕»«⁑※⁂➡️⬅️⁺⁻]\s+/;
-    const cleanedMessage = body.trim().replace(prefixRegex, '');
-
-    const pageSize = 10;
-    const animeTotalPages = Math.ceil(searchData.results.length / pageSize);
-
-    const getAnimePollValues = (page) => {
-      const start = (page - 1) * pageSize;
-      const end = start + pageSize;
-      const pageResults = searchData.results.slice(start, end);
-      const pollValues = pageResults.map((anime, index) => {
-        const prefix = ['`', '•', '°', '⁕', '»', '«', '⁑', '※', '⁂', '⁺', '⁻'][index] || '•';
-        return `${prefix} ${anime.animeName}`;
-      });
-      if (animeTotalPages > 1 && page < animeTotalPages) {
-        pollValues.push('➡️ Próxima página');
-      }
-      if (page > 1) {
-        pollValues.push('⬅️ Página anterior');
-      }
-      return pollValues;
-    };
-
-    if (budy2 === '➡️ proxima pagina' && !searchData.selectedAnime) {
-      if (searchData.currentPage < animeTotalPages) {
-        searchData.currentPage++;
-        saveAnimeSearchData(userId, searchData);
-        const pollMessage = `🔎 Resultados da pesquisa por "${searchData.query}"\n📃 Página ${searchData.currentPage} de ${animeTotalPages}\n\nEscolha um anime:`;
-        await nazu.sendMessage(sender, {
-          poll: {
-            name: pollMessage,
-            values: getAnimePollValues(searchData.currentPage),
-            selectableCount: 1
-          },
-          messageContextInfo: { messageSecret: Math.random() }
-        }, { options: { userJid: nazu?.user?.id } });
-      }
-      return;
-    }
-
-    if (budy2 === '⬅️ pagina anterior' && !searchData.selectedAnime) {
-      if (searchData.currentPage > 1) {
-        searchData.currentPage--;
-        saveAnimeSearchData(userId, searchData);
-        const pollMessage = `🔎 Resultados da pesquisa por "${searchData.query}"\n📃 Página ${searchData.currentPage} de ${animeTotalPages}\n\nEscolha um anime:`;
-        await nazu.sendMessage(sender, {
-          poll: {
-            name: pollMessage,
-            values: getAnimePollValues(searchData.currentPage),
-            selectableCount: 1
-          },
-          messageContextInfo: { messageSecret: Math.random() }
-        }, { options: { userJid: nazu?.user?.id } });
-      }
-      return;
-    }
-
-    if (budy2 === '➡️ proxima pagina' && searchData.selectedAnime && searchData.episodes) {
-      if (searchData.currentEpisodePage < searchData.episodeTotalPages) {
-        searchData.currentEpisodePage++;
-        saveAnimeSearchData(userId, searchData);
-        const episodePageSize = 10;
-        const start = (searchData.currentEpisodePage - 1) * episodePageSize;
-        const end = start + episodePageSize;
-        const pageEpisodes = searchData.episodes.slice(start, end);
-        const pollValues = pageEpisodes.map((_, index) => `${start + index + 1}`);
-        if (searchData.episodeTotalPages > 1 && searchData.currentEpisodePage < searchData.episodeTotalPages) {
-          pollValues.push('➡️ Próxima página');
-        }
-        if (searchData.currentEpisodePage > 1) {
-          pollValues.push('⬅️ Página anterior');
-        }
-        const pollMessage = `Escolha um episódio de ${searchData.selectedAnime.animeName}\n📃 Página ${searchData.currentEpisodePage} de ${searchData.episodeTotalPages}:`;
-        await nazu.sendMessage(sender, {
-          poll: {
-            name: pollMessage,
-            values: pollValues,
-            selectableCount: 1
-          },
-          messageContextInfo: { messageSecret: Math.random() }
-        }, { options: { userJid: nazu?.user?.id } });
-      }
-      return;
-    }
-
-    if (budy2 === '⬅️ pagina anterior' && searchData.selectedAnime && searchData.episodes) {
-      if (searchData.currentEpisodePage > 1) {
-        searchData.currentEpisodePage--;
-        saveAnimeSearchData(userId, searchData);
-        const episodePageSize = 10;
-        const start = (searchData.currentEpisodePage - 1) * episodePageSize;
-        const end = start + episodePageSize;
-        const pageEpisodes = searchData.episodes.slice(start, end);
-        const pollValues = pageEpisodes.map((_, index) => `${start + index + 1}`);
-        if (searchData.episodeTotalPages > 1 && searchData.currentEpisodePage < searchData.episodeTotalPages) {
-          pollValues.push('➡️ Próxima página');
-        }
-        if (searchData.currentEpisodePage > 1) {
-          pollValues.push('⬅️ Página anterior');
-        }
-        const pollMessage = `Escolha um episódio de ${searchData.selectedAnime.animeName}\n📃 Página ${searchData.currentEpisodePage} de ${searchData.episodeTotalPages}:`;
-        await nazu.sendMessage(sender, {
-          poll: {
-            name: pollMessage,
-            values: pollValues,
-            selectableCount: 1
-          },
-          messageContextInfo: { messageSecret: Math.random() }
-        }, { options: { userJid: nazu?.user?.id } });
-      }
-      return;
-    }
-
-    if (cleanedMessage === 'Ver episódios' && searchData.selectedAnime) {
-      const episodes = await anime.eps(searchData.selectedAnime.animeLink);
-      if (episodes.length === 1) {
-        const episodioUrl = episodes[0];
-        const videoUrl = await anime.getUrl(episodioUrl);
-        await nazu.sendMessage(sender, { text: `Aqui está o link para assistir: ${videoUrl.links.SD}` });
-        saveAnimeSearchData(userId, null);
-      } else {
-        const episodePageSize = 10;
-        const episodeTotalPages = Math.ceil(episodes.length / episodePageSize);
-        searchData.episodes = episodes;
-        searchData.currentEpisodePage = 1;
-        searchData.episodeTotalPages = episodeTotalPages;
-        saveAnimeSearchData(userId, searchData);
-
-        const start = (searchData.currentEpisodePage - 1) * episodePageSize;
-        const end = start + episodePageSize;
-        const pageEpisodes = episodes.slice(start, end);
-        const pollValues = pageEpisodes.map((_, index) => `Episodio ${start + index + 1}`);
-        if (episodeTotalPages > 1) {
-          pollValues.push('➡️ Próxima página');
-        }
-        const pollMessage = `Escolha um episódio de ${searchData.selectedAnime.animeName}\n📃 Página ${searchData.currentEpisodePage} de ${episodeTotalPages}:`;
-        await nazu.sendMessage(sender, {
-          poll: {
-            name: pollMessage,
-            values: pollValues,
-            selectableCount: 1
-          },
-          messageContextInfo: { messageSecret: Math.random() }
-        }, { options: { userJid: nazu?.user?.id } });
-      }
-      return;
-    }
-
-    if (cleanedMessage === 'Excluir enquete' && searchData.selectedAnime) {
-      saveAnimeSearchData(userId, null);
-      await nazu.sendMessage(sender, { text: 'Enquete excluída!' });
-      return;
-    }
-
-    // Verifica se um anime foi selecionado
-    const selectedAnime = searchData.results.find(anime => anime.animeName === cleanedMessage);
-    if (selectedAnime) {
-      searchData.selectedAnime = selectedAnime;
-      saveAnimeSearchData(userId, searchData);
-
-      // Obtém as informações do anime
-      const DatinhaAnimez = await anime.getInfo(selectedAnime.animeLink);
-      const textoBonito = `🎬 *${DatinhaAnimez.animeTitle}*\n` +
-                         `🎙️ *Tipo:* ${DatinhaAnimez.type}\n` +
-                         `🏢 *Estúdio:* ${DatinhaAnimez.studio}\n` +
-                         `🌟 *Gêneros:* ${DatinhaAnimez.genres.join(', ')}\n\n` +
-                         `📝 *Sinopse:*\n${DatinhaAnimez.description}`;
-
-      await nazu.sendMessage(sender, {
-        image: { url: selectedAnime.thumbnail || DatinhaAnimez.imageUrl },
-        caption: textoBonito
-      }, { quoted: info });
-
-      const pollMessage = `Você selecionou: ${selectedAnime.animeName}\nO que deseja fazer?`;
-      await nazu.sendMessage(sender, {
-        poll: {
-          name: pollMessage,
-          values: ['Ver episódios', 'Excluir enquete'],
-          selectableCount: 1
-        },
-        messageContextInfo: { messageSecret: Math.random() }
-      }, { options: { userJid: nazu?.user?.id } });
-      return;
-    }
-
-    if (searchData.episodes) {
-      const episodeIndex = parseInt(cleanedMessage.replace(/\D/g, '')) - 1;
-      if (episodeIndex >= 0 && episodeIndex < searchData.episodes.length) {
-        const episodioUrl = searchData.episodes[episodeIndex];
-        const videoUrl = await anime.getUrl(episodioUrl);
-        console.log(videoUrl);
-        await nazu.sendMessage(sender, { text: `Aqui está o link para assistir: ${videoUrl.links.SD}` });
-        saveAnimeSearchData(userId, null);
-        return;
-      }
-    }
-  }
-}
-
  };
   } catch(error) {
     console.error('==== ERRO NO PROCESSAMENTO DA MENSAGEM ====');

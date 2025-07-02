@@ -257,7 +257,6 @@ async function createBotSocket(authDir, isPrimary = true) {
               const activeSocket = dualMode && useSecondary && secondarySocket?.user ? secondarySocket : socket;
               useSecondary = !useSecondary;
               store.messages[From].updateAssign(key.id, {message: {}, key: {}});
-              await activeSocket.sendMessage(From, { delete: key });
               await indexModule(activeSocket, JsonMessage, store, groupCache);
             };
           } catch (e) {
