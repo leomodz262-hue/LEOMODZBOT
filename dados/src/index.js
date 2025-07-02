@@ -1517,13 +1517,13 @@ if (budy2.includes('@' + nazu.user.id.split(':')[0]) && !isCmd && !info.key.from
 if (isGroup && groupData.antifig && groupData.antifig.enabled && type === 'stickerMessage' && !isGroupAdmin && !info.key.fromMe) {
   try {
     await nazu.sendMessage(from, { delete: { remoteJid: from, fromMe: false, id: info.key.id, participant: sender } });
-    
+    groupData.warnings = groupData.warnings || {};
     groupData.warnings[sender] = groupData.warnings[sender] || { count: 0, lastWarned: null };
     groupData.warnings[sender].count += 1;
     groupData.warnings[sender].lastWarned = new Date().toISOString();
     
     const warnCount = groupData.warnings[sender].count;
-    const warnLimit = groupData.antifig.warnLimit;
+    const warnLimit = groupData.antifig.warnLimit || 3;
     
     let warnMessage = `🚫 @${sender.split('@')[0]}, figurinhas não são permitidas neste grupo! Advertência ${warnCount}/${warnLimit}.`;
     if (warnCount >= warnLimit && isBotAdmin) {
