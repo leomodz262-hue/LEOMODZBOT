@@ -5984,8 +5984,8 @@ ${weatherEmoji} *${weatherDescription}*`;
   break;
     
  default:
+  if (isCmd && isAutoRepo) await nazu.react('❌');
   if (!isCmd && isAutoRepo) {
-    if(isCmd) await nazu.react('❌');
     if (['prefix', 'prefixo'].includes(budy2)) {
       await reply(`✨ Aqui está o meu prefixo para usar os comandos: 『 ${prefix} 』 ✨`);
     } else if (['b dia', 'bom dia'].includes(budy2)) {
