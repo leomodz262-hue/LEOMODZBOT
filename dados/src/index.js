@@ -1539,6 +1539,7 @@ if (isGroup && groupData.antifig && groupData.antifig.enabled && type === 'stick
     await reply(`⚠️ Erro ao processar antifig para @${sender.split('@')[0]}. Admins, por favor, verifiquem!`, { mentions: [sender] });
   }
 }
+
   switch(command) {
   
   
@@ -4687,7 +4688,7 @@ case 'modoparceria':
   try {
     if (!isGroup) return reply("Este comando só funciona em grupos.");
     if (!isGroupAdmin) return reply("Apenas administradores podem gerenciar o antifig.");
-    
+    groupData.antifig = groupData.antifig || {};
     groupData.antifig.enabled = !groupData.antifig.enabled;
     fs.writeFileSync(groupFile, JSON.stringify(groupData, null, 2));
     const status = groupData.antifig.enabled ? "ativado" : "desativado";
