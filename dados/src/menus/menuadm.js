@@ -84,6 +84,7 @@ async function menuadm(prefix, botName = "MeuBot", userName = "Usuário", isLite
 ┊•.̇𖥨֗🍓⭟${prefix}antipt
 ┊•.̇𖥨֗🍓⭟${prefix}antidoc
 ┊•.̇𖥨֗🍓⭟${prefix}antiloc
+┊•.̇𖥨֗🍓⭟${prefix}antifig
 ╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯
 
 ╭┈❪🍧ฺꕸ▸ *CONFIGURAÇÕES*

@@ -1496,6 +1496,7 @@ if (budy2.includes('@' + nazu.user.id.split(':')[0]) && !isCmd && !info.key.from
   }
 }
   
+  //SISTEMA DE PARCERIA
   if (isGroup && parceriasData.active && !isGroupAdmin && body.includes('chat.whatsapp.com') && !info.key.fromMe) {
   if (parceriasData.partners[sender]) {
     const partnerData = parceriasData.partners[sender];
@@ -1512,6 +1513,32 @@ if (budy2.includes('@' + nazu.user.id.split(':')[0]) && !isCmd && !info.key.from
   };
 };
 
+//ANTI FIGURINHAS
+if (isGroup && groupData.antifig.enabled && type === 'stickerMessage' && !isGroupAdmin && !info.key.fromMe) {
+  try {
+    await nazu.sendMessage(from, { delete: { remoteJid: from, fromMe: false, id: info.key.id, participant: sender } });
+    
+    groupData.warnings[sender] = groupData.warnings[sender] || { count: 0, lastWarned: null };
+    groupData.warnings[sender].count += 1;
+    groupData.warnings[sender].lastWarned = new Date().toISOString();
+    
+    const warnCount = groupData.warnings[sender].count;
+    const warnLimit = groupData.antifig.warnLimit;
+    
+    let warnMessage = `🚫 @${sender.split('@')[0]}, figurinhas não são permitidas neste grupo! Advertência ${warnCount}/${warnLimit}.`;
+    if (warnCount >= warnLimit && isBotAdmin) {
+      warnMessage += `\n⚠️ Você atingiu o limite de advertências e será removido.`;
+      await nazu.groupParticipantsUpdate(from, [sender], 'remove');
+      delete groupData.warnings[sender];
+    }
+    
+    await reply(warnMessage, { mentions: [sender] });
+    fs.writeFileSync(groupFile, JSON.stringify(groupData, null, 2));
+  } catch (error) {
+    console.error("Erro no sistema antifig:", error);
+    await reply(`⚠️ Erro ao processar antifig para @${sender.split('@')[0]}. Admins, por favor, verifiquem!`, { mentions: [sender] });
+  }
+}
   switch(command) {
   
   
@@ -4653,6 +4680,21 @@ case 'modoparceria':
   } catch (e) {
     console.error('Erro no comando modoparceria:', e);
     await reply("Ocorreu um erro ao alterar o modo de parcerias 💔");
+  }
+  break;
+  
+  case 'antifig':
+  try {
+    if (!isGroup) return reply("Este comando só funciona em grupos.");
+    if (!isGroupAdmin) return reply("Apenas administradores podem gerenciar o antifig.");
+    
+    groupData.antifig.enabled = !groupData.antifig.enabled;
+    fs.writeFileSync(groupFile, JSON.stringify(groupData, null, 2));
+    const status = groupData.antifig.enabled ? "ativado" : "desativado";
+    await reply(`✅ Antifig ${status}! Figurinhas ${groupData.antifig.enabled ? "serão apagadas e o remetente receberá advertências" : "agora são permitidas"}.`);
+  } catch (e) {
+    console.error('Erro no comando antifig:', e);
+    await reply("Ocorreu um erro ao gerenciar o antifig 💔");
   }
   break;
   
