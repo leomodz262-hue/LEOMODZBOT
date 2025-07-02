@@ -459,8 +459,6 @@ async function NazuninhaBotExec(nazu, info, store, groupCache) {
     const q = args.join(' ');
     const budy2 = normalizar(body);
  
-    if(!budy2 || budy2.length < 1) return;
- 
     const menc_prt = info.message?.extendedTextMessage?.contextInfo?.participant;
     const menc_jid = q.replace("@", "").split(' ')[0] + "@s.whatsapp.net";
     const menc_jid2 = info.message?.extendedTextMessage?.contextInfo?.mentionedJid;
@@ -1108,6 +1106,7 @@ const loadAnimeSearchData = (userId) => {
     if (botState.viewMessages) nazu.readMessages([info.key]);
 
     try {
+    if(budy2 && budy2.length < 1) {
       const timestamp = new Date().toLocaleTimeString('pt-BR', { hour12: false });
       const messageType = isCmd ? 'COMANDO' : 'MENSAGEM';
       const context = isGroup ? 'GRUPO' : 'PRIVADO';
@@ -1127,6 +1126,7 @@ const loadAnimeSearchData = (userId) => {
       console.log('┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫');
       console.log(`┃ 🕒 Data/Hora: ${timestamp.padEnd(27)}`);
       console.log('┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n');
+      };
    } catch (error) {
      console.error('┃ 🚨 Erro ao gerar logs:', error, '');
    };
