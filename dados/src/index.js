@@ -1514,7 +1514,7 @@ if (budy2.includes('@' + nazu.user.id.split(':')[0]) && !isCmd && !info.key.from
 };
 
 //ANTI FIGURINHAS
-if (isGroup && groupData.antifig.enabled && type === 'stickerMessage' && !isGroupAdmin && !info.key.fromMe) {
+if (isGroup && groupData.antifig && groupData.antifig.enabled && type === 'stickerMessage' && !isGroupAdmin && !info.key.fromMe) {
   try {
     await nazu.sendMessage(from, { delete: { remoteJid: from, fromMe: false, id: info.key.id, participant: sender } });
     
