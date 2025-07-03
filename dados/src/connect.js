@@ -7,7 +7,7 @@
 */
 
 
-const { makeWASocket, useMultiFileAuthState, proto, DisconnectReason, getAggregateVotesInPollMessage, makeInMemoryStore } = require('@cognima/walib');
+const { makeWASocket, useMultiFileAuthState, proto, DisconnectReason, getAggregateVotesInPollMessage, makeInMemoryStore, fetchLatestBaileysVersion } = require('@cognima/walib');
 const Banner = require("@cognima/banners");
 const { Boom } = require('@hapi/boom');
 const { NodeCache } = require('@cacheable/node-cache');
