@@ -2,7 +2,7 @@
 ═════════════════════════════
   Nazuna - Conexão WhatsApp
   Autor: Hiudy
-  Revisão: 22/06/2025
+  Revisão: 03/07/2025
 ═════════════════════════════
 */
 
@@ -50,28 +50,26 @@ async function createBotSocket(authDir, isPrimary = true) {
   await fs.mkdir(authDir, { recursive: true });
 
   const { state, saveCreds } = await useMultiFileAuthState(authDir);
-
+  
+  const { version, isLatest } = await fetchLatestBaileysVersion();
+  
   const socket = makeWASocket({
-    markOnlineOnConnect: false,
-    fireInitQueries: false,
-    generateHighQualityLinkPreview: false,
-    shouldSyncHistoryMessage: () => true,
-    connectTimeoutMs: 180000,
-    keepAliveIntervalMs: 6000,
-    retryRequestDelayMs: 500,
-    maxMsgRetryCount: 4,
-    defaultQueryTimeoutMs: 3000,
+    version,
+    emitOwnEvents: true,
+    fireInitQueries: true,
+    generateHighQualityLinkPreview: true,
+    syncFullHistory: true,
+    markOnlineOnConnect: true,
+    connectTimeoutMs: 60000,
+    qrTimeout: 180000,
+    keepAliveIntervalMs: 10000,
+    defaultQueryTimeoutMs: 0,
     msgRetryCounterCache,
-    countryCode: 'BR',
     auth: state,
     printQRInTerminal: !codeMode,
     logger: logger,
-    browser: ['Mac OS', 'Safari', '14.4.1'],
-    getMessage: async (key) => {
-      const msg = await store.loadMessage(key.remoteJid, key.id);
-      return msg?.message || proto.Message.fromObject({});
-    },
-    cachedGroupMetadata: (jid) => groupCache.get(jid) || null,
+    browser: ['Ubuntu', 'Edge', '110.0.1587.56'],
+    getMessage
   });
 
   store.bind(socket.ev);
