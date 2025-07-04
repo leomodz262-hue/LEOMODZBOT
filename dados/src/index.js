@@ -1616,7 +1616,7 @@ if (isGroup && groupData.antifig && groupData.antifig.enabled && type === "stick
       delete groupData.warnings[sender];
     }
     
-    await reply(warnMessage, { mentions: [sender] });
+    await nazu.sendMessage(from, {text: warnMessage, mentions: [sender] });
     fs.writeFileSync(groupFile, JSON.stringify(groupData, null, 2));
   } catch (error) {
     console.error("Erro no sistema antifig:", error);
