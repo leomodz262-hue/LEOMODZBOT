@@ -27,6 +27,8 @@ const indexModule = require(path.join(__dirname, 'index.js'));
 
 const codeMode = process.argv.includes('--code');
 const dualMode = process.argv.includes('--dual');
+const messagesCache = new Map();
+setInterval(() => messagesCache.clear(), 600000);
 
 const ask = (question) => {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -221,9 +223,10 @@ async function createBotSocket(authDir, isPrimary = true) {
         if (typeof indexModule === 'function') {
           for (const info of m.messages) {
             if (!info.message || !info.key.remoteJid) continue;
+            messagesCache.set(info.key.id, info);
             const activeSocket = dualMode && useSecondary && secondarySocket?.user ? secondarySocket : socket;
             useSecondary = !useSecondary;
-            await indexModule(activeSocket, info, store, groupCache);
+            await indexModule(activeSocket, info, store, groupCache, messagesCache);
           }
         } else {
           console.error('O módulo index.js não exporta uma função válida.');
@@ -255,7 +258,7 @@ async function createBotSocket(authDir, isPrimary = true) {
               const activeSocket = dualMode && useSecondary && secondarySocket?.user ? secondarySocket : socket;
               useSecondary = !useSecondary;
               store.messages[From].updateAssign(key.id, {message: {}, key: {}});
-              await indexModule(activeSocket, JsonMessage, store, groupCache);
+              await indexModule(activeSocket, JsonMessage, store, groupCache, messagesCache);
             };
           } catch (e) {
             console.error(`Erro ao processar atualização de enquete:`, e);

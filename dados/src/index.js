@@ -466,7 +466,7 @@ function checkLevelDown(userId, userData, levelingData) {
   userData.patent = getPatent(userData.level, levelingData.patents);
 }
 
-async function NazuninhaBotExec(nazu, info, store, groupCache) {
+async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
   SocketActions = nazu;
   
   var config = JSON.parse(fs.readFileSync(__dirname+'/config.json'));
@@ -619,7 +619,8 @@ async function NazuninhaBotExec(nazu, info, store, groupCache) {
     };
     
     if(isGroup && info.message.protocolMessage && info.message.protocolMessage.type === 0 && isAntiDel) {
-      const msg = await store.loadMessage(info.message.protocolMessage.key.remoteJid, info.message.protocolMessage.key.id);
+      const msg = messagesCache.get(info.message.protocolMessage.key.id);
+      if(!msg) return;
       const clone = JSON.parse(JSON.stringify(msg.message).replaceAll('conversation', 'text').replaceAll('Message', ''));
       for (const key in clone) {
         const media = clone[key];
