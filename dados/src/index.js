@@ -633,7 +633,8 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
           }
         }
       }
-    await nazu.sendMessage(from, clone);
+      console.log(clone);
+      await nazu.sendMessage(from, clone);
     };
 
     if (isGroup && isCmd && !isGroupAdmin && 
