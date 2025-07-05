@@ -610,13 +610,18 @@ async function NazuninhaBotExec(nazu, info, store, groupCache) {
     const isAntiPorn = groupData.antiporn;
     const isMuted = groupData.mutedUsers?.[sender];
     const isAntiLinkGp = groupData.antilinkgp;
+    const isAntiDel = groupData.antidel;
     const isAutoRepo = groupData.autorepo;
     const isModoLite = isGroup && isModoLiteActive(groupData, modoLiteGlobal);
   
     if (isGroup && isOnlyAdmin && !isGroupAdmin) {
       return;
     };
-  
+    
+    if(isGroup && info.message.protocolMessage && info.message.protocolMessage.type === 0 && isAntiDel) {
+      await nazu.sendMessage(from, { text: "evento" });
+    };
+
     if (isGroup && isCmd && !isGroupAdmin && 
       groupData.blockedCommands && groupData.blockedCommands[command]) {
       await reply('⛔ Este comando foi bloqueado pelos administradores do grupo.');
@@ -4294,6 +4299,20 @@ case 'ping':
     groupData.antilinkhard = !groupData.antilinkhard;
     fs.writeFileSync(groupFile, JSON.stringify(groupData, null, 2));
     await reply(`✅ Antilinkhard ${groupData.antilinkhard ? 'ativado' : 'desativado'}! Qualquer link enviado resultará em banimento.`);
+  } catch (e) {
+    console.error(e);
+    await reply("Ocorreu um erro 💔");
+  }
+  break;
+  
+  case 'antidelete':
+  try {
+    if (!isGroup) return reply("Isso só pode ser usado em grupo 💔");
+    if (!isGroupAdmin) return reply("Você precisa ser adm 💔");
+    if (!isBotAdmin) return reply("Eu preciso ser adm para isso 💔");
+    groupData.antidel = !groupData.antidel;
+    fs.writeFileSync(groupFile, JSON.stringify(groupData, null, 2));
+    await reply(`✅ Antidelete ${groupData.antilinkhard ? 'ativado' : 'desativado'}!`);
   } catch (e) {
     console.error(e);
     await reply("Ocorreu um erro 💔");
