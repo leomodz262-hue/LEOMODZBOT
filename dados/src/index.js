@@ -621,7 +621,6 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
     if(isGroup && info.message.protocolMessage && info.message.protocolMessage.type === 0 && isAntiDel) {
       const msg = messagesCache.get(info.message.protocolMessage.key.id);
       if(!msg) return;
-      console.log(msg);
       const clone = JSON.parse(JSON.stringify(msg).replaceAll('conversation', 'text').replaceAll('Message', ''));
       for (const key in clone) {
         const media = clone[key];
@@ -634,7 +633,6 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
           }
         }
       }
-      console.log(clone);
       await nazu.sendMessage(from, clone);
     };
 
@@ -6175,15 +6173,6 @@ ${weatherEmoji} *${weatherDescription}*`;
     console.error('Tipo de erro:', error.name);
     console.error('Mensagem:', error.message);
     console.error('Stack trace:', error.stack);
-    
-    try {
-      console.error('Tipo de mensagem:', type);
-      console.error('Comando (se aplicável):', isCmd ? command : 'N/A');
-      console.error('Grupo:', isGroup ? groupName : 'Mensagem privada');
-      console.error('Remetente:', sender);
-    } catch (logError) {
-      console.error('Erro ao registrar informações adicionais:', logError);
-    };
   };
 };
 
