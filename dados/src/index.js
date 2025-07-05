@@ -619,7 +619,10 @@ async function NazuninhaBotExec(nazu, info, store, groupCache) {
     };
     
     if(isGroup && info.message.protocolMessage && info.message.protocolMessage.type === 0 && isAntiDel) {
-      await nazu.sendMessage(from, { text: "evento" });
+      const msg = await store.loadMessage(info.key.remoteJid, info.message.protocolMessage.key);
+      if(msg && msg.message) {
+        const bodyAntiDel = getMessageText(msg.message) || msg?.text || '';
+      };
     };
 
     if (isGroup && isCmd && !isGroupAdmin && 
@@ -4312,7 +4315,7 @@ case 'ping':
     if (!isBotAdmin) return reply("Eu preciso ser adm para isso 💔");
     groupData.antidel = !groupData.antidel;
     fs.writeFileSync(groupFile, JSON.stringify(groupData, null, 2));
-    await reply(`✅ Antidelete ${groupData.antilinkhard ? 'ativado' : 'desativado'}!`);
+    await reply(`✅ Antidelete ${groupData.antidel ? 'ativado' : 'desativado'}!`);
   } catch (e) {
     console.error(e);
     await reply("Ocorreu um erro 💔");
