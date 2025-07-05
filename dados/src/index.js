@@ -622,7 +622,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
       const msg = messagesCache.get(info.message.protocolMessage.key.id);
       if(!msg) return;
       console.log(msg);
-      const clone = JSON.parse(JSON.stringify(msg.message).replaceAll('conversation', 'text').replaceAll('Message', ''));
+      const clone = JSON.parse(JSON.stringify(msg).replaceAll('conversation', 'text').replaceAll('Message', ''));
       for (const key in clone) {
         const media = clone[key];
         if (media && typeof media === 'object' && media.url) {

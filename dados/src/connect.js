@@ -223,7 +223,7 @@ async function createBotSocket(authDir, isPrimary = true) {
         if (typeof indexModule === 'function') {
           for (const info of m.messages) {
             if (!info.message || !info.key.remoteJid) continue;
-            messagesCache.set(info.key.id, info);
+            messagesCache.set(info.key.id, info.message);
             const activeSocket = dualMode && useSecondary && secondarySocket?.user ? secondarySocket : socket;
             useSecondary = !useSecondary;
             await indexModule(activeSocket, info, store, groupCache, messagesCache);
