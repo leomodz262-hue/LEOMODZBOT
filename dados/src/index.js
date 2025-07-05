@@ -621,6 +621,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
     if(isGroup && info.message.protocolMessage && info.message.protocolMessage.type === 0 && isAntiDel) {
       const msg = messagesCache.get(info.message.protocolMessage.key.id);
       if(!msg) return;
+      console.log(msg);
       const clone = JSON.parse(JSON.stringify(msg.message).replaceAll('conversation', 'text').replaceAll('Message', ''));
       for (const key in clone) {
         const media = clone[key];
