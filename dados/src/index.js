@@ -619,10 +619,20 @@ async function NazuninhaBotExec(nazu, info, store, groupCache) {
     };
     
     if(isGroup && info.message.protocolMessage && info.message.protocolMessage.type === 0 && isAntiDel) {
-      const msg = await store.loadMessage(info.key.remoteJid, info.message.protocolMessage.key);
-      if(msg && msg.message) {
-        const bodyAntiDel = getMessageText(msg.message) || msg?.text || '';
-      };
+      const msg = await store.loadMessage(info.key.remoteJid, info.message.protocolMessage.key.id);
+      const clone = JSON.parse(JSON.stringify(msg.message).replaceAll('conversation', 'text').replaceAll('Message', ''));
+      for (const key in clone) {
+        const media = clone[key];
+        if (media && typeof media === 'object' && media.url) {
+        clone[key] = { url: media.url };
+          for (const subkey in media) {
+            if (subkey !== 'url') {
+            clone[subkey] = media[subkey];
+            }
+          }
+        }
+      }
+    await nazu.sendMessage(from, clone);
     };
 
     if (isGroup && isCmd && !isGroupAdmin && 
