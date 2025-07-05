@@ -619,8 +619,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache) {
     };
     
     if(isGroup && info.message.protocolMessage && info.message.protocolMessage.type === 0 && isAntiDel) {
-      console.log(info.message);
-      const msg = await store.loadMessage(info.key.remoteJid, info.message.protocolMessage.key.id);
+      const msg = await store.loadMessage(info.message.protocolMessage.key.remoteJid, info.message.protocolMessage.key.id);
       const clone = JSON.parse(JSON.stringify(msg.message).replaceAll('conversation', 'text').replaceAll('Message', ''));
       for (const key in clone) {
         const media = clone[key];
