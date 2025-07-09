@@ -4,7 +4,7 @@ const allMessages = require('./index');
 
 const CONFIG_FILE = path.join(__dirname, '..', 'config.json');
 
-let messages = allMessages.pt;
+let messages = allMessages.en;
 
 async function loadMessages() {
   try {
