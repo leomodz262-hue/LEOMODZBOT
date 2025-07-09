@@ -1,4 +1,3 @@
-const { DisconnectReason } = require('@cognima/walib');
 // [ By Hiudy ] -- ID
 
 module.exports = {
@@ -179,7 +178,6 @@ Pembuat: Hiudy
     custom: (text) => text,
   }),
   reason_messages: {
-    [DisconnectReason.loggedOut]: "🗑️ Sesi tidak valid, menghapus autentikasi...",
     401: "🗑️ Sesi tidak valid, menghapus autentikasi...",
     408: "⏰ Sesi habis waktu, memuat ulang...",
     411: "📄 File sesi tampak salah, mencoba memuat ulang...",

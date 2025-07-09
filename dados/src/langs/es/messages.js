@@ -1,4 +1,3 @@
-const { DisconnectReason } = require('@cognima/walib');
 // [ By Hiudy ] -- ES
 
 module.exports = {
@@ -179,7 +178,6 @@ Creador: Hiudy
     custom: (text) => text,
   }),
   reason_messages: {
-    [DisconnectReason.loggedOut]: "🗑️ Sesión inválida, eliminando autenticación...",
     401: "🗑️ Sesión inválida, eliminando autenticación...",
     408: "⏰ La sesión expiró, recargando...",
     411: "📄 El archivo de sesión parece incorrecto, intentando recargar...",
