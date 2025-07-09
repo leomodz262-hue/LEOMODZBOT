@@ -6,6 +6,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const readline = require('readline');
 const os = require('os');
+const { loadMessages, getMessages } = require('../langs/loader.js');
 
 
 const CONFIG_PATH = path.join(process.cwd(), 'dados', 'src', 'config.json');
@@ -67,9 +68,10 @@ const RESTART_COUNT_RESET_INTERVAL = 60000;
 
 
 function setupGracefulShutdown() {
+    const lang = getMessages();
   const shutdown = () => {
     console.log('\n');
-    mensagem('🛑 Encerrando o bot...');
+    mensagem(lang.shutting_down);
     
     if (botProcess) {
       botProcess.removeAllListeners('close');
@@ -96,9 +98,10 @@ function setupGracefulShutdown() {
 
 
 async function displayHeader() {
+    const lang = getMessages();
   const header = [
-    `   ${colors.bold}🚀 Inicializador da Nazuna 🚀${colors.reset}        `,
-    `   ${colors.bold}🔧 Criado por Hiudy - Versão: ${version} 🔧${colors.reset}`
+    `   ${colors.bold}${lang.starter_header}${colors.reset}        `,
+    `   ${colors.bold}${lang.starter_version(version)}${colors.reset}`
   ];
   
   separador();
@@ -116,33 +119,35 @@ async function displayHeader() {
 
 
 async function checkPrerequisites() {
+    const lang = getMessages();
   if (!fsSync.existsSync(CONFIG_PATH)) {
-    aviso("⚠ Opa! Parece que você ainda não configurou o bot.");
-    mensagem(`🔹 Para configurar, execute: ${colors.blue}npm run config${colors.reset}`);
+    aviso(lang.config_not_found);
+    mensagem(lang.run_config_command(`${colors.blue}npm run config${colors.reset}`));
     process.exit(1);
   }
 
   if (!fsSync.existsSync(NODE_MODULES_PATH)) {
-    aviso("⚠ Opa! Parece que os módulos ainda não foram instalados.");
-    mensagem(`📦 Para instalar, execute: ${colors.blue}npm run config:install${colors.reset}`);
+    aviso(lang.modules_not_found);
+    mensagem(lang.run_install_command(`${colors.blue}npm run config:install${colors.reset}`));
     process.exit(1);
   }
 
   if (!fsSync.existsSync(CONNECT_FILE)) {
-    aviso(`⚠ Arquivo de conexão não encontrado: ${CONNECT_FILE}`);
-    aviso("Verifique se o bot foi instalado corretamente.");
+    aviso(lang.connection_file_not_found(CONNECT_FILE));
+    aviso(lang.check_installation);
     process.exit(1);
   }
 }
 
 
 function startBot(codeMode = false) {
+    const lang = getMessages();
 
   const args = ['--expose-gc', CONNECT_FILE];
   if (codeMode) args.push('--code');
   if (dualMode) args.push('--dual');
 
-  info(`🚀 Iniciando o bot ${codeMode ? 'com código' : 'com QR Code'}${dualMode ? ' (modo dual)' : ''}...`);
+  info(codeMode ? lang.starting_with_code(dualMode) : lang.starting_with_qrcode(dualMode));
   
   botProcess = spawn('node', args, {
     stdio: 'inherit',
@@ -150,13 +155,13 @@ function startBot(codeMode = false) {
   });
   
   botProcess.on('error', (error) => {
-    aviso(`❌ Erro ao iniciar o processo: ${error.message}`);
+    aviso(lang.error_starting_process(error.message));
     restartBot(codeMode);
   });
   
   botProcess.on('close', (code) => {
     if (code !== 0) {
-      aviso(`⚠ O bot caiu com código: ${code}`);
+      aviso(lang.bot_crashed(code));
       restartBot(codeMode);
     }
   });
@@ -166,6 +171,7 @@ function startBot(codeMode = false) {
 
 
 function restartBot(codeMode) {
+    const lang = getMessages();
   restartCount++;
 
   let delay = RESTART_DELAY;
@@ -173,9 +179,9 @@ function restartBot(codeMode) {
   if (restartCount > MAX_RESTART_COUNT) {
     const exponentialDelay = Math.min(30000, RESTART_DELAY * Math.pow(1.5, restartCount - MAX_RESTART_COUNT));
     delay = exponentialDelay;
-    aviso(`⚠ Muitas reinicializações (${restartCount}). Aguardando ${Math.round(delay/1000)} segundos...`);
+    aviso(lang.many_restarts(restartCount, Math.round(delay/1000)));
   } else {
-    aviso(`⚠ O bot caiu! Reiniciando em ${delay/1000} segundo...`);
+    aviso(lang.restarting_bot(delay/1000));
   }
   
   setTimeout(() => {
@@ -189,6 +195,7 @@ function restartBot(codeMode) {
 
 
 async function checkAutoConnect() {
+    const lang = getMessages();
   try {
     if (!fsSync.existsSync(QR_CODE_DIR)) {
       await fs.mkdir(QR_CODE_DIR, { recursive: true });
@@ -198,43 +205,44 @@ async function checkAutoConnect() {
     const files = await fs.readdir(QR_CODE_DIR);
     return files.length > 2;
   } catch (error) {
-    aviso(`❌ Erro ao verificar diretório QR Code: ${error.message}`);
+    aviso(lang.error_checking_qr(error.message));
     return false;
   }
 }
 
 
 async function promptConnectionMethod() {
+    const lang = getMessages();
   return new Promise((resolve) => {
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout
     });
 
-    console.log(`${colors.yellow}🔗 Como deseja conectar o bot?${colors.reset}`);
-    console.log(`${colors.yellow}1.${colors.reset} Conexão por QR Code`);
-    console.log(`${colors.yellow}2.${colors.reset} Conexão por Código`);
-    console.log(`${colors.yellow}3.${colors.reset} Sair`);
+    console.log(`${colors.yellow}${lang.ask_connection_method}${colors.reset}`);
+    console.log(`${colors.yellow}${lang.qr_code_connection}${colors.reset}`);
+    console.log(`${colors.yellow}${lang.code_connection}${colors.reset}`);
+    console.log(`${colors.yellow}${lang.exit_option}${colors.reset}`);
     
-    rl.question(`Escolha uma opção (1/2/3): `, (answer) => {
+    rl.question(`${lang.choose_option} `, (answer) => {
       console.log();
       rl.close();
       
       switch (answer.trim()) {
         case '1':
-          mensagem("📡 Iniciando conexão por QR Code...");
+          mensagem(lang.starting_qr_connection);
           resolve({ method: 'qr' });
           break;
         case '2':
-          mensagem("🔑 Iniciando conexão por Código...");
+          mensagem(lang.starting_code_connection);
           resolve({ method: 'code' });
           break;
         case '3':
-          mensagem("👋 Saindo...");
+          mensagem(lang.exiting);
           process.exit(0);
           break;
         default:
-          aviso("❌ Opção inválida! Usando QR Code como padrão.");
+          aviso(lang.invalid_option_qr_default);
           resolve({ method: 'qr' });
       }
     });
@@ -244,25 +252,29 @@ async function promptConnectionMethod() {
 
 async function main() {
   try {
+    await loadMessages();
+    const lang = getMessages();
     setupGracefulShutdown();
     await displayHeader();
     await checkPrerequisites();
     const hasSession = await checkAutoConnect();
     if (hasSession) {
-      mensagem("📡 QR Code já detectado! Iniciando conexão automática...");
+      mensagem(lang.qr_detected_auto_connect);
       startBot(false);
     } else {
       const { method } = await promptConnectionMethod();
       startBot(method === 'code');
     }
   } catch (error) {
-    aviso(`❌ Erro inesperado: ${error.message}`);
+    const lang = getMessages();
+    aviso(lang.unexpected_error(error.message));
     process.exit(1);
   }
 }
 
 
 main().catch(error => {
-  aviso(`❌ Erro fatal: ${error.message}`);
+    const lang = getMessages();
+  aviso(lang.fatal_error(error.message));
   process.exit(1);
 }); 

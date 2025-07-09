@@ -2077,38 +2077,64 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
     }
     break;
 
-  case 'listaralugueis': case 'aluguelist': case 'listaluguel': case 'listaaluguel':
+  case 'listaralugueis':
+case 'aluguelist':
+case 'listaluguel':
+case 'listaaluguel':
   try {
     if (!isOwner) return reply('🚫 Este comando é apenas para o dono do bot!');
-    
+
     const rentalData = loadRentalData();
     const globalMode = rentalData.globalMode ? '🟢 Ativo' : '🔴 Desativado';
     const groupRentals = rentalData.groups || {};
     const groupCount = Object.keys(groupRentals).length;
 
+    const filtro = args[0]?.toLowerCase();
+
     let message = `╭───「 *Lista de Aluguéis* 」───╮\n│ 🌍 *Modo Aluguel Global*: ${globalMode}\n│ 📊 *Total de Grupos*: ${groupCount}\n╰────────────────╯\n`;
 
     if (groupCount === 0) {
-      message += '📪 Nenhum grupo com aluguel ativo no momento.';
+      message += '📪 Nenhum grupo com aluguel registrado.';
     } else {
-      message += '📋 *Grupos com Aluguel Ativo*:\n\n';
+      message += '📋 *Grupos com Aluguel*:\n\n';
       let index = 1;
       for (const [groupId, info] of Object.entries(groupRentals)) {
         const groupMetadata = await nazu.groupMetadata(groupId).catch(() => ({ subject: 'Desconhecido' }));
         const groupName = groupMetadata.subject || 'Sem Nome';
-        const status = info.expiresAt === 'permanent' ? 'Permanente' : new Date(info.expiresAt) > new Date() ? 'Ativo' : 'Expirado';
-        const expires = info.expiresAt === 'permanent' ? '∞ Permanente' : info.expiresAt ? new Date(info.expiresAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'N/A';
-        
+
+        let status = 'Expirado';
+        if (info.expiresAt === 'permanent') {
+          status = 'Permanente';
+        } else if (new Date(info.expiresAt) > new Date()) {
+          status = 'Ativo';
+        }
+
+        const shouldInclude =
+          !filtro ||
+          (filtro === 'ven' && status === 'Expirado') ||
+          (filtro === 'atv' && status === 'Ativo') ||
+          (filtro === 'perm' && status === 'Permanente');
+
+        if (!shouldInclude) continue;
+
+        const expires = info.expiresAt === 'permanent'
+          ? '∞ Permanente'
+          : info.expiresAt
+            ? new Date(info.expiresAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+            : 'N/A';
+
         message += `🔹 *${index}. ${groupName}*\n`;
         message += `  - *Status*: ${status}\n`;
         message += `  - *Expira em*: ${expires}\n\n`;
         index++;
       }
+
+      if (index === 1) message += '📪 Nenhum grupo encontrado com esse filtro.';
     }
 
     await reply(message);
   } catch (e) {
-    console.error('Erro no comando listrentals:', e);
+    console.error('Erro no comando listaluguel:', e);
     await reply("Ocorreu um erro ao listar os aluguéis 💔");
   }
   break;

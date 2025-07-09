@@ -9,6 +9,7 @@ const readline = require('readline');
 const os = require('os');
 const { promisify } = require('util');
 const execAsync = promisify(exec);
+const { loadMessages, getMessages } = require('../langs/loader.js');
 
 
 const CONFIG_FILE = path.join(process.cwd(), 'dados', 'src', 'config.json');
@@ -60,22 +61,31 @@ function printSeparator() {
 
 
 function validateInput(input, field) {
+    const lang = getMessages();
   switch (field) {
     case 'prefixo':
       if (input.length !== 1) {
-        printWarning(`❌ O prefixo deve ter exatamente 1 caractere.`);
+        printWarning(lang.invalid_prefix);
         return false;
       };
       return true;
       
     case 'numero':
       if (!/^[0-9]{10,15}$/.test(input)) {
-        printWarning(`❌ O número deve conter apenas dígitos (10-15 caracteres).`);
-        printDetail(`   Exemplo: 5511987654321 (sem símbolos ou espaços)`);
+        printWarning(lang.invalid_number);
+        printDetail(lang.example_number);
         return false;
       };
       return true;
-      
+    
+    case 'language':
+        const validLanguages = ['en', 'pt', 'es', 'fr', 'id'];
+        if (!validLanguages.includes(input)) {
+            printWarning(lang.invalid_language(validLanguages));
+            return false;
+        }
+        return true;
+
     default:
       return true;
   };
@@ -83,9 +93,10 @@ function validateInput(input, field) {
 
 
 function setupGracefulShutdown() {
+    const lang = getMessages();
   const shutdown = () => {
     console.log('\n');
-    printWarning('🛑 Configuração cancelada pelo usuário.');
+    printWarning(lang.config_cancelled);
     process.exit(0);
   };
   
@@ -95,8 +106,9 @@ function setupGracefulShutdown() {
 
 
 async function installDependencies() {
+    const lang = getMessages();
   printSeparator();
-  printMessage("📦 Instalando dependências...");
+  printMessage(lang.installing_dependencies);
   
   try {
     const installCommand = isWindows ? 'npm install --no-optional --force --no-bin-links' : 'npm install --no-optional --force --no-bin-links';
@@ -110,7 +122,7 @@ async function installDependencies() {
       const spinner = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
       let i = 0;
       const interval = setInterval(() => {
-        process.stdout.write(`\r${spinner[i]} Instalando dependências...`);
+        process.stdout.write(`\r${spinner[i]} ${lang.installing_dependencies}`);
         i = (i + 1) % spinner.length;
       }, 100);
       
@@ -120,19 +132,20 @@ async function installDependencies() {
       });
     });
     
-    printMessage("✔ Instalação concluída! Rode 'npm start' para iniciar o bot.");
+    printMessage(lang.install_complete);
   } catch (error) {
-    printWarning(`❌ Erro na instalação: ${error.message}`);
-    printInfo("ℹ️ Você pode tentar instalar manualmente com: npm install --force");
+    printWarning(lang.install_error(error.message));
+    printInfo(lang.manual_install_info);
     process.exit(1);
   };
 };
 
 
 async function displayHeader() {
+    const lang = getMessages();
   const header = [
-    `${colors.bold}🔧 Configurador da Nazuna - v${version}${colors.reset}`,
-    `${colors.bold}🚀 Criado por Hiudy${colors.reset}`
+    `${colors.bold}${lang.config_welcome(version)}${colors.reset}`,
+    `${colors.bold}${lang.creator_message}${colors.reset}`
   ];
   
   printSeparator();
@@ -151,6 +164,8 @@ async function displayHeader() {
 
 async function main() {
   try {
+    await loadMessages();
+    const lang = getMessages();
     setupGracefulShutdown();
 
     if (process.argv.includes('--install')) {
@@ -165,10 +180,16 @@ async function main() {
       numerodono: "",
       nomebot: "",
       prefixo: "!",
+      language: "en",
       aviso: false,
       debug: false,
       enablePanel: false
     };
+
+    const locale = os.userInfo().username.split('.')[0].toLowerCase();
+    if (['pt', 'es', 'fr', 'id'].includes(locale)) {
+      defaultConfig.language = locale;
+    }
     
     let config = { ...defaultConfig };
     
@@ -176,11 +197,11 @@ async function main() {
       if (fsSync.existsSync(CONFIG_FILE)) {
         const existingConfig = JSON.parse(await fs.readFile(CONFIG_FILE, 'utf8'));
         config = { ...config, ...existingConfig };
-        printInfo("ℹ️ Configuração existente carregada.");
+        printInfo(lang.existing_config_loaded);
       }
     } catch (error) {
-      printWarning(`⚠ Erro ao ler configuração existente: ${error.message}`);
-      printInfo("ℹ️ Usando valores padrão.");
+      printWarning(lang.error_reading_config(error.message));
+      printInfo(lang.using_default_values);
     }
 
     const rl = readline.createInterface({
@@ -188,11 +209,13 @@ async function main() {
       output: process.stdout
     });
 
-    printInfo(`${colors.bold}${colors.underline}CONFIGURAÇÃO BÁSICA${colors.reset}`);
-    config.nomedono = await promptInput(rl, "👤 Qual seu nome?", config.nomedono);
-    config.numerodono = await promptInput(rl, "📞 Qual seu número (somente dígitos, 10-15)?", config.numerodono, "numero");
-    config.nomebot = await promptInput(rl, "🤖 Qual o nome do bot?", config.nomebot);
-    config.prefixo = await promptInput(rl, "⚙️ Qual o prefixo (1 caractere)?", config.prefixo, "prefixo");
+    printInfo(`${colors.bold}${colors.underline}${lang.basic_config_title}${colors.reset}`);
+    config.nomedono = await promptInput(rl, lang.ask_owner_name, config.nomedono);
+    config.numerodono = await promptInput(rl, lang.ask_owner_number, config.numerodono, "numero");
+    config.nomebot = await promptInput(rl, lang.ask_bot_name, config.nomebot);
+    config.prefixo = await promptInput(rl, lang.ask_prefix, config.prefixo, "prefixo");
+    config.language = await promptInput(rl, lang.ask_language, config.language, "language");
+
 
     config.aviso = false;
     config.debug = false;
@@ -207,43 +230,47 @@ async function main() {
       await fs.writeFile(CONFIG_FILE, JSON.stringify(config, null, 2));
 
       console.log();
-      printInfo("📋 Resumo da configuração:");
-      printDetail(`   Nome: ${config.nomedono}`);
-      printDetail(`   Número: ${config.numerodono}`);
-      printDetail(`   Nome do Bot: ${config.nomebot}`);
-      printDetail(`   Prefixo: ${config.prefixo}`);
+      printInfo(lang.config_summary);
+      printDetail(lang.owner_name_summary(config.nomedono));
+      printDetail(lang.owner_number_summary(config.numerodono));
+      printDetail(lang.bot_name_summary(config.nomebot));
+      printDetail(lang.prefix_summary(config.prefixo));
+      printDetail(lang.language_summary(config.language));
+
 
       printSeparator();
-      printMessage("🎉 Configuração concluída com sucesso!");
+      printMessage(lang.config_saved_success);
       printSeparator();
       
-      const installNow = await confirm(rl, "📦 Instalar dependências agora?", "s");
+      const installNow = await confirm(rl, lang.ask_install_deps, "s");
       
       if (installNow) {
         rl.close();
         await installDependencies();
       } else {
-        printMessage("⚡ Para instalar depois, use: npm run config:install");
+        printMessage(lang.install_later_info);
       }
       
       printSeparator();
-      printMessage(`🚀 Nazuna pronta para uso! - v${version}`);
+      printMessage(lang.nazuna_ready(version));
       printSeparator();
     } catch (error) {
-      printWarning(`❌ Erro ao salvar configuração: ${error.message}`);
+      printWarning(lang.error_saving_config(error.message));
     }
     
     rl.close();
   } catch (error) {
-    printWarning(`❌ Erro inesperado: ${error.message}`);
+    const lang = getMessages();
+    printWarning(lang.unexpected_error(error.message));
     process.exit(1);
   }
 }
 
 
 async function promptInput(rl, prompt, defaultValue, field = null) {
+    const lang = getMessages();
   return new Promise((resolve) => {
-    const displayPrompt = `${prompt} ${colors.dim}(Atual: ${defaultValue || 'Não definido'})${colors.reset}: `;
+    const displayPrompt = `${prompt} ${colors.dim}${lang.prompt_input_current(defaultValue)}${colors.reset}: `;
     rl.question(displayPrompt, (input) => {
       const value = input.trim() || defaultValue;
       
@@ -269,6 +296,7 @@ async function confirm(rl, prompt, defaultValue = 'n') {
 
 
 main().catch(error => {
-  printWarning(`❌ Erro fatal: ${error.message}`);
+    const lang = getMessages();
+  printWarning(lang.fatal_error(error.message));
   process.exit(1);
 }); 
