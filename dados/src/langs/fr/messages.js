@@ -1,3 +1,4 @@
+const { DisconnectReason } = require('@cognima/walib');
 // [ By Hiudy ] -- FR
 
 module.exports = {
