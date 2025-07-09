@@ -130,5 +130,62 @@ module.exports = {
   error_during_update: (msg) => `❌ Terjadi kesalahan kritis selama pembaruan: ${msg}`,
   backup_location_info: (dir) => `ℹ️ Data penting Anda (config, database, media) telah disimpan di: ${dir}`,
   manual_restore_info: "Anda dapat memulihkannya secara manual dengan memindahkan file dari folder cadangan ke folder 'data'.",
-  contact_dev_for_help: "Jika masalah berlanjut, hubungi pengembang."
+  contact_dev_for_help: "Jika masalah berlanjut, hubungi pengembang.",
+  
+  // connect.js || By Hiudy
+  invalid_number: "❌ Nomor tidak valid! Harus antara 10 hingga 15 digit.",
+  ask_phone_number: "📞 Masukkan nomor Anda (dengan kode negara dan wilayah, mis.: +5511999999999): \n\n",
+  pairing_code: (code) => `🔢 Kode penyandingan Anda: ${code}`,
+  pairing_instructions: "📲 Di WhatsApp, buka 'Perangkat Tertaut' -> 'Tautkan dengan Nomor Telepon' dan masukkan kode.\n",
+  bot_started: (nomebot, prefixo, nomedono, dualMode) => `
+============================================
+Bot: ${nomebot}
+Prefiks: ${prefixo}
+Pemilik: ${nomedono}
+Pembuat: Hiudy
+============================================
+    ✅ BOT BERHASIL DIMULAI${dualMode ? ' (MODE DUAL)' : ''}
+============================================`,
+  starting_nazuna: (dualMode) => `🚀 Memulai Nazuna ${dualMode ? '(Mode Dual)' : '(Mode Tunggal)'}...`,
+  starting_dual_mode: "🔀 Mode Dual diaktifkan - Memulai koneksi sekunder...",
+  dual_mode_ready: "🔀 Kedua koneksi berhasil dibuat - Mode dual siap!",
+  secondary_connection_established: "🔀 Koneksi sekunder berhasil dibuat!",
+  secondary_connection_closed: (reason) => `🔀 Koneksi sekunder ditutup, alasan: ${reason}`,
+  reconnecting_secondary: "🔀 Mencoba menyambungkan kembali koneksi sekunder...",
+  error_starting_secondary: (err) => `🔀 Gagal memulai koneksi sekunder: ${err}`,
+  continuing_primary_only: "🔀 Melanjutkan hanya dengan koneksi primer...",
+  error_starting_bot: (err) => `❌ Gagal memulai bot: ${err}`,
+  primary_connection_closed: (reason, message) => `⚠️ Koneksi primer ditutup, alasan: ${reason} - ${message}`,
+  reconnecting_primary: "🔄 Mencoba menyambungkan kembali koneksi primer...",
+  updating_primary_session: "🔄 Memperbarui sesi primer...",
+  connecting_secondary_session: "🔀 Menghubungkan sesi sekunder...",
+  invalid_index_module: "❌ Modul index.js tidak mengekspor fungsi yang valid.",
+  error_processing_poll: (err) => `❌ Gagal memproses pembaruan jajak pendapat: ${err}`,
+  error_calling_index: (err) => `❌ Gagal memanggil modul index.js: ${err}`,
+  error_removing_blacklist_user: (from, err) => `❌ Gagal menghapus pengguna dalam daftar hitam dari grup ${from}: ${err}`,
+  error_sending_welcome: (from, err) => `❌ Gagal mengirim pesan selamat datang di grup ${from}: ${err}`,
+  error_sending_exit: (from, err) => `❌ Gagal mengirim pesan keluar di grup ${from}: ${err}`,
+  x9_mode_message: (participant, action, by) => `🕵️ *Mode X9* 🕵️\n\n@${participant} telah ${action} oleh @${by}!`,
+  antifake_remove_message: (participant) => `🚫 @${participant} dihapus karena berasal dari negara yang tidak diizinkan (antifake diaktifkan)!`,
+  antipt_remove_message: (participant) => `🚫 @${participant} dihapus karena berasal dari Portugal (antipt diaktifkan)!`,
+  blacklist_remove_message: (participant, reason) => `🚫 @${participant} dihapus secara otomatis karena berada di daftar hitam.\nAlasan: ${reason}`,
+  welcome_message: (text, sender) => ({
+    default: `Selamat datang @${sender} di #nomedogp#!\nAnda adalah anggota ke-*#membros#*!`,
+    custom: (text) => text,
+  }),
+  exit_message: (text, sender) => ({
+    default: `Selamat tinggal @${sender}! 👋\nGrup *#nomedogp#* sekarang memiliki *#membros#* anggota.`,
+    custom: (text) => text,
+  }),
+  reason_messages: {
+    [DisconnectReason.loggedOut]: "🗑️ Sesi tidak valid, menghapus autentikasi...",
+    401: "🗑️ Sesi tidak valid, menghapus autentikasi...",
+    408: "⏰ Sesi habis waktu, memuat ulang...",
+    411: "📄 File sesi tampak salah, mencoba memuat ulang...",
+    428: "📡 Tidak dapat mempertahankan koneksi WhatsApp, mencoba lagi...",
+    440: "🔗 Terlalu banyak sesi terhubung, tutup beberapa...",
+    500: "⚙️ Sesi tampak salah dikonfigurasi, mencoba menyambungkan kembali...",
+    503: "❓ Kesalahan tidak dikenal, mencoba menyambungkan kembali...",
+    515: "🔄 Memulai ulang kode untuk menstabilkan koneksi...",
+  }
 };

@@ -130,5 +130,62 @@ module.exports = {
   error_during_update: (msg) => `❌ A critical error occurred during the update: ${msg}`,
   backup_location_info: (dir) => `ℹ️ Your important data (config, database, midias) has been saved in: ${dir}`,
   manual_restore_info: "You can restore them manually by moving the files from the backup folder to the 'dados' folder.",
-  contact_dev_for_help: "If the problem persists, contact the developer."
+  contact_dev_for_help: "If the problem persists, contact the developer.",
+  
+  // connect.js || By Hiudy
+  invalid_number: "❌ Invalid number! Must be between 10 and 15 digits.",
+  ask_phone_number: "📞 Enter your number (with country and area code, e.g., +5511999999999): \n\n",
+  pairing_code: (code) => `🔢 Your pairing code: ${code}`,
+  pairing_instructions: "📲 On WhatsApp, go to 'Linked Devices' -> 'Link with Phone Number' and enter the code.\n",
+  bot_started: (nomebot, prefixo, nomedono, dualMode) => `
+============================================
+Bot: ${nomebot}
+Prefix: ${prefixo}
+Owner: ${nomedono}
+Creator: Hiudy
+============================================
+    ✅ BOT STARTED SUCCESSFULLY${dualMode ? ' (DUAL MODE)' : ''}
+============================================`,
+  starting_nazuna: (dualMode) => `🚀 Starting Nazuna ${dualMode ? '(Dual Mode)' : '(Single Mode)'}...`,
+  starting_dual_mode: "🔀 Dual Mode activated - Starting secondary connection...",
+  dual_mode_ready: "🔀 Both connections established - Dual mode ready!",
+  secondary_connection_established: "🔀 Secondary connection established successfully!",
+  secondary_connection_closed: (reason) => `🔀 Secondary connection closed, reason: ${reason}`,
+  reconnecting_secondary: "🔀 Attempting to reconnect secondary connection...",
+  error_starting_secondary: (err) => `🔀 Error starting secondary connection: ${err}`,
+  continuing_primary_only: "🔀 Continuing with primary connection only...",
+  error_starting_bot: (err) => `❌ Error starting the bot: ${err}`,
+  primary_connection_closed: (reason, message) => `⚠️ Primary connection closed, reason: ${reason} - ${message}`,
+  reconnecting_primary: "🔄 Attempting to reconnect primary connection...",
+  updating_primary_session: "🔄 Updating primary session...",
+  connecting_secondary_session: "🔀 Connecting secondary session...",
+  invalid_index_module: "❌ The index.js module does not export a valid function.",
+  error_processing_poll: (err) => `❌ Error processing poll update: ${err}`,
+  error_calling_index: (err) => `❌ Error calling index.js module: ${err}`,
+  error_removing_blacklist_user: (from, err) => `❌ Error removing blacklisted user from group ${from}: ${err}`,
+  error_sending_welcome: (from, err) => `❌ Error sending welcome message in group ${from}: ${err}`,
+  error_sending_exit: (from, err) => `❌ Error sending exit message in group ${from}: ${err}`,
+  x9_mode_message: (participant, action, by) => `🕵️ *X9 Mode* 🕵️\n\n@${participant} was ${action} by @${by}!`,
+  antifake_remove_message: (participant) => `🚫 @${participant} was removed for being from a disallowed country (antifake enabled)!`,
+  antipt_remove_message: (participant) => `🚫 @${participant} was removed for being from Portugal (antipt enabled)!`,
+  blacklist_remove_message: (participant, reason) => `🚫 @${participant} was automatically removed for being on the blacklist.\nReason: ${reason}`,
+  welcome_message: (text, sender) => ({
+    default: `Welcome @${sender} to #nomedogp#!\nYou are our member number: *#membros#*!`,
+    custom: (text) => text,
+  }),
+  exit_message: (text, sender) => ({
+    default: `Goodbye @${sender}! 👋\nThe group *#nomedogp#* now has *#membros#* members.`,
+    custom: (text) => text,
+  }),
+  reason_messages: {
+    [DisconnectReason.loggedOut]: "🗑️ Invalid session, deleting authentication...",
+    401: "🗑️ Invalid session, deleting authentication...",
+    408: "⏰ Session timed out, reloading...",
+    411: "📄 Session file seems incorrect, attempting to reload...",
+    428: "📡 Unable to maintain WhatsApp connection, trying again...",
+    440: "🔗 Too many connected sessions, close some...",
+    500: "⚙️ Session seems misconfigured, attempting to reconnect...",
+    503: "❓ Unknown error, attempting to reconnect...",
+    515: "🔄 Restarting code to stabilize connection...",
+  }
 };

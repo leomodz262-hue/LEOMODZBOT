@@ -2,10 +2,9 @@
 ═════════════════════════════
   Nazuna - Conexão WhatsApp
   Autor: Hiudy
-  Revisão: 03/07/2025
+  Revisão: 09/07/2025
 ═════════════════════════════
 */
-
 
 const { makeWASocket, useMultiFileAuthState, proto, DisconnectReason, getAggregateVotesInPollMessage, makeInMemoryStore, fetchLatestBaileysVersion } = require('@cognima/walib');
 const Banner = require("@cognima/banners");
@@ -15,6 +14,9 @@ const readline = require('readline');
 const pino = require('pino');
 const fs = require('fs').promises;
 const path = require('path');
+const { loadMessages, getMessages } = require('./langs/loader.js');
+
+const lang = getMessages();
 
 const logger = pino({ level: 'silent' });
 const AUTH_DIR_PRIMARY = path.join(__dirname, '..', 'database', 'qr-code');
@@ -45,7 +47,7 @@ const store = makeInMemoryStore({ logger });
 async function getMessage(key) {
   const msg = await store.loadMessage(key.remoteJid, key.id);
   return msg?.message || proto.Message.fromObject({});
-};
+}
 
 async function createBotSocket(authDir, isPrimary = true) {
   await fs.mkdir(DATABASE_DIR, { recursive: true });
@@ -79,15 +81,15 @@ async function createBotSocket(authDir, isPrimary = true) {
   socket.ev.on('creds.update', saveCreds);
 
   if (codeMode && !socket.authState.creds.registered) {
-    let phoneNumber = await ask('📞 Digite seu número (com DDD e DDI, ex: +5511999999999): \n\n');
+    let phoneNumber = await ask(lang.ask_phone_number);
     phoneNumber = phoneNumber.replace(/\D/g, '');
     if (!/^\d{10,15}$/.test(phoneNumber)) {
-      console.log('❌ Número inválido! Deve ter entre 10 e 15 dígitos.');
+      console.log(lang.invalid_number);
       process.exit(1);
     }
     const code = await socket.requestPairingCode(phoneNumber, 'N4ZUN4V3');
-    console.log(`🔢 Seu código de pareamento: ${code}`);
-    console.log('📲 No WhatsApp, vá em "Aparelhos Conectados" -> "Conectar com Número de Telefone" e insira o código.\n');
+    console.log(lang.pairing_code(code));
+    console.log(lang.pairing_instructions);
   }
 
   if (isPrimary) {
@@ -119,7 +121,7 @@ async function createBotSocket(authDir, isPrimary = true) {
         const action = inf.action === 'promote' ? 'promovido a administrador' : 'rebaixado de administrador';
         const by = inf.author || 'alguém';
         await socket.sendMessage(from, {
-          text: `🕵️ *X9 Mode* 🕵️\n\n@${inf.participants[0].split('@')[0]} foi ${action} por @${by.split('@')[0]}!`,
+          text: lang.x9_mode_message(inf.participants[0].split('@')[0], action, by.split('@')[0]),
           mentions: [inf.participants[0], by],
         });
       }
@@ -130,7 +132,7 @@ async function createBotSocket(authDir, isPrimary = true) {
         if (!['55', '35'].includes(countryCode)) {
           await socket.groupParticipantsUpdate(from, [participant], 'remove');
           await socket.sendMessage(from, {
-            text: `🚫 @${participant.split('@')[0]} foi removido por ser de um país não permitido (antifake ativado)!`,
+            text: lang.antifake_remove_message(participant.split('@')[0]),
             mentions: [participant],
           });
         }
@@ -142,7 +144,7 @@ async function createBotSocket(authDir, isPrimary = true) {
         if (countryCode === '351') {
           await socket.groupParticipantsUpdate(from, [participant], 'remove');
           await socket.sendMessage(from, {
-            text: `🚫 @${participant.split('@')[0]} foi removido por ser de Portugal (antipt ativado)!`,
+            text: lang.antipt_remove_message(participant.split('@')[0]),
             mentions: [participant],
           });
         }
@@ -153,11 +155,11 @@ async function createBotSocket(authDir, isPrimary = true) {
         try {
           await socket.groupParticipantsUpdate(from, [sender], 'remove');
           await socket.sendMessage(from, {
-            text: `🚫 @${sender.split('@')[0]} foi removido automaticamente por estar na blacklist.\nMotivo: ${jsonGp.blacklist[sender].reason}`,
+            text: lang.blacklist_remove_message(sender.split('@')[0], jsonGp.blacklist[sender].reason),
             mentions: [sender],
           });
         } catch (e) {
-          console.error(`Erro ao remover usuário da blacklist no grupo ${from}:`, e);
+          console.error(lang.error_removing_blacklist_user(from, e));
         }
         return;
       }
@@ -165,8 +167,8 @@ async function createBotSocket(authDir, isPrimary = true) {
       if (inf.action === 'add' && jsonGp.bemvindo) {
         const sender = inf.participants[0];
         const textBv = jsonGp.textbv && jsonGp.textbv.length > 1
-          ? jsonGp.textbv
-          : 'Seja bem-vindo(a) #numerodele# ao #nomedogp#!\nVocê é nosso membro número: *#membros#*!';
+          ? lang.welcome_message.custom(jsonGp.textbv)
+          : lang.welcome_message.default;
 
         const welcomeText = textBv
           .replaceAll('#numerodele#', `@${sender.split('@')[0]}`)
@@ -180,7 +182,7 @@ async function createBotSocket(authDir, isPrimary = true) {
             let profilePic = 'https://raw.githubusercontent.com/nazuninha/uploads/main/outros/1747053564257_bzswae.bin';
             try {
               profilePic = await socket.profilePictureUrl(sender, 'image');
-            } catch (error) {};
+            } catch (error) {}
             const ImageZinha = jsonGp.welcome.image !== 'banner' ? { url: jsonGp.welcome.image } : await new Banner.welcomeLeave().setAvatar(profilePic).setTitle('Bem Vindo(a)').setMessage('Aceita um cafézinho enquanto lê as regras?').build();
             message.image = ImageZinha;
             delete message.text;
@@ -188,15 +190,15 @@ async function createBotSocket(authDir, isPrimary = true) {
           }
           await socket.sendMessage(from, message);
         } catch (e) {
-          console.error(`Erro ao enviar mensagem de boas-vindas no grupo ${from}:`, e);
+          console.error(lang.error_sending_welcome(from, e));
         }
       }
 
       if (inf.action === 'remove' && jsonGp.exit?.enabled) {
         const sender = inf.participants[0];
         const exitText = jsonGp.exit.text && jsonGp.exit.text.length > 1
-          ? jsonGp.exit.text
-          : 'Adeus #numerodele#! 👋\nO grupo *#nomedogp#* agora tem *#membros#* membros.';
+          ? lang.exit_message.custom(jsonGp.exit.text)
+          : lang.exit_message.default;
 
         const formattedText = exitText
           .replaceAll('#numerodele#', `@${sender.split('@')[0]}`)
@@ -212,7 +214,7 @@ async function createBotSocket(authDir, isPrimary = true) {
           }
           await socket.sendMessage(from, message);
         } catch (e) {
-          console.error(`Erro ao enviar mensagem de saída no grupo ${from}:`, e);
+          console.error(lang.error_sending_exit(from, e));
         }
       }
     });
@@ -229,10 +231,10 @@ async function createBotSocket(authDir, isPrimary = true) {
             await indexModule(activeSocket, info, store, groupCache, messagesCache);
           }
         } else {
-          console.error('O módulo index.js não exporta uma função válida.');
+          console.error(lang.invalid_index_module);
         }
       } catch (err) {
-        console.error('Erro ao chamar o módulo index.js:', err);
+        console.error(lang.error_calling_index(err));
       }
     });
 
@@ -259,51 +261,38 @@ async function createBotSocket(authDir, isPrimary = true) {
               useSecondary = !useSecondary;
               store.messages[From].updateAssign(key.id, {message: {}, key: {}});
               await indexModule(activeSocket, JsonMessage, store, groupCache, messagesCache);
-            };
+            }
           } catch (e) {
-            console.error(`Erro ao processar atualização de enquete:`, e);
-          };
-        };
-      };
+            console.error(lang.error_processing_poll(e));
+          }
+        }
+      }
     });
 
     socket.ev.on('connection.update', async (update) => {
       const { connection, lastDisconnect, qr } = update;
 
       if (connection === 'open') {
-        console.log(
-          `============================================\nBot: ${nomebot}\nPrefix: ${prefixo}\nDono: ${nomedono}\nCriador: Hiudy\n============================================\n    ✅ BOT INICIADO COM SUCESSO${dualMode ? ' (MODO DUAL)' : ''}\n============================================`
-        );
+        console.log(lang.bot_started(nomebot, prefixo, nomedono, dualMode));
       }
 
       if (connection === 'close') {
         const reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
-        const reasonMessages = {
-          [DisconnectReason.loggedOut]: '🗑️ Sessão inválida, excluindo autenticação...',
-          401: '🗑️ Sessão inválida, excluindo autenticação...',
-          408: '⏰ A sessão sofreu um timeout, recarregando...',
-          411: '📄 O arquivo de sessão parece incorreto, tentando recarregar...',
-          428: '📡 Não foi possível manter a conexão com o WhatsApp, tentando novamente...',
-          440: '🔗 Existem muitas sessões conectadas, feche algumas...',
-          500: '⚙️ A sessão parece mal configurada, tentando reconectar...',
-          503: '❓ Erro desconhecido, tentando reconectar...',
-          515: '🔄 Reiniciando código para estabilizar conexão...',
-        };
-
+        const reasonMessage = lang.reason_messages[reason] || 'Motivo desconhecido';
         if (reason) {
-          console.log(`⚠️ Conexão primária fechada, motivo: ${reason} - ${reasonMessages[reason] || 'Motivo desconhecido'}`);
+          console.log(lang.primary_connection_closed(reason, reasonMessage));
           if ([DisconnectReason.loggedOut, 401].includes(reason)) {
             await fs.rm(AUTH_DIR_PRIMARY, { recursive: true, force: true });
           }
         }
 
         await socket.end();
-        console.log('🔄 Tentando reconectar conexão primária...');
+        console.log(lang.reconnecting_primary);
         startNazu();
       }
 
       if (connection === 'connecting') {
-        console.log('🔄 Atualizando sessão primária...');
+        console.log(lang.updating_primary_session);
       }
     });
   } else {
@@ -311,12 +300,12 @@ async function createBotSocket(authDir, isPrimary = true) {
       const { connection, lastDisconnect } = update;
 
       if (connection === 'open') {
-        console.log('🔀 Conexão secundária estabelecida com sucesso!');
+        console.log(lang.secondary_connection_established);
       }
 
       if (connection === 'close') {
         const reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
-        console.log(`🔀 Conexão secundária fechada, motivo: ${reason}`);
+        console.log(lang.secondary_connection_closed(reason));
 
         if ([DisconnectReason.loggedOut, 401].includes(reason)) {
           await fs.rm(AUTH_DIR_SECONDARY, { recursive: true, force: true });
@@ -324,16 +313,16 @@ async function createBotSocket(authDir, isPrimary = true) {
 
         setTimeout(async () => {
           try {
-            console.log('🔀 Tentando reconectar conexão secundária...');
+            console.log(lang.reconnecting_secondary);
             secondarySocket = await createBotSocket(AUTH_DIR_SECONDARY, false);
           } catch (e) {
-            console.error('🔀 Falha ao reconectar conexão secundária:', e);
+            console.error(lang.error_starting_secondary(e));
           }
         }, 5000);
       }
 
       if (connection === 'connecting') {
-        console.log('🔀 Conectando sessão secundária...');
+        console.log(lang.connecting_secondary_session);
       }
     });
   }
@@ -343,12 +332,12 @@ async function createBotSocket(authDir, isPrimary = true) {
 
 async function startNazu() {
   try {
-    console.log(`🚀 Iniciando Nazuna ${dualMode ? '(Modo Dual)' : '(Modo Simples)'}...`);
+    console.log(lang.starting_nazuna(dualMode));
 
     const primarySocket = await createBotSocket(AUTH_DIR_PRIMARY, true);
 
     if (dualMode) {
-      console.log('🔀 Modo Dual ativado - Iniciando conexão secundária...');
+      console.log(lang.starting_dual_mode);
       try {
         secondarySocket = await createBotSocket(AUTH_DIR_SECONDARY, false);
 
@@ -369,14 +358,14 @@ async function startNazu() {
           waitForConnection(secondarySocket),
         ]);
 
-        console.log('🔀 Ambas as conexões estabelecidas - Modo dual pronto!');
+        console.log(lang.dual_mode_ready);
       } catch (err) {
-        console.error('🔀 Erro ao iniciar conexão secundária:', err);
-        console.log('🔀 Continuando apenas com conexão primária...');
+        console.error(lang.error_starting_secondary(err));
+        console.log(lang.continuing_primary_only);
       }
     }
   } catch (err) {
-    console.error('Erro ao iniciar o bot:', err);
+    console.error(lang.error_starting_bot(err));
     process.exit(1);
   }
 }

@@ -130,5 +130,62 @@ module.exports = {
   error_during_update: (msg) => `❌ Une erreur critique s'est produite pendant la mise à jour : ${msg}`,
   backup_location_info: (dir) => `ℹ️ Vos données importantes (config, database, médias) ont été enregistrées dans : ${dir}`,
   manual_restore_info: "Vous pouvez les restaurer manuellement en déplaçant les fichiers du dossier de sauvegarde vers le dossier 'données'.",
-  contact_dev_for_help: "Si le problème persiste, contactez le développeur."
+  contact_dev_for_help: "Si le problème persiste, contactez le développeur.",
+  
+  // connect.js || By Hiudy
+  invalid_number: "❌ Numéro invalide ! Doit comporter entre 10 et 15 chiffres.",
+  ask_phone_number: "📞 Entrez votre numéro (avec l'indicatif du pays et de la région, ex. : +5511999999999) : \n\n",
+  pairing_code: (code) => `🔢 Votre code de jumelage : ${code}`,
+  pairing_instructions: "📲 Sur WhatsApp, allez dans 'Appareils connectés' -> 'Connecter avec un numéro de téléphone' et entrez le code.\n",
+  bot_started: (nomebot, prefixo, nomedono, dualMode) => `
+============================================
+Bot : ${nomebot}
+Préfixe : ${prefixo}
+Propriétaire : ${nomedono}
+Créateur : Hiudy
+============================================
+    ✅ BOT DÉMARRÉ AVEC SUCCÈS${dualMode ? ' (MODE DUAL)' : ''}
+============================================`,
+  starting_nazuna: (dualMode) => `🚀 Démarrage de Nazuna ${dualMode ? '(Mode Dual)' : '(Mode Simple)'}...`,
+  starting_dual_mode: "🔀 Mode Dual activé - Démarrage de la connexion secondaire...",
+  dual_mode_ready: "🔀 Les deux connexions sont établies - Mode dual prêt !",
+  secondary_connection_established: "🔀 Connexion secondaire établie avec succès !",
+  secondary_connection_closed: (reason) => `🔀 Connexion secondaire fermée, raison : ${reason}`,
+  reconnecting_secondary: "🔀 Tentative de reconnexion de la connexion secondaire...",
+  error_starting_secondary: (err) => `🔀 Erreur lors du démarrage de la connexion secondaire : ${err}`,
+  continuing_primary_only: "🔀 Poursuite uniquement avec la connexion primaire...",
+  error_starting_bot: (err) => `❌ Erreur lors du démarrage du bot : ${err}`,
+  primary_connection_closed: (reason, message) => `⚠️ Connexion primaire fermée, raison : ${reason} - ${message}`,
+  reconnecting_primary: "🔄 Tentative de reconnexion de la connexion primaire...",
+  updating_primary_session: "🔄 Mise à jour de la session primaire...",
+  connecting_secondary_session: "🔀 Connexion de la session secondaire...",
+  invalid_index_module: "❌ Le module index.js n'exporte pas une fonction valide.",
+  error_processing_poll: (err) => `❌ Erreur lors du traitement de la mise à jour du sondage : ${err}`,
+  error_calling_index: (err) => `❌ Erreur lors de l'appel du module index.js : ${err}`,
+  error_removing_blacklist_user: (from, err) => `❌ Erreur lors de la suppression d'un utilisateur en liste noire du groupe ${from} : ${err}`,
+  error_sending_welcome: (from, err) => `❌ Erreur lors de l'envoi du message de bienvenue dans le groupe ${from} : ${err}`,
+  error_sending_exit: (from, err) => `❌ Erreur lors de l'envoi du message de sortie dans le groupe ${from} : ${err}`,
+  x9_mode_message: (participant, action, by) => `🕵️ *Mode X9* 🕵️\n\n@${participant} a été ${action} par @${by} !`,
+  antifake_remove_message: (participant) => `🚫 @${participant} a été retiré car provenant d'un pays non autorisé (antifake activé) !`,
+  antipt_remove_message: (participant) => `🚫 @${participant} a été retiré car provenant du Portugal (antipt activé) !`,
+  blacklist_remove_message: (participant, reason) => `🚫 @${participant} a été retiré automatiquement car il est sur la liste noire.\nRaison : ${reason}`,
+  welcome_message: (text, sender) => ({
+    default: `Bienvenue @${sender} dans #nomedogp# !\nVous êtes notre membre numéro : *#membros#* !`,
+    custom: (text) => text,
+  }),
+  exit_message: (text, sender) => ({
+    default: `Adieu @${sender} ! 👋\nLe groupe *#nomedogp#* compte désormais *#membros#* membres.`,
+    custom: (text) => text,
+  }),
+  reason_messages: {
+    [DisconnectReason.loggedOut]: "🗑️ Session invalide, suppression de l'authentification...",
+    401: "🗑️ Session invalide, suppression de l'authentification...",
+    408: "⏰ La session a expiré, rechargement...",
+    411: "📄 Le fichier de session semble incorrect, tentative de rechargement...",
+    428: "📡 Impossible de maintenir la connexion avec WhatsApp, nouvelle tentative...",
+    440: "🔗 Trop de sessions connectées, fermez-en quelques-unes...",
+    500: "⚙️ La session semble mal configurée, tentative de reconnexion...",
+    503: "❓ Erreur inconnue, tentative de reconnexion...",
+    515: "🔄 Redémarrage du code pour stabiliser la connexion...",
+  }
 };

@@ -130,5 +130,62 @@ module.exports = {
   error_during_update: (msg) => `❌ Ocurrió un error crítico durante la actualización: ${msg}`,
   backup_location_info: (dir) => `ℹ️ Tus datos importantes (config, database, medios) fueron guardados en: ${dir}`,
   manual_restore_info: "Puedes restaurarlos manualmente moviendo los archivos de la carpeta de respaldo a la carpeta 'datos'.",
-  contact_dev_for_help: "Si el problema persiste, contacta al desarrollador."
+  contact_dev_for_help: "Si el problema persiste, contacta al desarrollador.",
+  
+  // connect.js || By Hiudy
+  invalid_number: "❌ ¡Número inválido! Debe tener entre 10 y 15 dígitos.",
+  ask_phone_number: "📞 Ingresa tu número (con código de país y área, ej.: +5511999999999): \n\n",
+  pairing_code: (code) => `🔢 Tu código de emparejamiento: ${code}`,
+  pairing_instructions: "📲 En WhatsApp, ve a 'Dispositivos Vinculados' -> 'Vincular con Número de Teléfono' e ingresa el código.\n",
+  bot_started: (nomebot, prefixo, nomedono, dualMode) => `
+============================================
+Bot: ${nomebot}
+Prefijo: ${prefixo}
+Dueño: ${nomedono}
+Creador: Hiudy
+============================================
+    ✅ ¡BOT INICIADO CON ÉXITO!${dualMode ? ' (MODO DUAL)' : ''}
+============================================`,
+  starting_nazuna: (dualMode) => `🚀 Iniciando Nazuna ${dualMode ? '(Modo Dual)' : '(Modo Simple)'}...`,
+  starting_dual_mode: "🔀 Modo Dual activado - Iniciando conexión secundaria...",
+  dual_mode_ready: "🔀 ¡Ambas conexiones establecidas - Modo dual listo!",
+  secondary_connection_established: "🔀 ¡Conexión secundaria establecida con éxito!",
+  secondary_connection_closed: (reason) => `🔀 Conexión secundaria cerrada, motivo: ${reason}`,
+  reconnecting_secondary: "🔀 Intentando reconectar la conexión secundaria...",
+  error_starting_secondary: (err) => `🔀 Error al iniciar la conexión secundaria: ${err}`,
+  continuing_primary_only: "🔀 Continuando solo con la conexión primaria...",
+  error_starting_bot: (err) => `❌ Error al iniciar el bot: ${err}`,
+  primary_connection_closed: (reason, message) => `⚠️ Conexión primaria cerrada, motivo: ${reason} - ${message}`,
+  reconnecting_primary: "🔄 Intentando reconectar la conexión primaria...",
+  updating_primary_session: "🔄 Actualizando la sesión primaria...",
+  connecting_secondary_session: "🔀 Conectando la sesión secundaria...",
+  invalid_index_module: "❌ El módulo index.js no exporta una función válida.",
+  error_processing_poll: (err) => `❌ Error al procesar la actualización de la encuesta: ${err}`,
+  error_calling_index: (err) => `❌ Error al llamar al módulo index.js: ${err}`,
+  error_removing_blacklist_user: (from, err) => `❌ Error al remover usuario en lista negra del grupo ${from}: ${err}`,
+  error_sending_welcome: (from, err) => `❌ Error al enviar mensaje de bienvenida en el grupo ${from}: ${err}`,
+  error_sending_exit: (from, err) => `❌ Error al enviar mensaje de salida en el grupo ${from}: ${err}`,
+  x9_mode_message: (participant, action, by) => `🕵️ *Modo X9* 🕵️\n\n@${participant} fue ${action} por @${by}!`,
+  antifake_remove_message: (participant) => `🚫 @${participant} fue removido por ser de un país no permitido (antifake activado)!`,
+  antipt_remove_message: (participant) => `🚫 @${participant} fue removido por ser de Portugal (antipt activado)!`,
+  blacklist_remove_message: (participant, reason) => `🚫 @${participant} fue removido automáticamente por estar en la lista negra.\nMotivo: ${reason}`,
+  welcome_message: (text, sender) => ({
+    default: `¡Bienvenido(a) @${sender} a #nomedogp#!\nEres nuestro miembro número: *#membros#*!`,
+    custom: (text) => text,
+  }),
+  exit_message: (text, sender) => ({
+    default: `¡Adiós @${sender}! 👋\nEl grupo *#nomedogp#* ahora tiene *#membros#* miembros.`,
+    custom: (text) => text,
+  }),
+  reason_messages: {
+    [DisconnectReason.loggedOut]: "🗑️ Sesión inválida, eliminando autenticación...",
+    401: "🗑️ Sesión inválida, eliminando autenticación...",
+    408: "⏰ La sesión expiró, recargando...",
+    411: "📄 El archivo de sesión parece incorrecto, intentando recargar...",
+    428: "📡 No se pudo mantener la conexión con WhatsApp, intentando de nuevo...",
+    440: "🔗 Hay demasiadas sesiones conectadas, cierra algunas...",
+    500: "⚙️ La sesión parece mal configurada, intentando reconectar...",
+    503: "❓ Error desconocido, intentando reconectar...",
+    515: "🔄 Reiniciando el código para estabilizar la conexión...",
+  }
 };
