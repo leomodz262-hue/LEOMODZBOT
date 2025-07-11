@@ -2997,7 +2997,7 @@ case 'ytmp4':
   };
   break
 
-   case 'prefixo':case 'numerodono':case 'nomedono':case 'nomebot': try {
+   case 'prefixo':case 'numerodono':case 'nomedono':case 'nomebot': case 'language': try {
     if(!isOwner) return reply("Este comando é apenas para o meu dono");
     if (!q) return reply(`Uso correto: ${prefix}${command} <valor>`);
      let config = JSON.parse(fs.readFileSync(__dirname + '/config.json'));
