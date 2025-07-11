@@ -5015,6 +5015,7 @@ case 'listadv':
     let text = "📋 *Lista de Advertências*\n\n";
     for (const [user, warnings] of Object.entries(groupData.warnings)) {
       try {
+      if(Array.isArray(warnings)) {
       text += `👤 @${user.split('@')[0]} (${warnings.length}/3)\n`;
       warnings.forEach((warn, index) => {
         text += `  ${index + 1}. Motivo: ${warn.reason}\n`;
@@ -5022,6 +5023,7 @@ case 'listadv':
         text += `     Em: ${new Date(warn.timestamp).toLocaleString()}\n`;
       });
       text += "\n";
+     } 
       } catch(e) {}
     }
     reply(text, {
