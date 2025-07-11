@@ -5024,7 +5024,14 @@ case 'listadv':
       text += "\n";
       } catch(e) {}
     }
-    reply(text, { mentions: [...Object.keys(groupData.warnings), ...Object.values(groupData.warnings).flatMap(w => w.map(warn => warn.issuer))] });
+    reply(text, {
+  mentions: [
+    ...Object.keys(groupData.warnings),
+    ...Object.values(groupData.warnings).flatMap(w =>
+      Array.isArray(w) ? w.map(warn => warn.issuer) : []
+    )
+  ]
+});
   } catch (e) {
     console.error(e);
     reply("Ocorreu um erro 💔");
