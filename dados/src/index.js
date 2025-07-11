@@ -5014,6 +5014,7 @@ case 'listadv':
     if (Object.keys(groupData.warnings).length === 0) return reply("📋 Não há advertências ativas no grupo.");
     let text = "📋 *Lista de Advertências*\n\n";
     for (const [user, warnings] of Object.entries(groupData.warnings)) {
+      try {
       text += `👤 @${user.split('@')[0]} (${warnings.length}/3)\n`;
       warnings.forEach((warn, index) => {
         text += `  ${index + 1}. Motivo: ${warn.reason}\n`;
@@ -5021,6 +5022,7 @@ case 'listadv':
         text += `     Em: ${new Date(warn.timestamp).toLocaleString()}\n`;
       });
       text += "\n";
+      } catch(e) {}
     }
     reply(text, { mentions: [...Object.keys(groupData.warnings), ...Object.values(groupData.warnings).flatMap(w => w.map(warn => warn.issuer))] });
   } catch (e) {
