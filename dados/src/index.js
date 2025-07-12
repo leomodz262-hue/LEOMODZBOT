@@ -2,7 +2,8 @@
 // Nazuna Bot - Index principal
 // Criado por: Hiudy
 // Versão: 4.0.0
-// Atualizado: 30/06/2025
+// Atualizado: 12/07/2025
+// Donate: https://cognima.com.br/donate
 // ====================
 
 
@@ -21,14 +22,6 @@ let SocketActions = null;
 
 
 const { version: botVersion } = JSON.parse(fs.readFileSync(pathz.join(__dirname, '..', '..', 'package.json')));
-
-
-const { menu, menudown, menuadm, menubn, menuDono, menuMembros, menuFerramentas, menuSticker, menuIa, menuAlterador, menuLogos, menuTopCmd } = require(`${__dirname}/menus/index.js`);
-
-
-var config = JSON.parse(fs.readFileSync(__dirname+'/config.json'));
-var { numerodono, nomedono, nomebot, prefixo, debug } = config;
-const prefix = prefixo; 
 
 
 const DATABASE_DIR = __dirname + '/../database';
@@ -172,7 +165,7 @@ const isSubdono = (userId) => {
 };
 
 
-const addSubdono = (userId) => {
+const addSubdono = (userId, numerodono) => {
   if (!userId || typeof userId !== 'string' || !userId.includes('@s.whatsapp.net')) {
       return { success: false, message: 'ID de usuário inválido. Use o formato completo (ex: 1234567890@s.whatsapp.net) ou marque o usuário.' };
   };
@@ -470,7 +463,9 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
   SocketActions = nazu;
   
   var config = JSON.parse(fs.readFileSync(__dirname+'/config.json'));
-  var { numerodono, nomedono, nomebot, prefixo, debug } = config;
+  var { numerodono, nomedono, nomebot, prefixo, debug, language } = config;
+  var { menu, menudown, menuadm, menubn, menuDono, menuMembros, menuFerramentas, menuSticker, menuIa, menuAlterador, menuLogos, menuTopCmd } = require(`${__dirname}/langs/${language}/menus/index.js`);
+  var prefix = prefixo;
   var numerodono = String(numerodono);
   
   const { youtube, tiktok, pinterest, igdl, sendSticker, FilmesDL, styleText, emojiMix, upload, mcPlugin, tictactoe, toolsJson, vabJson, apkMod, google, Lyrics, commandStats, ia, VerifyUpdate, anime } = await require(__dirname+'/funcs/exports.js');
@@ -1651,16 +1646,23 @@ if (isGroup && groupData.antifig && groupData.antifig.enabled && type === "stick
   //ALTERADORES
   
   case 'speedup':
+  case 'boyvoice':
   case 'vozmenino':
+  case 'womenvoice':
   case 'vozmulher':
+  case 'manvoice':
   case 'vozhomem':
+  case 'childvoice':
   case 'vozcrianca':
   case 'vozeco':
   case 'eco':
+  case 'slowvoice':
   case 'vozlenta':
   case 'audiolento':
+  case 'fastvoice':
   case 'vozrapida':
   case 'audiorapido':
+  case 'cavevoice':
   case 'vozcaverna':
   case 'bass':
   case 'bass2':
@@ -1684,7 +1686,7 @@ if (isGroup && groupData.antifig && groupData.antifig.enabled && type === "stick
   case 'lowpass':
     try {
       if ((isMedia && !info.message.imageMessage && !info.message.videoMessage) || isQuotedAudio) {
-        const audioEffects = { speedup: 'atempo=1.06,asetrate=44100*1.25', vozmenino: 'atempo=1.06,asetrate=44100*1.25', vozmulher: 'asetrate=44100*1.25,atempo=0.8', vozhomem: 'asetrate=44100*0.8,atempo=1.2', vozcrianca: 'asetrate=44100*1.4,atempo=0.9', vozeco: 'aecho=0.8:0.88:60:0.4', eco: 'aecho=0.8:0.88:60:0.4', vozlenta: 'atempo=0.6', audiolento: 'atempo=0.6', vozrapida: 'atempo=1.5', audiorapido: 'atempo=1.5', vozcaverna: 'aecho=0.6:0.3:1000:0.5', bass: 'bass=g=5', bass2: 'bass=g=10', bass3: 'bass=g=15', volumeboost: 'volume=1.5', aumentarvolume: 'volume=1.5', reverb: 'aecho=0.8:0.88:60:0.4', drive: 'afftdn=nf=-25', equalizer: 'equalizer=f=100:width_type=h:width=200:g=3,equalizer=f=1000:width_type=h:width=200:g=-1,equalizer=f=10000:width_type=h:width=200:g=4', equalizar: 'equalizer=f=100:width_type=h:width=200:g=3,equalizer=f=1000:width_type=h:width=200:g=-1,equalizer=f=10000:width_type=h:width=200:g=4', reverse: 'areverse', audioreverso: 'areverse', pitch: 'asetrate=44100*0.8', flanger: 'flanger', grave: 'atempo=0.9,asetrate=44100', vozgrave: 'atempo=0.9,asetrate=44100', chorus: 'chorus=0.7:0.9:55:0.4:0.25:2', phaser: 'aphaser=type=t:decay=0.4', tremolo: 'tremolo=f=6:d=0.8', vibrato: 'vibrato=f=6', lowpass: 'lowpass=f=500' };
+        const audioEffects = { speedup: 'atempo=1.06,asetrate=44100*1.25', boyvoice: 'atempo=1.06,asetrate=44100*1.25', vozmenino: 'atempo=1.06,asetrate=44100*1.25', womenvoice: 'asetrate=44100*1.25,atempo=0.8', vozmulher: 'asetrate=44100*1.25,atempo=0.8', manvoice: 'asetrate=44100*0.8,atempo=1.2', vozhomem: 'asetrate=44100*0.8,atempo=1.2', childvoice: 'asetrate=44100*1.4,atempo=0.9', vozcrianca: 'asetrate=44100*1.4,atempo=0.9', vozeco: 'aecho=0.8:0.88:60:0.4', eco: 'aecho=0.8:0.88:60:0.4', slowvoice: 'atempo=0.6', vozlenta: 'atempo=0.6', audiolento: 'atempo=0.6', fastvoice: 'atempo=1.5', vozrapida: 'atempo=1.5', audiorapido: 'atempo=1.5', cavevoice: 'aecho=0.6:0.3:1000:0.5', vozcaverna: 'aecho=0.6:0.3:1000:0.5', bass: 'bass=g=5', bass2: 'bass=g=10', bass3: 'bass=g=15', volumeboost: 'volume=1.5', aumentarvolume: 'volume=1.5', reverb: 'aecho=0.8:0.88:60:0.4', drive: 'afftdn=nf=-25', equalizer: 'equalizer=f=100:width_type=h:width=200:g=3,equalizer=f=1000:width_type=h:width=200:g=-1,equalizer=f=10000:width_type=h:width=200:g=4', equalizar: 'equalizer=f=100:width_type=h:width=200:g=3,equalizer=f=1000:width_type=h:width=200:g=-1,equalizer=f=10000:width_type=h:width=200:g=4', reverse: 'areverse', audioreverso: 'areverse', pitch: 'asetrate=44100*0.8', flanger: 'flanger', grave: 'atempo=0.9,asetrate=44100', vozgrave: 'atempo=0.9,asetrate=44100', chorus: 'chorus=0.7:0.9:55:0.4:0.25:2', phaser: 'aphaser=type=t:decay=0.4', tremolo: 'tremolo=f=6:d=0.8', vibrato: 'vibrato=f=6', lowpass: 'lowpass=f=500' };
         const muk = isQuotedAudio ? info.message.extendedTextMessage.contextInfo.quotedMessage.audioMessage : info.message.audioMessage;
         await reply('Aguarde um momentinho... ☀️');
         const rane = __dirname+`/../database/tmp/${Math.random()}.mp3`;
@@ -1713,6 +1715,8 @@ if (isGroup && groupData.antifig && groupData.antifig.enabled && type === "stick
   case 'videorapido':
   case 'fastvid':
   case 'videoslow':
+  case 'slowvid':
+  case 'reversevid':
   case 'videolento':
   case 'videoreverso':
   case 'videoloop':
@@ -1723,11 +1727,13 @@ if (isGroup && groupData.antifig && groupData.antifig.enabled && type === "stick
   case 'sepia':
   case 'espelhar':
   case 'rotacionar':
+  case 'mirror':
+  case 'rotate':
     try {
       if ((isMedia && info.message.videoMessage) || isQuotedVideo) {
         const encmedia = isQuotedVideo ? info.message.extendedTextMessage.contextInfo.quotedMessage.videoMessage : info.message.videoMessage;
         await reply('Aguarde um momentinho... ☀️');
-        const videoEffects = { videorapido: '[0:v]setpts=0.5*PTS[v];[0:a]atempo=2[a]', fastvid: '[0:v]setpts=0.5*PTS[v];[0:a]atempo=2[a]', videoslow: '[0:v]setpts=2*PTS[v];[0:a]atempo=0.5[a]', videolento: '[0:v]setpts=2*PTS[v];[0:a]atempo=0.5[a]', videoreverso: 'reverse,areverse', videoloop: 'loop=2',videomudo: 'an', videobw: 'hue=s=0', pretoebranco: 'hue=s=0', tomp3: 'q:a=0 -map a', sepia: 'colorchannelmixer=.393:.769:.189:.349:.686:.168:.272:.534:.131', espelhar: 'hflip', rotacionar: 'rotate=90*PI/180', };
+        const videoEffects = { videorapido: '[0:v]setpts=0.5*PTS[v];[0:a]atempo=2[a]', fastvid: '[0:v]setpts=0.5*PTS[v];[0:a]atempo=2[a]', videoslow: '[0:v]setpts=2*PTS[v];[0:a]atempo=0.5[a]', videolento: '[0:v]setpts=2*PTS[v];[0:a]atempo=0.5[a]', videoreverso: 'reverse,areverse', reversevid: 'reverse,areverse', videoloop: 'loop=2',videomudo: 'an', videobw: 'hue=s=0', pretoebranco: 'hue=s=0', tomp3: 'q:a=0 -map a', sepia: 'colorchannelmixer=.393:.769:.189:.349:.686:.168:.272:.534:.131', mirror: 'hflip', espelhar: 'hflip', rotacionar: 'rotate=90*PI/180', rotate: 'rotate=90*PI/180' };
         const rane = __dirname+`/../database/tmp/${Math.random()}.mp4`
         const buffimg = await getFileBuffer(encmedia, 'video');
         fs.writeFileSync(rane, buffimg);
@@ -1821,8 +1827,8 @@ if (isGroup && groupData.antifig && groupData.antifig.enabled && type === "stick
     }
   break;
   
-  case 'tradutor':
-    if (!q) return reply(`🌍 Quer traduzir algo? Me diga o idioma e o texto assim: ${prefix}tradutor idioma | texto
+  case 'tradutor': case 'translator':
+    if (!q) return reply(`🌍 Quer traduzir algo? Me diga o idioma e o texto assim: ${prefix}${command} idioma | texto
 Exemplo: ${prefix}tradutor inglês | Bom dia! 😊`);
     try {
       await reply('Aguarde um momentinho... ☀️');
@@ -1909,8 +1915,8 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
     }
   break;
   
-  case 'dicionario':
-    if (!q) return reply(`📔 Qual palavra você quer procurar no dicionário? Me diga após o comando ${prefix}dicionario! 😊`);
+  case 'dicionario': case 'dictionary':
+    if (!q) return reply(`📔 Qual palavra você quer procurar no dicionário? Me diga após o comando ${prefix}${command}! 😊`);
     reply("📔 Procurando no dicionário... Aguarde um pouquinho! ⏳");
     try {
       const palavra = q.trim().toLowerCase();
@@ -1976,7 +1982,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
         return reply("🤔 Você precisa marcar o usuário ou fornecer o número completo (ex: 5511999998888) para adicionar como subdono.");
       }
       const normalizedJid = targetUserJid.includes('@') ? targetUserJid : targetUserJid.replace(/\D/g, '') + '@s.whatsapp.net';
-      const result = addSubdono(normalizedJid);
+      const result = addSubdono(normalizedJid, numerodono);
       await reply(result.message);
     } catch (e) {
       console.error("Erro ao adicionar subdono:", e);
@@ -2307,7 +2313,7 @@ case 'ranklevel':
   };
   break
 
-  case 'nick': case 'gerarnick': try {
+  case 'nick': case 'gerarnick': case 'nickgenerator': try {
   if(!q) return reply('Digite o nick após o comando.');
   datzn = await styleText(q);
   await reply(datzn.join('\n'));
@@ -2619,7 +2625,7 @@ case 'ytmp4':
   }
   break;
    
-  case 'menu': case 'help':
+  case 'menu': case 'help': case 'comandos': case 'commands':
     try {
       const menuVideoPath = __dirname + '/../midias/menu.mp4';
       const menuImagePath = __dirname + '/../midias/menu.jpg';
@@ -2635,7 +2641,7 @@ case 'ytmp4':
     }
   break;
 
-  case 'alteradores': case 'menualterador': case 'menualteradores':
+  case 'alteradores': case 'menualterador': case 'menualteradores': case 'changersmenu': case 'changers':
     try {
       await sendMenuWithMedia('alteradores', menuAlterador);
     } catch (error) {
@@ -2653,7 +2659,7 @@ case 'ytmp4':
     }
   break;
     
-  case 'menubn': case 'menubrincadeira': case 'menubrincadeiras':
+  case 'menubn': case 'menubrincadeira': case 'menubrincadeiras': case 'gamemenu':
     try {
       let menuContent = await menubn(prefix, nomebot, pushname, isModoLite);
       await sendMenuWithMedia('brincadeiras', async () => menuContent);
@@ -2663,7 +2669,7 @@ case 'ytmp4':
     }
   break;
     
-  case 'menudown': case 'menudownload': case 'menudownloads':
+  case 'menudown': case 'menudownload': case 'menudownloads': case 'downmenu': case 'downloadmenu':
     try {
       await sendMenuWithMedia('downloads', menudown);
     } catch (error) {
@@ -2672,7 +2678,7 @@ case 'ytmp4':
     }
   break;
     
-  case 'ferramentas': case 'menuferramentas': case 'menuferramenta':
+  case 'ferramentas': case 'menuferramentas': case 'menuferramenta': case 'toolsmenu': case 'tools':
     try {
       await sendMenuWithMedia('ferramentas', menuFerramentas);
     } catch (error) {
@@ -2681,7 +2687,7 @@ case 'ytmp4':
     }
   break;
     
-  case 'menuadm': case 'menuadmin': case 'menuadmins':
+  case 'menuadm': case 'menuadmin': case 'menuadmins': case 'admmenu':
     try {
       await sendMenuWithMedia('admin', menuadm);
     } catch (error) {
@@ -2690,7 +2696,7 @@ case 'ytmp4':
     }
   break;
     
-  case 'menumembros': case 'menumemb': case 'menugeral':
+  case 'menumembros': case 'menumemb': case 'menugeral': case 'membmenu': case 'membermenu':
     try {
       await sendMenuWithMedia('membros', menuMembros);
     } catch (error) {
@@ -4036,7 +4042,7 @@ case 'ping':
   }
   break;
 
-  case 'listblocksgp':
+  case 'listblocksgp': case 'blocklist':
   if (!isGroup) return reply("isso so pode ser usado em grupo 💔");
   if (!isGroupAdmin) return reply("você precisa ser adm 💔");
   try {
@@ -4080,7 +4086,7 @@ case 'ping':
     };
     break
 
-  case 'promover':
+  case 'promover': case 'promote':
   try {
     if (!isGroup) return reply("isso so pode ser usado em grupo 💔");
     if (!isGroupAdmin) return reply("Comando restrito a Administradores ou Moderadores com permissão. 💔");
@@ -4094,7 +4100,7 @@ case 'ping':
   }
   break;
 
-  case 'rebaixar':
+  case 'rebaixar': case 'demote':
   try {
     if (!isGroup) return reply("isso so pode ser usado em grupo 💔");
     if (!isGroupAdmin) return reply("Comando restrito a Administradores ou Moderadores com permissão. 💔");
@@ -4138,7 +4144,7 @@ case 'ping':
   }
   break;
   
-  case 'marcar':
+  case 'marcar': case 'mark':
   if (!isGroup) return reply("isso so pode ser usado em grupo 💔");
   if (!isGroupAdmin) return reply("Comando restrito a Administradores ou Moderadores com permissão. 💔");
   if (!isBotAdmin) return reply("Eu preciso ser adm 💔");
@@ -4156,7 +4162,7 @@ case 'ping':
   }
   break;
   
-  case 'fechargp':
+  case 'fechargp': case 'closegp':
   try {
     if (!isGroup) return reply("Este comando só funciona em grupos.");
     if (!isGroupAdmin) return reply("Apenas administradores podem agendar o fechamento do grupo.");
@@ -4186,7 +4192,7 @@ case 'ping':
   }
   break;
 
-  case 'abrirgp':
+  case 'abrirgp': case 'opengp':
   try {
     if (!isGroup) return reply("Este comando só funciona em grupos.");
     if (!isGroupAdmin) return reply("Apenas administradores podem agendar a abertura do grupo.");
@@ -4216,14 +4222,14 @@ case 'ping':
   }
   break;
 
-  case 'grupo': case 'gp': try {
+  case 'grupo': case 'gp': case 'group': try {
   if (!isGroup) return reply("isso so pode ser usado em grupo 💔");
   if (!isGroupAdmin) return reply("Comando restrito a Administradores ou Moderadores com permissão. 💔");
   if (!isBotAdmin) return reply("Eu preciso ser adm 💔");
-  if(q.toLowerCase() === 'a' || q.toLowerCase() === 'abrir') {
+  if(q.toLowerCase() === 'a' || q.toLowerCase() === 'o' || q.toLowerCase() === 'open' || q.toLowerCase() === 'abrir') {
   await nazu.groupSettingUpdate(from, 'not_announcement');
   await reply('Grupo aberto.');
-  } else if(q.toLowerCase() === 'f' || q.toLowerCase() === 'fechar') {
+  } else if(q.toLowerCase() === 'f' || q.toLowerCase() === 'c' || q.toLowerCase() === 'close' || q.toLowerCase() === 'fechar') {
   await nazu.groupSettingUpdate(from, 'announcement');
   await reply('Grupo fechado.');
   }} catch(e) {
@@ -4232,7 +4238,7 @@ case 'ping':
   };
   break
   
-  case 'sorteio': case 'sortear':
+  case 'sorteio': case 'sortear': case 'raffle':
   if (!isGroup) return reply("isso so pode ser usado em grupo 💔");
   if (!isGroupAdmin) return reply("Comando restrito a Administradores ou Moderadores com permissão. 💔");
   if (!isBotAdmin) return reply("Eu preciso ser adm 💔");
@@ -4584,7 +4590,7 @@ case 'dellimitmessage':
   }
   break;
   
-    case 'modobrincadeira': case 'modobrincadeiras': case 'modobn': try {
+    case 'modobrincadeira': case 'modobrincadeiras': case 'modobn': case 'gamemode': try {
     if (!isGroup) return reply("isso so pode ser usado em grupo 💔");
     if (!isGroupAdmin) return reply("você precisa ser adm 💔");
     const groupFilePath = __dirname + `/../database/grupos/${from}.json`;
@@ -4604,7 +4610,7 @@ case 'dellimitmessage':
     };
     break;
     
-    case 'bemvindo': case 'bv': case 'boasvindas': try {
+    case 'bemvindo': case 'bv': case 'boasvindas': case 'welcome': try {
     if (!isGroup) return reply("isso so pode ser usado em grupo 💔");
     if (!isGroupAdmin) return reply("você precisa ser adm 💔");
     const groupFilePath = __dirname + `/../database/grupos/${from}.json`;   
@@ -4715,7 +4721,7 @@ break;
    };
    break;
  
-   case 'limpar':
+   case 'limpar': case 'clean':
   try {
     if (!isGroup) return reply("Isso só pode ser usado em grupo 💔");
     if (!isGroupAdmin) return reply("Você precisa ser adm 💔");
@@ -4729,7 +4735,7 @@ break;
   }
   break;
 
-case 'removerfotobv': case 'rmfotobv': case 'delfotobv':
+case 'removerfotobv': case 'rmfotobv': case 'delfotobv': case 'rmwelcomeimg':
   try {
     if (!isGroup) return reply("Isso só pode ser usado em grupo 💔");
     if (!isGroupAdmin) return reply("Você precisa ser administrador 💔");
@@ -4745,7 +4751,7 @@ case 'removerfotobv': case 'rmfotobv': case 'delfotobv':
   }
   break;
 
-case 'removerfotosaiu': case 'rmfotosaiu': case 'delfotosaiu':
+case 'removerfotosaiu': case 'rmfotosaiu': case 'delfotosaiu': case 'rmexitimg':
   try {
     if (!isGroup) return reply("Isso só pode ser usado em grupo 💔");
     if (!isGroupAdmin) return reply("Você precisa ser administrador 💔");
@@ -4793,7 +4799,7 @@ case 'removerfotosaiu': case 'rmfotosaiu': case 'delfotosaiu':
    };
    break;
   
-  case 'parcerias':
+  case 'parcerias': case 'partnerships':
   try {
     if (!isGroup) return reply("Este comando só funciona em grupos.");
     if (!isGroupAdmin) return reply("Apenas administradores podem usar este comando.");
@@ -4814,7 +4820,7 @@ case 'removerfotosaiu': case 'rmfotosaiu': case 'delfotosaiu':
   }
   break;
 
-case 'addparceria':
+case 'addparceria': case 'addpartnership':
   try {
     if (!isGroup) return reply("Este comando só funciona em grupos.");
     if (!isGroupAdmin) return reply("Apenas administradores podem usar este comando.");
@@ -4844,7 +4850,7 @@ case 'addparceria':
   }
   break;
 
-case 'delparceria':
+case 'delparceria': case 'delpartnership':
   try {
     if (!isGroup) return reply("Este comando só funciona em grupos.");
     if (!isGroupAdmin) return reply("Apenas administradores podem usar este comando.");
@@ -4896,7 +4902,7 @@ case 'modoparceria':
   }
   break;
   
-  case 'addblacklist':
+  case 'addblacklist': case 'blacklist':
   try {
     if (!isGroup) return reply("Isso só pode ser usado em grupo 💔");
     if (!isGroupAdmin) return reply("Você precisa ser administrador 💔");
@@ -4915,7 +4921,7 @@ case 'modoparceria':
   }
   break;
 
-case 'delblacklist':
+case 'delblacklist': case 'unblacklist':
   try {
     if (!isGroup) return reply("Isso só pode ser usado em grupo 💔");
     if (!isGroupAdmin) return reply("Você precisa ser administrador 💔");
@@ -4953,7 +4959,7 @@ case 'listblacklist':
   break;
   
   case 'adv':
-case 'advertir':
+case 'advertir': case 'warning':
   try {
     if (!isGroup) return reply("Isso só pode ser usado em grupo 💔");
     if (!isGroupAdmin) return reply("Você precisa ser administrador 💔");
@@ -4985,7 +4991,7 @@ case 'advertir':
   }
   break;
 
-case 'removeradv': case 'rmadv':
+case 'removeradv': case 'rmadv': case 'unwarning':
   try {
     if (!isGroup) return reply("Isso só pode ser usado em grupo 💔");
     if (!isGroupAdmin) return reply("Você precisa ser administrador 💔");
@@ -5004,7 +5010,7 @@ case 'removeradv': case 'rmadv':
   }
   break;
 
-case 'listadv':
+case 'listadv': case 'warninglist':
   try {
     if (!isGroup) return reply("Isso só pode ser usado em grupo 💔");
     if (!isGroupAdmin) return reply("Você precisa ser administrador 💔");
@@ -5060,7 +5066,7 @@ case 'listadv':
     };
     break;
     
-    case 'modolite': try {
+    case 'modolite': case 'litemode': try {
       if (!isGroup) return reply("Isso só pode ser usado em grupo 💔");
       if (!isGroupAdmin) return reply("Você precisa ser administrador 💔");
       
@@ -5200,7 +5206,7 @@ case 'listadv':
   }
   break;
     
-    case 'legendabv': case 'textbv': try {
+    case 'legendabv': case 'textbv': case 'welcomemsg': try {
     if (!isGroup) return reply("isso so pode ser usado em grupo 💔");
     if (!isGroupAdmin) return reply("você precisa ser adm 💔");
     const groupFilePath = __dirname + `/../database/grupos/${from}.json`;
@@ -5235,6 +5241,7 @@ case 'listadv':
   
   case 'desmute':
   case 'desmutar':
+  case 'unmute':
   try {
     if (!isGroup) return reply("isso so pode ser usado em grupo 💔");
     if (!isGroupAdmin) return reply("você precisa ser adm 💔");
@@ -5762,7 +5769,7 @@ Motivo: ${reason}`;
   }
   break;
 
-  case 'addregra':
+  case 'addregra': case 'addrule':
     try {
       if (!isGroup) return reply("Este comando só funciona em grupos.");
       if (!isGroupAdmin) return reply("Apenas administradores podem adicionar regras.");
@@ -5778,7 +5785,7 @@ ${groupData.rules.length}. ${q}`);
   }
   break;
   
-  case 'delregra':
+  case 'delregra': case 'delrule':
     try {
       if (!isGroup) return reply("Este comando só funciona em grupos.");
       if (!isGroupAdmin) return reply("Apenas administradores podem remover regras.");

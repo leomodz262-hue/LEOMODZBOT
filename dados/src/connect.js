@@ -2,7 +2,8 @@
 ═════════════════════════════
   Nazuna - Conexão WhatsApp
   Autor: Hiudy
-  Revisão: 09/07/2025
+  Revisão: 12/07/2025
+  Donate: https://cognima.com.br/donate
 ═════════════════════════════
 */
 
@@ -15,6 +16,10 @@ const pino = require('pino');
 const fs = require('fs').promises;
 const path = require('path');
 const { loadMessages, getMessages } = require('./langs/loader.js');
+
+(async () => {
+  await loadMessages();
+})();
 
 const lang = getMessages();
 
@@ -87,7 +92,7 @@ async function createBotSocket(authDir, isPrimary = true) {
       console.log(lang.invalid_number);
       process.exit(1);
     }
-    const code = await socket.requestPairingCode(phoneNumber, 'N4ZUN4V3');
+    const code = await socket.requestPairingCode(phoneNumber, 'N4ZUN4V4');
     console.log(lang.pairing_code(code));
     console.log(lang.pairing_instructions);
   }
@@ -167,8 +172,8 @@ async function createBotSocket(authDir, isPrimary = true) {
       if (inf.action === 'add' && jsonGp.bemvindo) {
         const sender = inf.participants[0];
         const textBv = jsonGp.textbv && jsonGp.textbv.length > 1
-          ? lang.welcome_message.custom(jsonGp.textbv)
-          : lang.welcome_message.default;
+          ? lang.welcome_message(jsonGp.textbv, sender).custom(jsonGp.textbv)
+          : lang.welcome_message(null, sender).default;
 
         const welcomeText = textBv
           .replaceAll('#numerodele#', `@${sender.split('@')[0]}`)
@@ -197,8 +202,8 @@ async function createBotSocket(authDir, isPrimary = true) {
       if (inf.action === 'remove' && jsonGp.exit?.enabled) {
         const sender = inf.participants[0];
         const exitText = jsonGp.exit.text && jsonGp.exit.text.length > 1
-          ? lang.exit_message.custom(jsonGp.exit.text)
-          : lang.exit_message.default;
+          ? lang.exit_message(jsonGp.exit.text, sender).custom(jsonGp.exit.text)
+          : lang.exit_message(null, sender).default;
 
         const formattedText = exitText
           .replaceAll('#numerodele#', `@${sender.split('@')[0]}`)

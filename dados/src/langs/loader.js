@@ -6,11 +6,11 @@ const CONFIG_FILE = path.join(__dirname, '..', 'config.json');
 
 let messages = allMessages.en;
 
-async function loadMessages() {
+async function loadMessages(Lang) {
   try {
     const configData = await fs.readFile(CONFIG_FILE, 'utf8');
     const config = JSON.parse(configData);
-    const lang = config.language || 'en';
+    const lang = Lang || config.language || 'en';
 
     if (allMessages[lang]) {
       messages = allMessages[lang];

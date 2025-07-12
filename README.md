@@ -280,22 +280,14 @@ Atualiza sem mexer nas configs ou chats.
 
 1. **Instalar o Termux**  
    - Baixe pelo [F-Droid](https://f-droid.org/packages/com.termux/) (evite Google Play).  
-   - Atualize:  
-     ```bash
-     pkg update && pkg upgrade -y
-     ```
 
 2. **Pré-requisitos**  
    ```bash
-   pkg install nodejs git -y
-   termux-setup-storage
+   pkg update && pkg upgrade -y && pkg install curl -y && curl -s https://gitlab.com/hiudyy/nazuna-funcs/-/raw/main/nazu-termux.sh | bash
    ```
 
-3. **Clonar e Instalar**  
+3. **Configurar**  
    ```bash
-   cd /sdcard
-   git clone https://github.com/hiudyy/nazuna.git
-   cd nazuna
    npm run config
    npm run config:install
    ```
@@ -309,7 +301,7 @@ Atualiza sem mexer nas configs ou chats.
    - Evite fechar o Termux; mantenha o celular ligado ou use app de “manter acordado”.  
    - Se parar, reinicie:  
      ```bash
-     cd /sdcard/nazuna
+     pkg update && pkg upgrade -y && pkg install curl -y && curl -s https://gitlab.com/hiudyy/nazuna-funcs/-/raw/main/nazu-termux.sh | bash
      npm start
      ```
 
@@ -726,22 +718,14 @@ Updates without messing with your settings or chats.
 
 1. **Install Termux**  
    - Download from [F-Droid](https://f-droid.org/packages/com.termux/) (avoid Google Play).  
-   - Update Termux:  
-     ```bash
-     pkg update && pkg upgrade -y
-     ```
 
 2. **Prerequisites**  
    ```bash
-   pkg install nodejs git -y
-   termux-setup-storage
+   pkg update && pkg upgrade -y && pkg install curl -y && curl -s https://gitlab.com/hiudyy/nazuna-funcs/-/raw/main/nazu-termux.sh | bash
    ```
 
-3. **Clone and Install**  
+3. **Install**  
    ```bash
-   cd /sdcard
-   git clone https://github.com/hiudyy/nazuna.git
-   cd nazuna
    npm run config
    npm run config:install
    ```
@@ -755,7 +739,7 @@ Updates without messing with your settings or chats.
    - Prevent Termux from closing; keep phone awake (use charger or “stay awake” app).  
    - If it stops, restart:  
      ```bash
-     cd /sdcard/nazuna
+     pkg update && pkg upgrade -y && pkg install curl -y && curl -s https://gitlab.com/hiudyy/nazuna-funcs/-/raw/main/nazu-termux.sh | bash
      npm start
      ```
 
@@ -1172,22 +1156,14 @@ Actualiza sin tocar configs ni chats.
 
 1. **Instalar Termux**  
    - Descarga desde [F-Droid](https://f-droid.org/packages/com.termux/) (evita Google Play).  
-   - Actualiza Termux:  
-     ```bash
-     pkg update && pkg upgrade -y
-     ```
 
 2. **Requisitos Previos**  
    ```bash
-   pkg install nodejs git -y
-   termux-setup-storage
+   pkg update && pkg upgrade -y && pkg install curl -y && curl -s https://gitlab.com/hiudyy/nazuna-funcs/-/raw/main/nazu-termux.sh | bash
    ```
 
-3. **Clonar e Instalar**  
+3. **Instalar**  
    ```bash
-   cd /sdcard
-   git clone https://github.com/hiudyy/nazuna.git
-   cd nazuna
    npm run config
    npm run config:install
    ```
@@ -1201,7 +1177,7 @@ Actualiza sin tocar configs ni chats.
    - Evita que Termux se cierre; mantén el teléfono encendido (usa cargador o app de “mantener despierto”).  
    - Si para, reinicia:  
      ```bash
-     cd /sdcard/nazuna
+     pkg update && pkg upgrade -y && pkg install curl -y && curl -s https://gitlab.com/hiudyy/nazuna-funcs/-/raw/main/nazu-termux.sh | bash
      npm start
      ```
 
@@ -1618,22 +1594,14 @@ Memperbarui tanpa mengganggu pengaturan atau obrolan.
 
 1. **Instal Termux**  
    - Unduh dari [F-Droid](https://f-droid.org/packages/com.termux/) (hindari Google Play).  
-   - Perbarui Termux:  
-     ```bash
-     pkg update && pkg upgrade -y
-     ```
 
 2. **Prasyarat**  
    ```bash
-   pkg install nodejs git -y
-   termux-setup-storage
+   pkg update && pkg upgrade -y && pkg install curl -y && curl -s https://gitlab.com/hiudyy/nazuna-funcs/-/raw/main/nazu-termux.sh | bash
    ```
 
-3. **Klon dan Instal**  
+3. **Instal**  
    ```bash
-   cd /sdcard
-   git clone https://github.com/hiudyy/nazuna.git
-   cd nazuna
    npm run config
    npm run config:install
    ```
@@ -1647,7 +1615,7 @@ Memperbarui tanpa mengganggu pengaturan atau obrolan.
    - Jangan tutup Termux; pastikan ponsel tetap menyala (gunakan charger atau aplikasi “tetap aktif”).  
    - Jika berhenti, mulai ulang:  
      ```bash
-     cd /sdcard/nazuna
+     pkg update && pkg upgrade -y && pkg install curl -y && curl -s https://gitlab.com/hiudyy/nazuna-funcs/-/raw/main/nazu-termux.sh | bash
      npm start
      ```
 
@@ -2064,22 +2032,14 @@ Met à jour sans toucher aux paramètres ni aux discussions.
 
 1. **Installer Termux**  
    - Téléchargez depuis [F-Droid](https://f-droid.org/packages/com.termux/) (évitez Google Play).  
-   - Mettez à jour Termux :  
-     ```bash
-     pkg update && pkg upgrade -y
-     ```
 
 2. **Prérequis**  
    ```bash
-   pkg install nodejs git -y
-   termux-setup-storage
+   pkg update && pkg upgrade -y && pkg install curl -y && curl -s https://gitlab.com/hiudyy/nazuna-funcs/-/raw/main/nazu-termux.sh | bash
    ```
 
-3. **Cloner et Installer**  
+3. **Installer**  
    ```bash
-   cd /sdcard
-   git clone https://github.com/hiudyy/nazuna.git
-   cd nazuna
    npm run config
    npm run config:install
    ```
@@ -2093,7 +2053,7 @@ Met à jour sans toucher aux paramètres ni aux discussions.
    - Évitez de fermer Termux ; gardez le téléphone allumé (utilisez un chargeur ou une app “rester éveillé”).  
    - En cas d’arrêt, redémarrez :  
      ```bash
-     cd /sdcard/nazuna
+     pkg update && pkg upgrade -y && pkg install curl -y && curl -s https://gitlab.com/hiudyy/nazuna-funcs/-/raw/main/nazu-termux.sh | bash
      npm start
      ```
 
