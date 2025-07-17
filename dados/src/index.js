@@ -463,7 +463,8 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
   SocketActions = nazu;
   
   var config = JSON.parse(fs.readFileSync(__dirname+'/config.json'));
-  var { numerodono, nomedono, nomebot, prefixo, debug, language } = config;
+  var { numerodono, nomedono, nomebot, prefixo, debug } = config;
+  var language = config.language || "pt";
   var { menu, menudown, menuadm, menubn, menuDono, menuMembros, menuFerramentas, menuSticker, menuIa, menuAlterador, menuLogos, menuTopCmd } = require(`${__dirname}/langs/${language}/menus/index.js`);
   var prefix = prefixo;
   var numerodono = String(numerodono);
