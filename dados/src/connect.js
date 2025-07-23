@@ -23,7 +23,6 @@ const pino = require('pino');
 const fs = require('fs').promises;
 const path = require('path');
 
-// Configuration and constants
 const logger = pino({ level: 'silent' });
 const AUTH_DIR_PRIMARY = path.join(__dirname, '..', 'database', 'qr-code');
 const AUTH_DIR_SECONDARY = path.join(__dirname, '..', 'database', 'qr-code-secondary');
@@ -32,15 +31,12 @@ const msgRetryCounterCache = new NodeCache({ stdTTL: 120, useClones: false });
 const { prefixo, nomebot, nomedono, numerodono } = require('./config.json');
 const indexModule = require(path.join(__dirname, 'index.js'));
 
-// Command-line arguments
 const codeMode = process.argv.includes('--code');
 const dualMode = process.argv.includes('--dual');
 
-// Message cache for performance
 const messagesCache = new Map();
 setInterval(() => messagesCache.clear(), 600000);
 
-// Readline utility for user input
 const ask = (question) => {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   return new Promise((resolve) => rl.question(question, (answer) => {
@@ -49,21 +45,17 @@ const ask = (question) => {
   }));
 };
 
-// Group metadata cache
 const groupCache = new NodeCache({ stdTTL: 5 * 60, useClones: false });
 
-// In-memory store for messages
 const store = makeInMemoryStore({ logger });
 let secondaryNazunaSock = null;
 let useSecondary = false;
 
-// Fetch message from store
 async function getMessage(key) {
   const msg = await store.loadMessage(key.remoteJid, key.id);
   return msg?.message || proto.Message.fromObject({});
 }
 
-// Create a WhatsApp socket
 async function createBotSocket(authDir, isPrimary = true) {
   await fs.mkdir(DATABASE_DIR, { recursive: true });
   await fs.mkdir(authDir, { recursive: true });
@@ -93,7 +85,6 @@ async function createBotSocket(authDir, isPrimary = true) {
   store.bind(NazunaSock.ev);
   NazunaSock.ev.on('creds.update', saveCreds);
 
-  // Handle pairing code for non-QR authentication
   if (codeMode && !NazunaSock.authState.creds.registered) {
     let phoneNumber = await ask('📱 Por favor, insira o número de telefone (com DDD, sem espaços ou caracteres especiais): ');
     phoneNumber = phoneNumber.replace(/\D/g, '');
@@ -107,13 +98,11 @@ async function createBotSocket(authDir, isPrimary = true) {
   }
 
   if (isPrimary) {
-    // Handle group updates
     NazunaSock.ev.on('groups.update', async ([ev]) => {
       const meta = await NazunaSock.groupMetadata(ev.id).catch(() => null);
       if (meta) groupCache.set(ev.id, meta);
     });
 
-    // Handle group participant updates
     NazunaSock.ev.on('group-participants.update', async (inf) => {
       const from = inf.id;
       if (inf.participants[0].startsWith(NazunaSock.user.id.split(':')[0])) return;
@@ -133,7 +122,6 @@ async function createBotSocket(authDir, isPrimary = true) {
         return;
       }
 
-      // X9 mode: Notify admin promotions/demotions
       if ((inf.action === 'promote' || inf.action === 'demote') && jsonGp.x9) {
         const action = inf.action === 'promote' ? 'promovido a administrador' : 'rebaixado de administrador';
         const by = inf.author || 'alguém';
@@ -143,7 +131,6 @@ async function createBotSocket(authDir, isPrimary = true) {
         });
       }
 
-      // Anti-fake: Remove participants with non-allowed country codes
       if (inf.action === 'add' && jsonGp.antifake) {
         const participant = inf.participants[0];
         const countryCode = participant.split('@')[0].substring(0, 2);
@@ -156,7 +143,6 @@ async function createBotSocket(authDir, isPrimary = true) {
         }
       }
 
-      // Anti-PT: Remove Portuguese numbers
       if (inf.action === 'add' && jsonGp.antipt) {
         const participant = inf.participants[0];
         const countryCode = participant.split('@')[0].substring(0, 3);
@@ -169,7 +155,6 @@ async function createBotSocket(authDir, isPrimary = true) {
         }
       }
 
-      // Blacklist: Remove banned users
       if (inf.action === 'add' && jsonGp.blacklist?.[inf.participants[0]]) {
         const sender = inf.participants[0];
         try {
@@ -184,7 +169,6 @@ async function createBotSocket(authDir, isPrimary = true) {
         return;
       }
 
-      // Welcome message
       if (inf.action === 'add' && jsonGp.bemvindo) {
         const sender = inf.participants[0];
         const welcomeText = jsonGp.textbv && jsonGp.textbv.length > 1
@@ -221,7 +205,6 @@ async function createBotSocket(authDir, isPrimary = true) {
         }
       }
 
-      // Exit message
       if (inf.action === 'remove' && jsonGp.exit?.enabled) {
         const sender = inf.participants[0];
         const exitText = jsonGp.exit.text && jsonGp.exit.text.length > 1
@@ -248,7 +231,6 @@ async function createBotSocket(authDir, isPrimary = true) {
       }
     });
 
-    // Handle incoming messages
     NazunaSock.ev.on('messages.upsert', async (m) => {
       if (!m.messages || !Array.isArray(m.messages) || m.type !== 'notify') return;
       try {
@@ -268,7 +250,6 @@ async function createBotSocket(authDir, isPrimary = true) {
       }
     });
 
-    // Handle connection updates for primary socket
     NazunaSock.ev.on('connection.update', async (update) => {
       const { connection, lastDisconnect, qr } = update;
 
@@ -304,7 +285,6 @@ async function createBotSocket(authDir, isPrimary = true) {
       }
     });
   } else {
-    // Handle connection updates for secondary socket
     NazunaSock.ev.on('connection.update', async (update) => {
       const { connection, lastDisconnect } = update;
 
@@ -339,7 +319,6 @@ async function createBotSocket(authDir, isPrimary = true) {
   return NazunaSock;
 }
 
-// Start the bot
 async function startNazu() {
   try {
     console.log(`🚀 Iniciando Nazuna... Modo dual: ${dualMode ? 'Ativado' : 'Desativado'}`);
