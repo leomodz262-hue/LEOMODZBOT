@@ -515,7 +515,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
     const body = getMessageText(info.message) || info?.text || '';
     
     const args = body.trim().split(/ +/).slice(1);
-    const q = args.join(' ');
+    var q = args.join(' ');
     const budy2 = normalizar(body);
  
     const menc_prt = info.message?.extendedTextMessage?.contextInfo?.participant;
@@ -563,7 +563,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
     
     const groupPrefix = groupData.customPrefix || prefixo;
     const isCmd = body.trim().startsWith(groupPrefix);
-    const command = isCmd ? (normalizar(body.trim().slice(groupPrefix.length).split(/ +/).shift().trim())).replace(/\s+/g, '') : null;
+    var command = isCmd ? (normalizar(body.trim().slice(groupPrefix.length).split(/ +/).shift().trim())).replace(/\s+/g, '') : null;
  
     if (!isGroup) {
   if (antipvData.mode === 'antipv' && !isOwner) {
