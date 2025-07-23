@@ -1289,7 +1289,7 @@ if ((budy2.includes('@' + nazu.user.id.split(':')[0]) && !isCmd && !info.key.fro
       jSoNzIn.id_enviou_marcada = jsonO.participant;
       jSoNzIn.marcou_sua_mensagem = (jsonO.participant == (nazu.user.id.split(':')[0]+'@s.whatsapp.net'));
     };
-    const respAssist = await ia.makeAssistentRequest(jSoNzIn);
+    const respAssist = await ia.makeAssistentRequest({mensagens: [jSoNzIn]}, pathz.join(__dirname, 'index.js'));
     if(respAssist.resp && respAssist.resp.length > 0) {
       for(msgza of respAssist.resp) {
         if(msgza.react) await nazu.react(msgza.react);
