@@ -605,6 +605,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
     const isAntiLinkGp = groupData.antilinkgp;
     const isAntiDel = groupData.antidel;
     const isAutoRepo = groupData.autorepo;
+    const isAssistente = groupData.assistente;
     const isModoLite = isGroup && isModoLiteActive(groupData, modoLiteGlobal);
   
     if (isGroup && isOnlyAdmin && !isGroupAdmin) {
@@ -1263,7 +1264,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
  
     if(budy2.match(/^(\d+)d(\d+)$/))reply(+budy2.match(/^(\d+)d(\d+)$/)[1]>50||+budy2.match(/^(\d+)d(\d+)$/)[2]>100?"❌ Limite: max 50 dados e 100 lados":"🎲 Rolando "+budy2.match(/^(\d+)d(\d+)$/)[1]+"d"+budy2.match(/^(\d+)d(\d+)$/)[2]+"...\n🎯 Resultados: "+(r=[...Array(+budy2.match(/^(\d+)d(\d+)$/)[1])].map(_=>1+Math.floor(Math.random()*+budy2.match(/^(\d+)d(\d+)$/)[2]))).join(", ")+"\n📊 Total: "+r.reduce((a,b)=>a+b,0));
 
-if ((!info.key.fromMe && !isCmd) && ((budy2.includes('@' + nazu.user.id.split(':')[0])) || (menc_os2 && menc_os2 == (nazu.user.id.split(':')[0]+'@s.whatsapp.net')))) {
+if ((!info.key.fromMe && isAssistente && !isCmd) && ((budy2.includes('@' + nazu.user.id.split(':')[0])) || (menc_os2 && menc_os2 == (nazu.user.id.split(':')[0]+'@s.whatsapp.net')))) {
   if (budy2.replaceAll('@' + nazu.user.id.split(':')[0], '').length > 2) {
     const jSoNzIn = {
       texto: budy2.replaceAll('@' + nazu.user.id.split(':')[0], '').trim(),
@@ -4943,6 +4944,21 @@ case 'listadv': case 'warninglist':
     groupData.autorepo = !groupData.autorepo;
     fs.writeFileSync(groupFilePath, JSON.stringify(groupData, null, 2));
     reply(`✅ Auto resposta ${groupData.autorepo ? 'ativada' : 'desativada'}!`);
+   } catch (e) {
+    console.error(e);
+    reply("Ocorreu um erro 💔");
+   }
+   break;
+   
+   case 'assistente': case 'assistent':
+    try {
+    if (!isGroup) return reply("Isso só pode ser usado em grupo 💔");
+    if (!isGroupAdmin) return reply("Você precisa ser administrador 💔");
+    const groupFilePath = __dirname + `/../database/grupos/${from}.json`;
+    let groupData = fs.existsSync(groupFilePath) ? JSON.parse(fs.readFileSync(groupFilePath)) : {};
+    groupData.assistente = !groupData.assistente;
+    fs.writeFileSync(groupFilePath, JSON.stringify(groupData, null, 2));
+    reply(`✅ *Assistente ${groupData.assistente ? 'ativada' : 'desativada'} com sucesso!*\n\n⚠️ Esta é uma funcionalidade *experimental (beta)* e ainda está em fase de testes. Podem ocorrer erros ou comportamentos inesperados. Caso encontre algo estranho, avise um administrador!`);
    } catch (e) {
     console.error(e);
     reply("Ocorreu um erro 💔");
