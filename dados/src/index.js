@@ -1292,7 +1292,7 @@ if ((!info.key.fromMe && !isCmd) && ((budy2.includes('@' + nazu.user.id.split(':
     const respAssist = await ia.makeAssistentRequest({mensagens: [jSoNzIn]}, pathz.join(__dirname, 'index.js'));
     if(respAssist.resp && respAssist.resp.length > 0) {
       for(msgza of respAssist.resp) {
-        if(msgza.react) await nazu.react(msgza.react);
+        if(msgza.react) await nazu.react(msgza.react.replaceAll(' ', '').replaceAll('\n', ''));
         if(msgza.resp && msgza.resp.length > 0) await reply(msgza.resp);
         if(msgza.actions) {
           if(msgza.actions.comando) var command = msgza.actions.comando;
