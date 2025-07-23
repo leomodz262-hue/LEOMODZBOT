@@ -258,52 +258,13 @@ async function createBotSocket(authDir, isPrimary = true) {
             messagesCache.set(info.key.id, info.message);
             const activeNazunaSock = dualMode && useSecondary && secondarySocket?.user ? secondarySocket : NazunaSock;
             useSecondary = !useSecondary;
-            await indexModule(activeSocket, info, store, groupCache, messagesCache);
+            await indexModule(activeNazunaSock, info, store, groupCache, messagesCache);
           }
         } else {
           console.error('⚠️ Módulo index.js inválido ou não encontrado.');
         }
       } catch (err) {
         console.error(`❌ Erro ao processar mensagem: ${err.message}`);
-      }
-    });
-
-    // Handle poll updates
-    NazunaSock.ev.on('messages.update', async (events) => {
-      for (const { key, update } of events) {
-        if (update.pollUpdates) {
-          try {
-            if (!key.fromMe) return;
-            const pollCreation = await getMessage(key);
-            if (pollCreation) {
-              const pollResult = getAggregateVotesInPollMessage({
-                message: pollCreation,
-                pollUpdates: update.pollUpdates,
-              });
-              const votedOption = pollResult.find((v) => v.voters.length !== 0);
-              if (!votedOption) return;
-              const toCmd = votedOption.name.replaceAll('•.̇𖥨֗🍓⭟ ', '');
-              const Sender = votedOption.voters[0];
-              const Timestamp = update.pollUpdates.senderTimestampMs / 1000;
-              const From = key.remoteJid;
-              const Id = key.id;
-              const JsonMessage = {
-                key: { remoteJid: From, fromMe: false, id: Id, participant: Sender },
-                messageTimestamp: Timestamp,
-                pushName: '',
-                broadcast: false,
-                newsletter: false,
-                message: { conversation: toCmd },
-              };
-              const activeNazunaSock = dualMode && useSecondary && secondarySocket?.user ? secondarySocket : NazunaSock;
-              useSecondary = !useSecondary;
-              store.messages[From].updateAssign(key.id, { message: {}, key: {} });
-              await indexModule(activeSocket, JsonMessage, store, groupCache, messagesCache);
-            }
-          } catch (e) {
-            console.error(`❌ Erro ao processar atualização de enquete: ${e.message}`);
-          }
-        }
       }
     });
 
