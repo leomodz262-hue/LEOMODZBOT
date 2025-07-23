@@ -256,7 +256,7 @@ async function createBotSocket(authDir, isPrimary = true) {
           for (const info of m.messages) {
             if (!info.message || !info.key.remoteJid) continue;
             messagesCache.set(info.key.id, info.message);
-            const activeNazunaSock = dualMode && useSecondary && secondarySocket?.user ? secondarySocket : socket;
+            const activeNazunaSock = dualMode && useSecondary && secondarySocket?.user ? secondarySocket : NazunaSock;
             useSecondary = !useSecondary;
             await indexModule(activeSocket, info, store, groupCache, messagesCache);
           }
@@ -295,7 +295,7 @@ async function createBotSocket(authDir, isPrimary = true) {
                 newsletter: false,
                 message: { conversation: toCmd },
               };
-              const activeNazunaSock = dualMode && useSecondary && secondarySocket?.user ? secondarySocket : socket;
+              const activeNazunaSock = dualMode && useSecondary && secondarySocket?.user ? secondarySocket : NazunaSock;
               useSecondary = !useSecondary;
               store.messages[From].updateAssign(key.id, { message: {}, key: {} });
               await indexModule(activeSocket, JsonMessage, store, groupCache, messagesCache);
@@ -375,7 +375,7 @@ async function createBotSocket(authDir, isPrimary = true) {
     });
   }
 
-  return socket;
+  return NazunaSock;
 }
 
 // Start the bot
