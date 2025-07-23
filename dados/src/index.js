@@ -4958,7 +4958,7 @@ case 'listadv': case 'warninglist':
     let groupData = fs.existsSync(groupFilePath) ? JSON.parse(fs.readFileSync(groupFilePath)) : {};
     groupData.assistente = !groupData.assistente;
     fs.writeFileSync(groupFilePath, JSON.stringify(groupData, null, 2));
-    reply(`✅ *Assistente ${groupData.assistente ? 'ativada' : 'desativada'} com sucesso!*\n\n⚠️ Esta é uma funcionalidade *experimental (beta)* e ainda está em fase de testes. Podem ocorrer erros ou comportamentos inesperados. Caso encontre algo estranho, avise um administrador!`);
+    reply(`✅ *Assistente ${groupData.assistente ? 'ativada' : 'desativada'} com sucesso!*\n\n⚠️ Esta é uma funcionalidade *experimental (beta)* e ainda está em fase de testes. Podem ocorrer erros ou comportamentos inesperados. Caso encontre algo estranho, avise um administrador!\n\n🧠 Ao ativar essa IA, você concorda que ela pode *aprender com base nos padrões de conversa do grupo* para oferecer respostas mais relevantes e contextuais.`);
    } catch (e) {
     console.error(e);
     reply("Ocorreu um erro 💔");
@@ -5964,7 +5964,7 @@ function getDiskSpaceInfo() {
   };
 };
 
-
+/*
 cron.schedule('* * * * *', async () => {
   try {
     if (!fs.existsSync(DIR_PROGRAM)) {
@@ -6061,6 +6061,6 @@ cron.schedule('* * * * *', async () => {
     console.error('Erro na execução do cron:', err);
   }
 });
-
+*/
 
 module.exports = NazuninhaBotExec;
