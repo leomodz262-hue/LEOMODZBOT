@@ -8,14 +8,14 @@ const readline = require('readline');
 const os = require('os');
 const { promisify } = require('util');
 const execAsync = promisify(exec);
-const { loadMessages, getMessages } = require('../langs/loader.js');
 
-const REPO_URL = "https://github.com/hiudyy/nazuna.git";
+// Configuration constants
+const REPO_URL = 'https://github.com/hiudyy/nazuna.git';
 const BACKUP_DIR = path.join(process.cwd(), `backup_${new Date().toISOString().replace(/[:.]/g, '_').replace(/T/, '_')}`);
-const TEMP_DIR = path.join(process.cwd(), "temp_nazuna");
+const TEMP_DIR = path.join(process.cwd(), 'temp_nazuna');
 const isWindows = os.platform() === 'win32';
 
-
+// ANSI color codes for console output
 const colors = {
   reset: '\x1b[0m',
   green: '\x1b[1;32m',
@@ -25,10 +25,10 @@ const colors = {
   cyan: '\x1b[1;36m',
   magenta: '\x1b[1;35m',
   dim: '\x1b[2m',
-  bold: '\x1b[1m'
+  bold: '\x1b[1m',
 };
 
-
+// Console message helpers
 function printMessage(text) {
   console.log(`${colors.green}${text}${colors.reset}`);
 }
@@ -49,12 +49,11 @@ function printSeparator() {
   console.log(`${colors.blue}============================================${colors.reset}`);
 }
 
-
+// Graceful shutdown setup
 function setupGracefulShutdown() {
-    const lang = getMessages();
   const shutdown = () => {
     console.log('\n');
-    printWarning(lang.config_cancelled);
+    printWarning('🛑 Atualização cancelada pelo usuário.');
     process.exit(0);
   };
 
@@ -62,131 +61,125 @@ function setupGracefulShutdown() {
   process.on('SIGTERM', shutdown);
 }
 
-
+// Display startup header
 async function displayHeader() {
-    const lang = getMessages();
   const header = [
-    `${colors.bold}${lang.updater_header}${colors.reset}`,
-    `${colors.bold}${lang.creator_message}${colors.reset}`
+    `${colors.bold}🚀 Nazuna - Atualizador${colors.reset}`,
+    `${colors.bold}👨‍💻 Criado por Hiudy${colors.reset}`,
   ];
-  
-  printSeparator();
 
+  printSeparator();
   for (const line of header) {
-    await new Promise(resolve => {
+    await new Promise((resolve) => {
       process.stdout.write(line + '\n');
       setTimeout(resolve, 100);
     });
   }
-  
   printSeparator();
   console.log();
 }
 
-
+// Check system requirements (git and npm)
 async function checkRequirements() {
-    const lang = getMessages();
-  printInfo(lang.checking_requirements);
-  
+  printInfo('🔍 Verificando requisitos do sistema...');
+
   try {
     await execAsync('git --version');
-    printDetail(lang.git_found);
+    printDetail('✅ Git encontrado.');
   } catch (error) {
-    printWarning(lang.git_not_found);
+    printWarning('⚠️ Git não encontrado! É necessário para atualizar o Nazuna.');
     if (isWindows) {
-      printInfo(lang.git_download_win);
+      printInfo('📥 Instale o Git em: https://git-scm.com/download/win');
     } else if (os.platform() === 'darwin') {
-      printInfo(lang.git_install_mac);
+      printInfo('📥 Instale o Git com: brew install git');
     } else {
-      printInfo(lang.git_install_linux);
+      printInfo('📥 Instale o Git com: sudo apt-get install git (Ubuntu/Debian) ou equivalente.');
     }
     process.exit(1);
   }
 
   try {
     await execAsync('npm --version');
-    printDetail(lang.npm_found);
+    printDetail('✅ NPM encontrado.');
   } catch (error) {
-    printWarning(lang.npm_not_found);
-    printInfo(lang.npm_download);
+    printWarning('⚠️ NPM não encontrado! É necessário para instalar dependências.');
+    printInfo('📥 Instale o Node.js e NPM em: https://nodejs.org');
     process.exit(1);
   }
-  
-  printDetail(lang.requirements_met);
+
+  printDetail('✅ Todos os requisitos atendidos.');
 }
 
-
+// Confirm update with countdown
 async function confirmUpdate() {
-    const lang = getMessages();
+  printWarning('⚠️ Atenção: A atualização sobrescreverá arquivos existentes, exceto configurações e dados salvos.');
+  printInfo('📂 Um backup será criado automaticamente.');
+  printWarning('🛑 Pressione Ctrl+C para cancelar a qualquer momento.');
+
   return new Promise((resolve) => {
-    printWarning(lang.update_warning);
-    printInfo(lang.backup_info);
-    printWarning(lang.cancel_info);
-    
     let countdown = 5;
     const timer = setInterval(() => {
-      process.stdout.write(`\r${lang.starting_in(countdown)}${' '.repeat(20)}`);
+      process.stdout.write(`\r⏳ Iniciando em ${countdown} segundos...${' '.repeat(20)}`);
       countdown--;
-      
+
       if (countdown < 0) {
         clearInterval(timer);
-        process.stdout.write("\r                                  \n");
-        printMessage(lang.proceeding_with_update);
+        process.stdout.write('\r                                  \n');
+        printMessage('🚀 Prosseguindo com a atualização...');
         resolve();
       }
     }, 1000);
   });
-};
+}
 
-
+// Create backup of critical files
 async function createBackup() {
-    const lang = getMessages();
-  printMessage(lang.creating_backup);
-  
+  printMessage('📁 Criando backup dos arquivos...');
+
   try {
     await fs.mkdir(path.join(BACKUP_DIR, 'dados', 'database'), { recursive: true });
     await fs.mkdir(path.join(BACKUP_DIR, 'dados', 'src'), { recursive: true });
     await fs.mkdir(path.join(BACKUP_DIR, 'dados', 'midias'), { recursive: true });
-    
+
     const databaseDir = path.join(process.cwd(), 'dados', 'database');
     if (fsSync.existsSync(databaseDir)) {
-      printDetail(lang.copying_database);
+      printDetail('📂 Copiando diretório de banco de dados...');
       await copyDirectoryAsync(databaseDir, path.join(BACKUP_DIR, 'dados', 'database'));
     }
 
     const configFile = path.join(process.cwd(), 'dados', 'src', 'config.json');
     if (fsSync.existsSync(configFile)) {
-      printDetail(lang.copying_config);
+      printDetail('📝 Copiando arquivo de configuração...');
       await fs.copyFile(configFile, path.join(BACKUP_DIR, 'dados', 'src', 'config.json'));
     }
-    
+
     const midiasDir = path.join(process.cwd(), 'dados', 'midias');
     if (fsSync.existsSync(midiasDir)) {
-      printDetail(lang.copying_media);
+      printDetail('🖼️ Copiando diretório de mídias...');
       await copyDirectoryAsync(midiasDir, path.join(BACKUP_DIR, 'dados', 'midias'));
     }
-    
-    printMessage(lang.backup_saved_at(BACKUP_DIR));
+
+    printMessage(`✅ Backup salvo em: ${BACKUP_DIR}`);
   } catch (error) {
-    printWarning(lang.error_creating_backup(error.message));
+    printWarning(`❌ Erro ao criar backup: ${error.message}`);
     throw error;
   }
 }
 
-
+// Recursively copy directory
 async function copyDirectoryAsync(source, destination) {
   if (!fsSync.existsSync(destination)) {
     await fs.mkdir(destination, { recursive: true });
   }
-  
+
   const files = await fs.readdir(source);
-  
+
   for (const file of files) {
     const sourcePath = path.join(source, file);
     const destPath = path.join(destination, file);
-    
+
     const stats = await fs.stat(sourcePath);
-    
+
     if (stats.isDirectory()) {
       await copyDirectoryAsync(sourcePath, destPath);
     } else {
@@ -195,11 +188,10 @@ async function copyDirectoryAsync(source, destination) {
   }
 }
 
-
+// Download latest version from GitHub
 async function downloadUpdate() {
-    const lang = getMessages();
-  printMessage(lang.downloading_latest_version);
-  
+  printMessage('📥 Baixando a versão mais recente do Nazuna...');
+
   try {
     if (fsSync.existsSync(TEMP_DIR)) {
       if (isWindows) {
@@ -209,18 +201,19 @@ async function downloadUpdate() {
       }
     }
 
-    printDetail(lang.cloning_repo);
+    printDetail('🔄 Clonando repositório...');
     await new Promise((resolve, reject) => {
-      const gitProcess = exec(`git clone --depth 1 ${REPO_URL} "${TEMP_DIR}"`, 
-        (error) => error ? reject(error) : resolve());
+      const gitProcess = exec(`git clone --depth 1 ${REPO_URL} "${TEMP_DIR}"`, (error) =>
+        error ? reject(error) : resolve()
+      );
 
       const spinner = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
       let i = 0;
       const interval = setInterval(() => {
-        process.stdout.write(`\r${spinner[i]} ${lang.downloading}`);
+        process.stdout.write(`\r${spinner[i]} Baixando...`);
         i = (i + 1) % spinner.length;
       }, 100);
-      
+
       gitProcess.on('close', () => {
         clearInterval(interval);
         process.stdout.write('\r                 \r');
@@ -232,34 +225,33 @@ async function downloadUpdate() {
     if (fsSync.existsSync(readmePath)) {
       await fs.unlink(readmePath);
     }
-    
-    printMessage(lang.download_complete);
+
+    printMessage('✅ Download concluído com sucesso.');
   } catch (error) {
-    printWarning(lang.failed_to_download(error.message));
-    printInfo(lang.checking_github_connectivity);
+    printWarning(`❌ Falha ao baixar a atualização: ${error.message}`);
+    printInfo('🔍 Verificando conectividade com o GitHub...');
     try {
       if (isWindows) {
         await execAsync('ping github.com -n 1');
       } else {
         await execAsync('ping -c 1 github.com');
       }
-      printWarning(lang.permission_or_git_config_error);
+      printWarning('⚠️ Verifique permissões ou configuração do Git.');
     } catch {
-      printWarning(lang.internet_connection_error);
+      printWarning('⚠️ Sem conexão com a internet. Verifique sua rede.');
     }
     throw error;
   }
 }
 
-
+// Clean old files
 async function cleanOldFiles() {
-    const lang = getMessages();
-  printMessage(lang.cleaning_old_files);
-  
+  printMessage('🧹 Limpando arquivos antigos...');
+
   try {
     const gitDir = path.join(process.cwd(), '.git');
     if (fsSync.existsSync(gitDir)) {
-      printDetail(lang.removing_git_dir);
+      printDetail('📂 Removendo diretório .git...');
       if (isWindows) {
         execSync(`rmdir /s /q "${gitDir}"`, { stdio: 'ignore' });
       } else {
@@ -269,40 +261,40 @@ async function cleanOldFiles() {
 
     const packageJson = path.join(process.cwd(), 'package.json');
     if (fsSync.existsSync(packageJson)) {
-      printDetail(lang.removing_package_json);
+      printDetail('📝 Removendo package.json...');
       await fs.unlink(packageJson);
     }
-    
+
     const packageLockJson = path.join(process.cwd(), 'package-lock.json');
     if (fsSync.existsSync(packageLockJson)) {
-      printDetail(lang.removing_package_lock);
+      printDetail('📝 Removendo package-lock.json...');
       await fs.unlink(packageLockJson);
     }
 
     const dadosDir = path.join(process.cwd(), 'dados');
     if (fsSync.existsSync(dadosDir)) {
-      printDetail(lang.cleaning_data_dir);
+      printDetail('📂 Limpando diretório de dados...');
       await cleanDirectoryAsync(dadosDir, BACKUP_DIR);
     }
-    
-    printMessage(lang.cleaning_complete);
+
+    printMessage('✅ Limpeza concluída com sucesso.');
   } catch (error) {
-    printWarning(lang.error_cleaning_files(error.message));
+    printWarning(`❌ Erro ao limpar arquivos antigos: ${error.message}`);
     throw error;
   }
 }
 
-
+// Clean directory while preserving backup
 async function cleanDirectoryAsync(directory, excludeDir) {
   const files = await fs.readdir(directory);
-  
+
   for (const file of files) {
     const filePath = path.join(directory, file);
 
     if (filePath === excludeDir) {
       continue;
     }
-    
+
     const stats = await fs.stat(filePath);
     if (stats.isDirectory()) {
       if (isWindows) {
@@ -316,11 +308,10 @@ async function cleanDirectoryAsync(directory, excludeDir) {
   }
 }
 
-
+// Apply update by copying new files
 async function applyUpdate() {
-    const lang = getMessages();
-  printMessage(lang.applying_update);
-  
+  printMessage('🚀 Aplicando atualização...');
+
   try {
     const tempFiles = await fs.readdir(TEMP_DIR);
     let filesCopied = 0;
@@ -328,20 +319,19 @@ async function applyUpdate() {
     for (const file of tempFiles) {
       const sourcePath = path.join(TEMP_DIR, file);
       const destPath = path.join(process.cwd(), file);
-      
+
       const stats = await fs.stat(sourcePath);
-      
+
       if (stats.isDirectory()) {
-        printDetail(lang.copying_dir(file));
+        printDetail(`📂 Copiando diretório ${file}...`);
         await copyDirectoryAsync(sourcePath, destPath);
       } else {
         await fs.copyFile(sourcePath, destPath);
       }
-      
-      filesCopied++;
 
+      filesCopied++;
       if (filesCopied % 5 === 0) {
-        printDetail(lang.files_copied(filesCopied, tempFiles.length));
+        printDetail(`📊 ${filesCopied} de ${tempFiles.length} arquivos copiados.`);
       }
     }
 
@@ -352,19 +342,18 @@ async function applyUpdate() {
         await fs.rm(TEMP_DIR, { recursive: true, force: true });
       }
     }
-    
-    printMessage(lang.update_applied_success);
+
+    printMessage('✅ Atualização aplicada com sucesso.');
   } catch (error) {
-    printWarning(lang.error_applying_update(error.message));
+    printWarning(`❌ Erro ao aplicar atualização: ${error.message}`);
     throw error;
   }
 }
 
-
+// Restore backup files
 async function restoreBackup() {
-    const lang = getMessages();
-  printMessage(lang.restoring_backup);
-  
+  printMessage('📂 Restaurando backup...');
+
   try {
     await fs.mkdir(path.join(process.cwd(), 'dados', 'database'), { recursive: true });
     await fs.mkdir(path.join(process.cwd(), 'dados', 'src'), { recursive: true });
@@ -372,93 +361,86 @@ async function restoreBackup() {
 
     const backupDatabaseDir = path.join(BACKUP_DIR, 'dados', 'database');
     if (fsSync.existsSync(backupDatabaseDir)) {
-      printDetail(lang.restoring_database);
+      printDetail('📂 Restaurando banco de dados...');
       await copyDirectoryAsync(backupDatabaseDir, path.join(process.cwd(), 'dados', 'database'));
     }
 
     const backupConfigFile = path.join(BACKUP_DIR, 'dados', 'src', 'config.json');
     if (fsSync.existsSync(backupConfigFile)) {
-      printDetail(lang.restoring_config);
+      printDetail('📝 Restaurando arquivo de configuração...');
       await fs.copyFile(backupConfigFile, path.join(process.cwd(), 'dados', 'src', 'config.json'));
     }
 
     const backupMidiasDir = path.join(BACKUP_DIR, 'dados', 'midias');
     if (fsSync.existsSync(backupMidiasDir)) {
-      printDetail(lang.restoring_media);
+      printDetail('🖼️ Restaurando diretório de mídias...');
       await copyDirectoryAsync(backupMidiasDir, path.join(process.cwd(), 'dados', 'midias'));
     }
-    
-    printMessage(lang.restore_success);
+
+    printMessage('✅ Backup restaurado com sucesso.');
   } catch (error) {
-    printWarning(lang.error_restoring_backup(error.message));
+    printWarning(`❌ Erro ao restaurar backup: ${error.message}`);
     throw error;
   }
 }
 
-
+// Install dependencies using npm run config:install
 async function installDependencies() {
-    const lang = getMessages();
-  printMessage(lang.installing_deps);
-  
-  try {
-    const installCommand = isWindows ? 
-      'npm install --no-optional --force --no-bin-links' : 
-      'npm install --no-optional --force --no-bin-links';
+  printMessage('📦 Instalando dependências...');
 
+  try {
     await new Promise((resolve, reject) => {
-      const npmProcess = exec(installCommand, (error) => {
-        if (error) reject(error);
-        else resolve();
-      });
+      const npmProcess = exec('npm run config:install', { shell: isWindows }, (error) =>
+        error ? reject(error) : resolve()
+      );
 
       const spinner = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
       let i = 0;
       const interval = setInterval(() => {
-        process.stdout.write(`\r${spinner[i]} ${lang.installing_dependencies}`);
+        process.stdout.write(`\r${spinner[i]} Instalando dependências...`);
         i = (i + 1) % spinner.length;
       }, 100);
-      
+
       npmProcess.on('close', () => {
         clearInterval(interval);
         process.stdout.write('\r                                \r');
       });
     });
-    
-    printMessage(lang.deps_installed_success);
+
+    printMessage('✅ Dependências instaladas com sucesso.');
   } catch (error) {
-    printWarning(lang.failed_to_install_deps(error.message));
-    printInfo(lang.manual_install_prompt);
+    printWarning(`❌ Falha ao instalar dependências: ${error.message}`);
+    printInfo('📝 Tente executar manualmente: npm run config:install');
     throw error;
   }
 }
 
-
+// Cleanup temporary files
 async function cleanup() {
-    const lang = getMessages();
-  printMessage(lang.finishing_up);
-  
+  printMessage('🧹 Finalizando e limpando arquivos temporários...');
+
   try {
     if (fsSync.existsSync(BACKUP_DIR)) {
-        printDetail(lang.removing_backup_dir);
-        if (isWindows) {
-          execSync(`rmdir /s /q "${BACKUP_DIR}"`, { stdio: 'ignore' });
-        } else {
-          await fs.rm(BACKUP_DIR, { recursive: true, force: true });
-        }
-        printDetail(lang.backup_removed);
+      printDetail('📂 Removendo diretório de backup...');
+      if (isWindows) {
+        execSync(`rmdir /s /q "${BACKUP_DIR}"`, { stdio: 'ignore' });
+      } else {
+        await fs.rm(BACKUP_DIR, { recursive: true, force: true });
+      }
+      printDetail('✅ Backup removido.');
     }
   } catch (error) {
-    printWarning(lang.error_cleaning_temp_files(error.message));
+    printWarning(`❌ Erro ao limpar arquivos temporários: ${error.message}`);
   }
 }
 
-
+// Prompt user for yes/no input
 async function promptYesNo(question, defaultAnswer = 'n') {
   const rl = readline.createInterface({
     input: process.stdin,
-    output: process.stdout
+    output: process.stdout,
   });
-  
+
   return new Promise((resolve) => {
     const defaultText = defaultAnswer.toLowerCase() === 's' ? 'S/n' : 's/N';
     rl.question(`${question} (${defaultText}): `, (answer) => {
@@ -469,67 +451,61 @@ async function promptYesNo(question, defaultAnswer = 'n') {
   });
 }
 
-
+// Main function to execute update process
 async function main() {
   try {
-    await loadMessages();
-    const lang = getMessages();
     setupGracefulShutdown();
     await displayHeader();
 
     const steps = [
-      { name: lang.checking_requirements, func: checkRequirements },
-      { name: lang.update_warning, func: confirmUpdate },
-      { name: lang.creating_backup, func: createBackup },
-      { name: lang.downloading_latest_version, func: downloadUpdate },
-      { name: lang.cleaning_old_files, func: cleanOldFiles },
-      { name: lang.applying_update, func: applyUpdate },
-      { name: lang.restoring_backup, func: restoreBackup },
-      { name: lang.installing_deps, func: installDependencies },
-      { name: lang.finishing_up, func: cleanup }
+      { name: 'Verificando requisitos do sistema', func: checkRequirements },
+      { name: 'Confirmando atualização', func: confirmUpdate },
+      { name: 'Criando backup', func: createBackup },
+      { name: 'Baixando a versão mais recente', func: downloadUpdate },
+      { name: 'Limpando arquivos antigos', func: cleanOldFiles },
+      { name: 'Aplicando atualização', func: applyUpdate },
+      { name: 'Restaurando backup', func: restoreBackup },
+      { name: 'Instalando dependências', func: installDependencies },
+      { name: 'Finalizando e limpando', func: cleanup },
     ];
-    
+
     let completedSteps = 0;
     const totalSteps = steps.length;
 
     for (const step of steps) {
       await step.func();
       completedSteps++;
-      printDetail(lang.progress(completedSteps, totalSteps));
+      printDetail(`📊 Progresso: ${completedSteps}/${totalSteps} etapas concluídas.`);
     }
-    
-    printMessage(lang.fetching_commit_info);
+
+    printMessage('🔄 Buscando informações do último commit...');
     const response = await fetch('https://api.github.com/repos/hiudyy/nazuna/commits?per_page=1', {
-      headers: { Accept: 'application/vnd.github+json' }
+      headers: { Accept: 'application/vnd.github+json' },
     });
-    
+
     if (!response.ok) {
-      throw new Error(lang.error_fetching_commits(`${response.status} ${response.statusText}`));
+      throw new Error(`Erro ao buscar commits: ${response.status} ${response.statusText}`);
     }
-    
+
     const linkHeader = response.headers.get('link');
     const NumberUp = linkHeader?.match(/page=(\d+)>;\s*rel="last"/)?.[1];
-    
-    const jsonUp = {
-      total: NumberUp
-    };
-    
+
+    const jsonUp = { total: NumberUp };
     await fs.writeFile(path.join(__dirname, '..', '..', 'database', 'updateSave.json'), JSON.stringify(jsonUp));
-    
+
     printSeparator();
-    printMessage(lang.update_complete_success);
-    printMessage(lang.start_bot_prompt);
+    printMessage('🎉 Atualização concluída com sucesso!');
+    printMessage('🚀 Inicie o bot com: npm start');
     printSeparator();
   } catch (error) {
-    const lang = getMessages();
     printSeparator();
-    printWarning(lang.error_during_update(error.message));
-    printWarning(lang.backup_location_info(BACKUP_DIR));
-    printInfo(lang.manual_restore_info);
-    printInfo(lang.contact_dev_for_help);
+    printWarning(`❌ Erro durante a atualização: ${error.message}`);
+    printWarning(`📂 Backup disponível em: ${BACKUP_DIR}`);
+    printInfo('📝 Para restaurar manualmente, copie os arquivos do backup para os diretórios correspondentes.');
+    printInfo('📩 Em caso de dúvidas, contate o desenvolvedor.');
     process.exit(1);
   }
 }
 
-
-main(); 
+// Execute main function
+main();

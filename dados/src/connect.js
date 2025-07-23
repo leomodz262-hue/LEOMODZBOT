@@ -2,67 +2,76 @@
 ═════════════════════════════
   Nazuna - Conexão WhatsApp
   Autor: Hiudy
-  Revisão: 12/07/2025
-  Donate: https://cognima.com.br/donate
+  Revisão: 21/07/2025
 ═════════════════════════════
 */
 
-const { makeWASocket, useMultiFileAuthState, proto, DisconnectReason, getAggregateVotesInPollMessage, makeInMemoryStore, fetchLatestBaileysVersion } = require('@cognima/walib');
-const Banner = require("@cognima/banners");
+const {
+  makeWASocket,
+  useMultiFileAuthState,
+  proto,
+  DisconnectReason,
+  getAggregateVotesInPollMessage,
+  makeInMemoryStore,
+  fetchLatestBaileysVersion,
+} = require('@cognima/walib');
+const Banner = require('@cognima/banners');
 const { Boom } = require('@hapi/boom');
 const { NodeCache } = require('@cacheable/node-cache');
 const readline = require('readline');
 const pino = require('pino');
 const fs = require('fs').promises;
 const path = require('path');
-const { loadMessages, getMessages } = require('./langs/loader.js');
 
-(async () => {
-  await loadMessages();
-})();
-
-const lang = getMessages();
-
+// Configuration and constants
 const logger = pino({ level: 'silent' });
 const AUTH_DIR_PRIMARY = path.join(__dirname, '..', 'database', 'qr-code');
 const AUTH_DIR_SECONDARY = path.join(__dirname, '..', 'database', 'qr-code-secondary');
 const DATABASE_DIR = path.join(__dirname, '..', 'database', 'grupos');
 const msgRetryCounterCache = new NodeCache({ stdTTL: 120, useClones: false });
 const { prefixo, nomebot, nomedono, numerodono } = require('./config.json');
-
 const indexModule = require(path.join(__dirname, 'index.js'));
 
+// Command-line arguments
 const codeMode = process.argv.includes('--code');
 const dualMode = process.argv.includes('--dual');
+
+// Message cache for performance
 const messagesCache = new Map();
 setInterval(() => messagesCache.clear(), 600000);
 
+// Readline utility for user input
 const ask = (question) => {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  return new Promise((resolve) => rl.question(question, (answer) => { rl.close(); resolve(answer.trim()); }));
+  return new Promise((resolve) => rl.question(question, (answer) => {
+    rl.close();
+    resolve(answer.trim());
+  }));
 };
 
+// Group metadata cache
 const groupCache = new NodeCache({ stdTTL: 5 * 60, useClones: false });
 
-let secondarySocket = null;
+// In-memory store for messages
+const store = makeInMemoryStore({ logger });
+let secondaryNazunaSock = null;
 let useSecondary = false;
 
-const store = makeInMemoryStore({ logger });
-
+// Fetch message from store
 async function getMessage(key) {
   const msg = await store.loadMessage(key.remoteJid, key.id);
   return msg?.message || proto.Message.fromObject({});
 }
 
+// Create a WhatsApp socket
 async function createBotSocket(authDir, isPrimary = true) {
   await fs.mkdir(DATABASE_DIR, { recursive: true });
   await fs.mkdir(authDir, { recursive: true });
 
   const { state, saveCreds } = await useMultiFileAuthState(authDir);
-  
   const { version, isLatest } = await fetchLatestBaileysVersion();
-  
-  const socket = makeWASocket({
+
+  const NazunaSock = makeWASocket({
     version,
     emitOwnEvents: true,
     fireInitQueries: true,
@@ -76,40 +85,42 @@ async function createBotSocket(authDir, isPrimary = true) {
     msgRetryCounterCache,
     auth: state,
     printQRInTerminal: !codeMode,
-    logger: logger,
+    logger,
     browser: ['Ubuntu', 'Edge', '110.0.1587.56'],
-    getMessage
+    getMessage,
   });
 
-  store.bind(socket.ev);
+  store.bind(NazunaSock.ev);
+  NazunaSock.ev.on('creds.update', saveCreds);
 
-  socket.ev.on('creds.update', saveCreds);
-
-  if (codeMode && !socket.authState.creds.registered) {
-    let phoneNumber = await ask(lang.ask_phone_number);
+  // Handle pairing code for non-QR authentication
+  if (codeMode && !NazunaSock.authState.creds.registered) {
+    let phoneNumber = await ask('📱 Por favor, insira o número de telefone (com DDD, sem espaços ou caracteres especiais): ');
     phoneNumber = phoneNumber.replace(/\D/g, '');
     if (!/^\d{10,15}$/.test(phoneNumber)) {
-      console.log(lang.invalid_number);
+      console.log('⚠️ Número inválido! Insira um número válido com 10 a 15 dígitos.');
       process.exit(1);
     }
-    const code = await socket.requestPairingCode(phoneNumber, 'N4ZUN4V4');
-    console.log(lang.pairing_code(code));
-    console.log(lang.pairing_instructions);
+    const code = await NazunaSock.requestPairingCode(phoneNumber, 'N4ZUN4V4');
+    console.log(`🔑 Código de pareamento: ${code}`);
+    console.log('📲 Envie este código no WhatsApp para autenticar o bot.');
   }
 
   if (isPrimary) {
-    socket.ev.on('groups.update', async ([ev]) => {
-      const meta = await socket.groupMetadata(ev.id).catch(() => null);
+    // Handle group updates
+    NazunaSock.ev.on('groups.update', async ([ev]) => {
+      const meta = await NazunaSock.groupMetadata(ev.id).catch(() => null);
       if (meta) groupCache.set(ev.id, meta);
     });
 
-    socket.ev.on('group-participants.update', async (inf) => {
+    // Handle group participant updates
+    NazunaSock.ev.on('group-participants.update', async (inf) => {
       const from = inf.id;
-      if (inf.participants[0].startsWith(socket.user.id.split(':')[0])) return;
+      if (inf.participants[0].startsWith(NazunaSock.user.id.split(':')[0])) return;
 
       let groupMetadata = groupCache.get(from);
       if (!groupMetadata) {
-        groupMetadata = await socket.groupMetadata(from).catch(() => null);
+        groupMetadata = await NazunaSock.groupMetadata(from).catch(() => null);
         if (!groupMetadata) return;
         groupCache.set(from, groupMetadata);
       }
@@ -122,88 +133,100 @@ async function createBotSocket(authDir, isPrimary = true) {
         return;
       }
 
+      // X9 mode: Notify admin promotions/demotions
       if ((inf.action === 'promote' || inf.action === 'demote') && jsonGp.x9) {
         const action = inf.action === 'promote' ? 'promovido a administrador' : 'rebaixado de administrador';
         const by = inf.author || 'alguém';
-        await socket.sendMessage(from, {
-          text: lang.x9_mode_message(inf.participants[0].split('@')[0], action, by.split('@')[0]),
+        await NazunaSock.sendMessage(from, {
+          text: `🚨 Atenção! @${inf.participants[0].split('@')[0]} foi ${action} por @${by.split('@')[0]}.`,
           mentions: [inf.participants[0], by],
         });
       }
 
+      // Anti-fake: Remove participants with non-allowed country codes
       if (inf.action === 'add' && jsonGp.antifake) {
         const participant = inf.participants[0];
         const countryCode = participant.split('@')[0].substring(0, 2);
         if (!['55', '35'].includes(countryCode)) {
-          await socket.groupParticipantsUpdate(from, [participant], 'remove');
-          await socket.sendMessage(from, {
-            text: lang.antifake_remove_message(participant.split('@')[0]),
+          await NazunaSock.groupParticipantsUpdate(from, [participant], 'remove');
+          await NazunaSock.sendMessage(from, {
+            text: `🚫 @${participant.split('@')[0]} foi removido por suspeita de número falso (código de país não permitido).`,
             mentions: [participant],
           });
         }
       }
 
+      // Anti-PT: Remove Portuguese numbers
       if (inf.action === 'add' && jsonGp.antipt) {
         const participant = inf.participants[0];
         const countryCode = participant.split('@')[0].substring(0, 3);
         if (countryCode === '351') {
-          await socket.groupParticipantsUpdate(from, [participant], 'remove');
-          await socket.sendMessage(from, {
-            text: lang.antipt_remove_message(participant.split('@')[0]),
+          await NazunaSock.groupParticipantsUpdate(from, [participant], 'remove');
+          await NazunaSock.sendMessage(from, {
+            text: `🇵🇹 @${participant.split('@')[0]} foi removido por ser um número de Portugal (anti-PT ativado).`,
             mentions: [participant],
           });
         }
       }
 
+      // Blacklist: Remove banned users
       if (inf.action === 'add' && jsonGp.blacklist?.[inf.participants[0]]) {
         const sender = inf.participants[0];
         try {
-          await socket.groupParticipantsUpdate(from, [sender], 'remove');
-          await socket.sendMessage(from, {
-            text: lang.blacklist_remove_message(sender.split('@')[0], jsonGp.blacklist[sender].reason),
+          await NazunaSock.groupParticipantsUpdate(from, [sender], 'remove');
+          await NazunaSock.sendMessage(from, {
+            text: `🚫 @${sender.split('@')[0]} foi removido do grupo por estar na lista negra. Motivo: ${jsonGp.blacklist[sender].reason}`,
             mentions: [sender],
           });
         } catch (e) {
-          console.error(lang.error_removing_blacklist_user(from, e));
+          console.error(`❌ Erro ao remover usuário da lista negra no grupo ${from}: ${e.message}`);
         }
         return;
       }
 
+      // Welcome message
       if (inf.action === 'add' && jsonGp.bemvindo) {
         const sender = inf.participants[0];
-        const textBv = jsonGp.textbv && jsonGp.textbv.length > 1
-          ? lang.welcome_message(jsonGp.textbv, sender).custom(jsonGp.textbv)
-          : lang.welcome_message(null, sender).default;
+        const welcomeText = jsonGp.textbv && jsonGp.textbv.length > 1
+          ? jsonGp.textbv
+          : `🎉 Bem-vindo(a), @${sender.split('@')[0]}! Você entrou no grupo *${groupMetadata.subject}*. Leia as regras e aproveite! Membros: ${groupMetadata.participants.length}. Descrição: ${groupMetadata.desc || 'Nenhuma'}.`;
 
-        const welcomeText = textBv
+        const formattedText = welcomeText
           .replaceAll('#numerodele#', `@${sender.split('@')[0]}`)
           .replaceAll('#nomedogp#', groupMetadata.subject)
           .replaceAll('#desc#', groupMetadata.desc || '')
           .replaceAll('#membros#', groupMetadata.participants.length);
 
         try {
-          const message = { text: welcomeText, mentions: [sender] };
+          const message = { text: formattedText, mentions: [sender] };
           if (jsonGp.welcome?.image) {
             let profilePic = 'https://raw.githubusercontent.com/nazuninha/uploads/main/outros/1747053564257_bzswae.bin';
             try {
-              profilePic = await socket.profilePictureUrl(sender, 'image');
+              profilePic = await NazunaSock.profilePictureUrl(sender, 'image');
             } catch (error) {}
-            const ImageZinha = jsonGp.welcome.image !== 'banner' ? { url: jsonGp.welcome.image } : await new Banner.welcomeLeave().setAvatar(profilePic).setTitle('Bem Vindo(a)').setMessage('Aceita um cafézinho enquanto lê as regras?').build();
-            message.image = ImageZinha;
+            const image = jsonGp.welcome.image !== 'banner'
+              ? { url: jsonGp.welcome.image }
+              : await new Banner.welcomeLeave()
+                  .setAvatar(profilePic)
+                  .setTitle('Bem-vindo(a)!')
+                  .setMessage('Aceita um cafézinho enquanto lê as regras?')
+                  .build();
+            message.image = image;
+            message.caption = formattedText;
             delete message.text;
-            message.caption = welcomeText;
           }
-          await socket.sendMessage(from, message);
+          await NazunaSock.sendMessage(from, message);
         } catch (e) {
-          console.error(lang.error_sending_welcome(from, e));
+          console.error(`❌ Erro ao enviar mensagem de boas-vindas no grupo ${from}: ${e.message}`);
         }
       }
 
+      // Exit message
       if (inf.action === 'remove' && jsonGp.exit?.enabled) {
         const sender = inf.participants[0];
         const exitText = jsonGp.exit.text && jsonGp.exit.text.length > 1
-          ? lang.exit_message(jsonGp.exit.text, sender).custom(jsonGp.exit.text)
-          : lang.exit_message(null, sender).default;
+          ? jsonGp.exit.text
+          : `👋 @${sender.split('@')[0]} saiu do grupo *${groupMetadata.subject}*. Até mais! Membros restantes: ${groupMetadata.participants.length}.`;
 
         const formattedText = exitText
           .replaceAll('#numerodele#', `@${sender.split('@')[0]}`)
@@ -216,34 +239,37 @@ async function createBotSocket(authDir, isPrimary = true) {
           if (jsonGp.exit?.image) {
             message.image = { url: jsonGp.exit.image };
             message.caption = formattedText;
+            delete message.text;
           }
-          await socket.sendMessage(from, message);
+          await NazunaSock.sendMessage(from, message);
         } catch (e) {
-          console.error(lang.error_sending_exit(from, e));
+          console.error(`❌ Erro ao enviar mensagem de saída no grupo ${from}: ${e.message}`);
         }
       }
     });
 
-    socket.ev.on('messages.upsert', async (m) => {
+    // Handle incoming messages
+    NazunaSock.ev.on('messages.upsert', async (m) => {
       if (!m.messages || !Array.isArray(m.messages) || m.type !== 'notify') return;
       try {
         if (typeof indexModule === 'function') {
           for (const info of m.messages) {
             if (!info.message || !info.key.remoteJid) continue;
             messagesCache.set(info.key.id, info.message);
-            const activeSocket = dualMode && useSecondary && secondarySocket?.user ? secondarySocket : socket;
+            const activeNazunaSock = dualMode && useSecondary && secondarySocket?.user ? secondarySocket : socket;
             useSecondary = !useSecondary;
             await indexModule(activeSocket, info, store, groupCache, messagesCache);
           }
         } else {
-          console.error(lang.invalid_index_module);
+          console.error('⚠️ Módulo index.js inválido ou não encontrado.');
         }
       } catch (err) {
-        console.error(lang.error_calling_index(err));
+        console.error(`❌ Erro ao processar mensagem: ${err.message}`);
       }
     });
 
-    socket.ev.on('messages.update', async (events) => {
+    // Handle poll updates
+    NazunaSock.ev.on('messages.update', async (events) => {
       for (const { key, update } of events) {
         if (update.pollUpdates) {
           try {
@@ -254,63 +280,80 @@ async function createBotSocket(authDir, isPrimary = true) {
                 message: pollCreation,
                 pollUpdates: update.pollUpdates,
               });
-              const votedOption = pollResult.find(v => v.voters.length !== 0);
+              const votedOption = pollResult.find((v) => v.voters.length !== 0);
               if (!votedOption) return;
               const toCmd = votedOption.name.replaceAll('•.̇𖥨֗🍓⭟ ', '');
               const Sender = votedOption.voters[0];
-              const Timestamp = (update.pollUpdates.senderTimestampMs / 1000);
+              const Timestamp = update.pollUpdates.senderTimestampMs / 1000;
               const From = key.remoteJid;
               const Id = key.id;
-              const JsonMessage = { key: { remoteJid: From, fromMe: false, id: Id, participant: Sender }, messageTimestamp: Timestamp, pushName: "", broadcast: false, newsletter: false, message: { conversation: toCmd}};
-              const activeSocket = dualMode && useSecondary && secondarySocket?.user ? secondarySocket : socket;
+              const JsonMessage = {
+                key: { remoteJid: From, fromMe: false, id: Id, participant: Sender },
+                messageTimestamp: Timestamp,
+                pushName: '',
+                broadcast: false,
+                newsletter: false,
+                message: { conversation: toCmd },
+              };
+              const activeNazunaSock = dualMode && useSecondary && secondarySocket?.user ? secondarySocket : socket;
               useSecondary = !useSecondary;
-              store.messages[From].updateAssign(key.id, {message: {}, key: {}});
+              store.messages[From].updateAssign(key.id, { message: {}, key: {} });
               await indexModule(activeSocket, JsonMessage, store, groupCache, messagesCache);
             }
           } catch (e) {
-            console.error(lang.error_processing_poll(e));
+            console.error(`❌ Erro ao processar atualização de enquete: ${e.message}`);
           }
         }
       }
     });
 
-    socket.ev.on('connection.update', async (update) => {
+    // Handle connection updates for primary socket
+    NazunaSock.ev.on('connection.update', async (update) => {
       const { connection, lastDisconnect, qr } = update;
 
       if (connection === 'open') {
-        console.log(lang.bot_started(nomebot, prefixo, nomedono, dualMode));
+        console.log(`✅ Bot *${nomebot}* iniciado com sucesso! Prefixo: ${prefixo} | Dono: ${nomedono} | Modo dual: ${dualMode ? 'Ativado' : 'Desativado'}`);
       }
 
       if (connection === 'close') {
         const reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
-        const reasonMessage = lang.reason_messages[reason] || 'Motivo desconhecido';
-        if (reason) {
-          console.log(lang.primary_connection_closed(reason, reasonMessage));
-          if ([DisconnectReason.loggedOut, 401].includes(reason)) {
-            await fs.rm(AUTH_DIR_PRIMARY, { recursive: true, force: true });
-          }
+        const reasonMessage = {
+          [DisconnectReason.loggedOut]: 'Deslogado do WhatsApp',
+          401: 'Sessão expirada',
+          [DisconnectReason.connectionClosed]: 'Conexão fechada',
+          [DisconnectReason.connectionLost]: 'Conexão perdida',
+          [DisconnectReason.connectionReplaced]: 'Conexão substituída',
+          [DisconnectReason.timedOut]: 'Tempo de conexão esgotado',
+          [DisconnectReason.badSession]: 'Sessão inválida',
+          [DisconnectReason.restartRequired]: 'Reinício necessário',
+        }[reason] || 'Motivo desconhecido';
+        console.log(`❌ Conexão principal fechada. Código: ${reason} | Motivo: ${reasonMessage}`);
+
+        if ([DisconnectReason.loggedOut, 401].includes(reason)) {
+          await fs.rm(AUTH_DIR_PRIMARY, { recursive: true, force: true });
         }
 
-        await socket.end();
-        console.log(lang.reconnecting_primary);
+        await NazunaSock.end();
+        console.log('🔄 Tentando reconectar o bot principal...');
         startNazu();
       }
 
       if (connection === 'connecting') {
-        console.log(lang.updating_primary_session);
+        console.log('🔄 Atualizando sessão principal...');
       }
     });
   } else {
-    socket.ev.on('connection.update', async (update) => {
+    // Handle connection updates for secondary socket
+    NazunaSock.ev.on('connection.update', async (update) => {
       const { connection, lastDisconnect } = update;
 
       if (connection === 'open') {
-        console.log(lang.secondary_connection_established);
+        console.log('✅ Conexão secundária estabelecida com sucesso!');
       }
 
       if (connection === 'close') {
         const reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
-        console.log(lang.secondary_connection_closed(reason));
+        console.log(`❌ Conexão secundária fechada. Código: ${reason}`);
 
         if ([DisconnectReason.loggedOut, 401].includes(reason)) {
           await fs.rm(AUTH_DIR_SECONDARY, { recursive: true, force: true });
@@ -318,16 +361,16 @@ async function createBotSocket(authDir, isPrimary = true) {
 
         setTimeout(async () => {
           try {
-            console.log(lang.reconnecting_secondary);
-            secondarySocket = await createBotSocket(AUTH_DIR_SECONDARY, false);
+            console.log('🔄 Tentando reconectar o bot secundário...');
+            secondaryNazunaSock = await createBotSocket(AUTH_DIR_SECONDARY, false);
           } catch (e) {
-            console.error(lang.error_starting_secondary(e));
+            console.error(`❌ Erro ao reiniciar bot secundário: ${e.message}`);
           }
         }, 5000);
       }
 
       if (connection === 'connecting') {
-        console.log(lang.connecting_secondary_session);
+        console.log('🔄 Conectando sessão secundária...');
       }
     });
   }
@@ -335,42 +378,39 @@ async function createBotSocket(authDir, isPrimary = true) {
   return socket;
 }
 
+// Start the bot
 async function startNazu() {
   try {
-    console.log(lang.starting_nazuna(dualMode));
+    console.log(`🚀 Iniciando Nazuna... Modo dual: ${dualMode ? 'Ativado' : 'Desativado'}`);
 
-    const primarySocket = await createBotSocket(AUTH_DIR_PRIMARY, true);
+    const primaryNazunaSock = await createBotSocket(AUTH_DIR_PRIMARY, true);
 
     if (dualMode) {
-      console.log(lang.starting_dual_mode);
+      console.log('🔗 Iniciando modo dual...');
       try {
-        secondarySocket = await createBotSocket(AUTH_DIR_SECONDARY, false);
+        secondaryNazunaSock = await createBotSocket(AUTH_DIR_SECONDARY, false);
 
-        const waitForConnection = (socket) => {
+        const waitForConnection = (NazunaSock) => {
           return new Promise((resolve) => {
-            if (socket.user) {
+            if (NazunaSock.user) {
               resolve();
             } else {
-              socket.ev.on('connection.update', (update) => {
+              NazunaSock.ev.on('connection.update', (update) => {
                 if (update.connection === 'open') resolve();
               });
             }
           });
         };
 
-        await Promise.all([
-          waitForConnection(primarySocket),
-          waitForConnection(secondarySocket),
-        ]);
-
-        console.log(lang.dual_mode_ready);
+        await Promise.all([waitForConnection(primarySocket), waitForConnection(secondarySocket)]);
+        console.log('✅ Modo dual pronto! Ambos os bots estão conectados.');
       } catch (err) {
-        console.error(lang.error_starting_secondary(err));
-        console.log(lang.continuing_primary_only);
+        console.error(`❌ Erro ao iniciar bot secundário: ${err.message}`);
+        console.log('⚠️ Continuando apenas com o bot principal.');
       }
     }
   } catch (err) {
-    console.error(lang.error_starting_bot(err));
+    console.error(`❌ Erro ao iniciar o bot: ${err.message}`);
     process.exit(1);
   }
 }

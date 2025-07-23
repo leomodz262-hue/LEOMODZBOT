@@ -6,9 +6,8 @@ const path = require('path');
 const { spawn } = require('child_process');
 const readline = require('readline');
 const os = require('os');
-const { loadMessages, getMessages } = require('../langs/loader.js');
 
-
+// Configuration paths and constants
 const CONFIG_PATH = path.join(process.cwd(), 'dados', 'src', 'config.json');
 const NODE_MODULES_PATH = path.join(process.cwd(), 'node_modules');
 const QR_CODE_DIR = path.join(process.cwd(), 'dados', 'database', 'qr-code');
@@ -17,16 +16,16 @@ const RESTART_DELAY = 50; // milliseconds
 const isWindows = os.platform() === 'win32';
 const dualMode = process.argv.includes('dual');
 
-
+// Version extraction from package.json
 let version = 'Desconhecida';
 try {
   const packageJson = JSON.parse(fsSync.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
   version = packageJson.version;
 } catch (error) {
-
+  // Silently handle missing package.json
 }
 
-
+// ANSI color codes for console output
 const colors = {
   reset: '\x1b[0m',
   green: '\x1b[1;32m',
@@ -36,10 +35,10 @@ const colors = {
   cyan: '\x1b[1;36m',
   magenta: '\x1b[1;35m',
   dim: '\x1b[2m',
-  bold: '\x1b[1m'
+  bold: '\x1b[1m',
 };
 
-
+// Console message helpers
 function mensagem(text) {
   console.log(`${colors.green}${text}${colors.reset}`);
 }
@@ -60,130 +59,139 @@ function separador() {
   console.log(`${colors.blue}============================================${colors.reset}`);
 }
 
-
+// Bot process management
 let botProcess = null;
 let restartCount = 0;
 const MAX_RESTART_COUNT = 10;
 const RESTART_COUNT_RESET_INTERVAL = 60000;
 
-
+// Graceful shutdown setup
 function setupGracefulShutdown() {
-    const lang = getMessages();
   const shutdown = () => {
     console.log('\n');
-    mensagem(lang.shutting_down);
-    
+    mensagem('🛑 Encerrando o Nazuna... Até logo!');
     if (botProcess) {
       botProcess.removeAllListeners('close');
       botProcess.kill();
     }
-    
     process.exit(0);
   };
 
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
-  
+
   if (isWindows) {
     const rl = readline.createInterface({
       input: process.stdin,
-      output: process.stdout
+      output: process.stdout,
     });
-    
-    rl.on('SIGINT', () => {
-      shutdown();
-    });
+    rl.on('SIGINT', shutdown);
   }
 }
 
-
+// Display startup header
 async function displayHeader() {
-    const lang = getMessages();
   const header = [
-    `   ${colors.bold}${lang.starter_header}${colors.reset}        `,
-    `   ${colors.bold}${lang.starter_version(version)}${colors.reset}`
+    `${colors.bold}🚀 Nazuna - Conexão WhatsApp${colors.reset}`,
+    `${colors.bold}📦 Versão: ${version}${colors.reset}`,
   ];
-  
-  separador();
 
+  separador();
   for (const line of header) {
-    await new Promise(resolve => {
+    await new Promise((resolve) => {
       process.stdout.write(line + '\n');
       setTimeout(resolve, 100);
     });
   }
-  
   separador();
   console.log();
 }
 
-
+// Check prerequisites and auto-run npm run config:install if node_modules is missing
 async function checkPrerequisites() {
-    const lang = getMessages();
   if (!fsSync.existsSync(CONFIG_PATH)) {
-    aviso(lang.config_not_found);
-    mensagem(lang.run_config_command(`${colors.blue}npm run config${colors.reset}`));
+    aviso('⚠️ Arquivo de configuração (config.json) não encontrado!');
+    mensagem('📝 Execute o comando: npm run config');
     process.exit(1);
   }
 
   if (!fsSync.existsSync(NODE_MODULES_PATH)) {
-    aviso(lang.modules_not_found);
-    mensagem(lang.run_install_command(`${colors.blue}npm run config:install${colors.reset}`));
-    process.exit(1);
+    aviso('⚠️ Módulos do Node.js não encontrados! Iniciando instalação automática com npm run config:install...');
+    try {
+      await new Promise((resolve, reject) => {
+        const installProcess = spawn('npm', ['run', 'config:install'], {
+          stdio: 'inherit',
+          shell: isWindows,
+        });
+
+        installProcess.on('close', (code) => {
+          if (code === 0) {
+            mensagem('📦 Instalação dos módulos concluída com sucesso!');
+            resolve();
+          } else {
+            reject(new Error(`Instalação falhou com código ${code}`));
+          }
+        });
+
+        installProcess.on('error', (error) => {
+          reject(new Error(`Erro ao executar npm run config:install: ${error.message}`));
+        });
+      });
+    } catch (error) {
+      aviso(`❌ Falha na instalação dos módulos: ${error.message}`);
+      mensagem('📦 Tente executar manualmente: npm run config:install');
+      process.exit(1);
+    }
   }
 
   if (!fsSync.existsSync(CONNECT_FILE)) {
-    aviso(lang.connection_file_not_found(CONNECT_FILE));
-    aviso(lang.check_installation);
+    aviso(`⚠️ Arquivo de conexão (${CONNECT_FILE}) não encontrado!`);
+    aviso('🔍 Verifique a instalação do projeto.');
     process.exit(1);
   }
 }
 
-
+// Start the bot process
 function startBot(codeMode = false) {
-    const lang = getMessages();
-
   const args = ['--expose-gc', CONNECT_FILE];
   if (codeMode) args.push('--code');
   if (dualMode) args.push('--dual');
 
-  info(codeMode ? lang.starting_with_code(dualMode) : lang.starting_with_qrcode(dualMode));
-  
+  info(codeMode ? `🔑 Iniciando com código de pareamento (modo dual: ${dualMode ? 'Ativado' : 'Desativado'})` : `📷 Iniciando com QR Code (modo dual: ${dualMode ? 'Ativado' : 'Desativado'})`);
+
   botProcess = spawn('node', args, {
     stdio: 'inherit',
-    env: { ...process.env, FORCE_COLOR: '1' }
+    env: { ...process.env, FORCE_COLOR: '1' },
   });
-  
+
   botProcess.on('error', (error) => {
-    aviso(lang.error_starting_process(error.message));
+    aviso(`❌ Erro ao iniciar o processo do bot: ${error.message}`);
     restartBot(codeMode);
   });
-  
+
   botProcess.on('close', (code) => {
     if (code !== 0) {
-      aviso(lang.bot_crashed(code));
+      aviso(`⚠️ O bot terminou com erro (código: ${code}).`);
       restartBot(codeMode);
     }
   });
-  
+
   return botProcess;
 }
 
-
+// Restart the bot with exponential backoff
 function restartBot(codeMode) {
-    const lang = getMessages();
   restartCount++;
-
   let delay = RESTART_DELAY;
-  
+
   if (restartCount > MAX_RESTART_COUNT) {
     const exponentialDelay = Math.min(30000, RESTART_DELAY * Math.pow(1.5, restartCount - MAX_RESTART_COUNT));
     delay = exponentialDelay;
-    aviso(lang.many_restarts(restartCount, Math.round(delay/1000)));
+    aviso(`⚠️ Muitas tentativas de reinício (${restartCount}). Aguardando ${Math.round(delay / 1000)} segundos.`);
   } else {
-    aviso(lang.restarting_bot(delay/1000));
+    aviso(`🔄 Reiniciando o bot em ${delay / 1000} segundos...`);
   }
-  
+
   setTimeout(() => {
     if (botProcess) {
       botProcess.removeAllListeners('close');
@@ -193,9 +201,8 @@ function restartBot(codeMode) {
   }, delay);
 }
 
-
+// Check for existing session
 async function checkAutoConnect() {
-    const lang = getMessages();
   try {
     if (!fsSync.existsSync(QR_CODE_DIR)) {
       await fs.mkdir(QR_CODE_DIR, { recursive: true });
@@ -205,76 +212,71 @@ async function checkAutoConnect() {
     const files = await fs.readdir(QR_CODE_DIR);
     return files.length > 2;
   } catch (error) {
-    aviso(lang.error_checking_qr(error.message));
+    aviso(`❌ Erro ao verificar diretório de QR Code: ${error.message}`);
     return false;
   }
 }
 
-
+// Prompt user for connection method
 async function promptConnectionMethod() {
-    const lang = getMessages();
   return new Promise((resolve) => {
     const rl = readline.createInterface({
       input: process.stdin,
-      output: process.stdout
+      output: process.stdout,
     });
 
-    console.log(`${colors.yellow}${lang.ask_connection_method}${colors.reset}`);
-    console.log(`${colors.yellow}${lang.qr_code_connection}${colors.reset}`);
-    console.log(`${colors.yellow}${lang.code_connection}${colors.reset}`);
-    console.log(`${colors.yellow}${lang.exit_option}${colors.reset}`);
-    
-    rl.question(`${lang.choose_option} `, (answer) => {
+    console.log(`${colors.yellow}🔧 Escolha o método de conexão:${colors.reset}`);
+    console.log(`${colors.yellow}1. 📷 Conectar via QR Code${colors.reset}`);
+    console.log(`${colors.yellow}2. 🔑 Conectar via código de pareamento${colors.reset}`);
+    console.log(`${colors.yellow}3. 🚪 Sair${colors.reset}`);
+
+    rl.question('➡️ Digite o número da opção desejada: ', (answer) => {
       console.log();
       rl.close();
-      
+
       switch (answer.trim()) {
         case '1':
-          mensagem(lang.starting_qr_connection);
+          mensagem('📷 Iniciando conexão via QR Code...');
           resolve({ method: 'qr' });
           break;
         case '2':
-          mensagem(lang.starting_code_connection);
+          mensagem('🔑 Iniciando conexão via código de pareamento...');
           resolve({ method: 'code' });
           break;
         case '3':
-          mensagem(lang.exiting);
+          mensagem('👋 Encerrando... Até mais!');
           process.exit(0);
           break;
         default:
-          aviso(lang.invalid_option_qr_default);
+          aviso('⚠️ Opção inválida! Usando conexão via QR Code como padrão.');
           resolve({ method: 'qr' });
       }
     });
   });
 }
 
-
+// Main function to initialize the bot
 async function main() {
   try {
-    await loadMessages();
-    const lang = getMessages();
     setupGracefulShutdown();
     await displayHeader();
     await checkPrerequisites();
     const hasSession = await checkAutoConnect();
     if (hasSession) {
-      mensagem(lang.qr_detected_auto_connect);
+      mensagem('📷 Sessão de QR Code detectada. Conectando automaticamente...');
       startBot(false);
     } else {
       const { method } = await promptConnectionMethod();
       startBot(method === 'code');
     }
   } catch (error) {
-    const lang = getMessages();
-    aviso(lang.unexpected_error(error.message));
+    aviso(`❌ Erro inesperado: ${error.message}`);
     process.exit(1);
   }
 }
 
-
-main().catch(error => {
-    const lang = getMessages();
-  aviso(lang.fatal_error(error.message));
+// Execute main function
+main().catch((error) => {
+  aviso(`❌ Erro fatal: ${error.message}`);
   process.exit(1);
-}); 
+});

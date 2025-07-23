@@ -29,7 +29,6 @@ const GRUPOS_DIR = DATABASE_DIR + '/grupos';
 const USERS_DIR = DATABASE_DIR + '/users';
 const DONO_DIR = DATABASE_DIR + '/dono';
 const DIR_PROGRAM = pathz.join(DATABASE_DIR, 'prog_actions.json');
-const ANIME_SEARCH_DIR = pathz.join(DATABASE_DIR, 'anime_search');
 const PARCERIAS_DIR = pathz.join(DATABASE_DIR, 'parcerias');
 const LEVELING_FILE = pathz.join(DATABASE_DIR, 'leveling.json');
 
@@ -97,7 +96,6 @@ const loadJsonFile = (path, defaultValue = {}) => {
 ensureDirectoryExists(GRUPOS_DIR);
 ensureDirectoryExists(USERS_DIR);
 ensureDirectoryExists(DONO_DIR);
-ensureDirectoryExists(ANIME_SEARCH_DIR);
 ensureDirectoryExists(PARCERIAS_DIR);
 
 
@@ -464,12 +462,11 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
   
   var config = JSON.parse(fs.readFileSync(__dirname+'/config.json'));
   var { numerodono, nomedono, nomebot, prefixo, debug } = config;
-  var language = config.language || "pt";
-  var { menu, menudown, menuadm, menubn, menuDono, menuMembros, menuFerramentas, menuSticker, menuIa, menuAlterador, menuLogos, menuTopCmd } = require(`${__dirname}/langs/${language}/menus/index.js`);
+  var { menu, menudown, menuadm, menubn, menuDono, menuMembros, menuFerramentas, menuSticker, menuIa, menuAlterador, menuLogos, menuTopCmd } = require(`${__dirname}/menus/index.js`);
   var prefix = prefixo;
   var numerodono = String(numerodono);
   
-  const { youtube, tiktok, pinterest, igdl, sendSticker, FilmesDL, styleText, emojiMix, upload, mcPlugin, tictactoe, toolsJson, vabJson, apkMod, google, Lyrics, commandStats, ia, VerifyUpdate, anime } = await require(__dirname+'/funcs/exports.js');
+  const { youtube, tiktok, pinterest, igdl, sendSticker, FilmesDL, styleText, emojiMix, upload, mcPlugin, tictactoe, toolsJson, vabJson, apkMod, google, Lyrics, commandStats, ia, VerifyUpdate } = await require(__dirname+'/funcs/exports.js');
     
   const antipvData = loadJsonFile(DATABASE_DIR + '/antipv.json');
   const premiumListaZinha = loadJsonFile(DONO_DIR + '/premium.json');
@@ -893,27 +890,6 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
         throw error;
       }
     }
-    
-    const saveAnimeSearchData = (userId, searchData) => {
-  try {
-    const filePath = pathz.join(ANIME_SEARCH_DIR, `${userId}.json`);
-    fs.writeFileSync(filePath, JSON.stringify(searchData, null, 2));
-    return true;
-  } catch (error) {
-    console.error(`Erro ao salvar dados de pesquisa de anime para ${userId}:`, error);
-    return false;
-  }
-};
-
-const loadAnimeSearchData = (userId) => {
-  try {
-    const filePath = pathz.join(ANIME_SEARCH_DIR, `${userId}.json`);
-    return fs.existsSync(filePath) ? JSON.parse(fs.readFileSync(filePath, 'utf-8')) : null;
-  } catch (error) {
-    console.error(`Erro ao carregar dados de pesquisa de anime para ${userId}:`, error);
-    return null;
-  }
-};
 
 
     const getMediaInfo = (message) => {
@@ -1287,268 +1263,51 @@ const loadAnimeSearchData = (userId) => {
  
     if(budy2.match(/^(\d+)d(\d+)$/))reply(+budy2.match(/^(\d+)d(\d+)$/)[1]>50||+budy2.match(/^(\d+)d(\d+)$/)[2]>100?"❌ Limite: max 50 dados e 100 lados":"🎲 Rolando "+budy2.match(/^(\d+)d(\d+)$/)[1]+"d"+budy2.match(/^(\d+)d(\d+)$/)[2]+"...\n🎯 Resultados: "+(r=[...Array(+budy2.match(/^(\d+)d(\d+)$/)[1])].map(_=>1+Math.floor(Math.random()*+budy2.match(/^(\d+)d(\d+)$/)[2]))).join(", ")+"\n📊 Total: "+r.reduce((a,b)=>a+b,0));
 
-if (budy2.includes('@' + nazu.user.id.split(':')[0]) && !isCmd && !info.key.fromMe) {
+if ((budy2.includes('@' + nazu.user.id.split(':')[0]) && !isCmd && !info.key.fromMe) || (menc_os2 && menc_os2 == (nazu.user.id.split(':')[0]+'@s.whatsapp.net'))) {
   if (budy2.replaceAll('@' + nazu.user.id.split(':')[0], '').length > 2) {
     const jSoNzIn = {
-      mensagem_original: budy2.replaceAll('@' + nazu.user.id.split(':')[0], '').trim(),
-      usuario_id: sender.split('@')[0],
-      data_atual: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-        .split('/').reverse().join('-') + ' ' + new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-        .split(' ')[1].split(':').slice(0, 2).join(':')
+      texto: budy2.replaceAll('@' + nazu.user.id.split(':')[0], '').trim(),
+      id_enviou: sender,
+      nome_enviou: pushname,
+      id_grupo: isGroup ? from : false,
+      nome_grupo: isGroup ? groupName: false,
+      tem_midia: isMedia,
+      marcou_mensagem: false,
+      marcou_sua_mensagem: false,
+      mensagem_marcada: false,
+      id_enviou_marcada: false,
+      tem_midia_marcada: false,
+      id_mensagem: info.key.id,
+      data_atual: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+      data_mensagem: new Date(info.messageTimestamp*1000).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
     };
-
     let { participant, quotedMessage } = info.message?.extendedTextMessage?.contextInfo || {};
-    let jsonO = {
-      participant,
-      quotedMessage,
-      texto: quotedMessage?.conversation ||
-             quotedMessage?.extendedTextMessage?.text ||
-             quotedMessage?.imageMessage?.caption ||
-             quotedMessage?.videoMessage?.caption ||
-             quotedMessage?.documentMessage?.caption || ""
-    };
+    let jsonO = { participant, quotedMessage, texto: quotedMessage?.conversation || quotedMessage?.extendedTextMessage?.text || quotedMessage?.imageMessage?.caption || quotedMessage?.videoMessage?.caption || quotedMessage?.documentMessage?.caption || "" };
     if (jsonO && jsonO.participant && jsonO.texto && jsonO.texto.length > 0) {
-      jSoNzIn.mensagem_citada = jsonO.texto;
-      jSoNzIn.usuario_mencionado_id = jsonO.participant.split('@')[0];
-    }
-
+      jSoNzIn.marcou_mensagem = true;
+      jSoNzIn.mensagem_marcada = jsonO.texto;
+      jSoNzIn.id_enviou_marcada = jsonO.participant;
+      jSoNzIn.marcou_sua_mensagem = (jsonO.participant == (nazu.user.id.split(':')[0]+'@s.whatsapp.net'));
+    };
     const respAssist = await ia.makeAssistentRequest(jSoNzIn);
-
-    if (respAssist.acoes && Array.isArray(respAssist.acoes) && respAssist.mensagem_aguarde) {
-      await reply(respAssist.mensagem_aguarde);
-
-      for (const action of respAssist.acoes) {
-        const { acao, dados } = action;
-
-        switch (acao) {
-          case 'BANIR_USUARIO':
-            if (dados && dados.usuario_id) {
-              if (!isGroupAdmin && !isOwner) {
-                await reply('Apenas admins me dão ordem para banir membros 🙄');
-                continue;
-              }
-              await nazu.groupParticipantsUpdate(from, [`${dados.usuario_id}@s.whatsapp.net`], 'remove');
-            }
-            break;
-
-          case 'PROMOVER_USUARIO':
-            if (dados && dados.usuario_id) {
-              if (!isGroupAdmin && !isOwner) {
-                await reply('Apenas admins me dão ordem para promover membros 🙄');
-                continue;
-              }
-              await nazu.groupParticipantsUpdate(from, [`${dados.usuario_id}@s.whatsapp.net`], 'promote');
-            }
-            break;
-
-          case 'REBAIXAR_USUARIO':
-            if (dados && dados.usuario_id) {
-              if (!isGroupAdmin && !isOwner) {
-                await reply('Apenas admins me dão ordem para rebaixar admins 🙄');
-                continue;
-              }
-              await nazu.groupParticipantsUpdatei(from, [`${dados.usuario_id}@s.whatsapp.net`], 'demote');
-            }
-            break;
-
-          case 'ABRIR_GRUPO':
-            if (!isGroupAdmin && !isOwner) {
-              await reply('Apenas admins me dão ordem para abrir ou fechar o grupo 🙄');
-              continue;
-            }
-            await nazu.groupSettingUpdate(from, 'not_announcement');
-            break;
-
-          case 'FECHAR_GRUPO':
-            if (!isGroupAdmin && !isOwner) {
-              await reply('Apenas admins me dão ordem para abrir ou fechar o grupo 🙄');
-              continue;
-            }
-            await nazu.groupSettingUpdate(from, 'announcement');
-            break;
-
-          case 'TOCAR_MUSICA':
-            if (dados && dados.musica) {
-              const videoInfo = await youtube.search(dados.musica);
-              const caption = `📌 *Título:* ${videoInfo.data.title}\n👤 *Artista/Canal:* ${videoInfo.data.author.name}\n⏱ *Duração:* ${videoInfo.data.timestamp} (${videoInfo.data.seconds} segundos)\n\n🎧 *Baixando e processando sua música, aguarde...*`;
-              await reply(caption);
-              const dlRes = await youtube.mp3(videoInfo.data.url);
-              if (!dlRes.ok) {
-                await reply(`❌ Erro ao baixar o áudio: ${dlRes.msg}`);
-                continue;
-              }
-              await nazu.sendMessage(from, { audio: dlRes.buffer, mimetype: 'audio/mpeg' }, { quoted: info });
-            }
-            break;
-
-          case 'CRIAR_ENQUETE':
-            if (dados && dados.pergunta && dados.opcoes) {
-              await nazu.sendMessage(from, {
-                poll: {
-                  name: dados.pergunta,
-                  values: dados.opcoes.split('_'),
-                  selectableCount: 1
-                },
-                messageContextInfo: { messageSecret: Math.random() }
-              }, { from, options: { userJid: nazu?.user?.id } });
-            }
-            break;
-
-          case 'DELETAR_MENSAGEM':
-            if (!isGroupAdmin && !isOwner) {
-              await reply('Apenas admins me dão ordem para deletar mensagens 🙄');
-              continue;
-            }
-            let stanzaId, participant;
-            if (info.message.extendedTextMessage) {
-              stanzaId = info.message.extendedTextMessage.contextInfo.stanzaId;
-              participant = info.message.extendedTextMessage.contextInfo.participant || menc_prt;
-            } else if (info.message.viewOnceMessage) {
-              stanzaId = info.key.id;
-              participant = info.key.participant || menc_prt;
-            }
-            try {
-              await nazu.sendMessage(from, {
-                delete: { remoteJid: from, fromMe: false, id: stanzaId, participant: participant }
-              });
-            } catch (error) {
-              console.error(error);
-            }
-            break;
-
-          case 'ASSISTIR_FILME':
-            if (dados && dados.filme) {
-              const datyz = await FilmesDL(dados.filme);
-              if (!datyz || !datyz.url) {
-                await reply('❌ Não encontrei o filme, tenta outro! 😕');
-                continue;
-              }
-              await nazu.sendMessage(from, {
-                image: { url: datyz.img },
-                caption: `Aqui está o que encontrei! 🎬\n\n*Nome*: ${datyz.name}\n\nSe tudo estiver certo, você pode assistir no link abaixo:\n${datyz.url}`
-              }, { quoted: info });
-            }
-            break;
-
-          case 'CONSULTAR_COGNIMAI':
-            const resultPriv = await ia.makeCognimaRequest('cognimai', budy2.replaceAll('@' + nazu.user.id.split(':')[0], ''), `cog_${sender.split('@')[0]}`);
-            if (!resultPriv.success) continue;
-            await reply(resultPriv.reply);
-            break;
-
-          case 'CONVERSAR_COMO_HUMANO':
-            const resultConv = await ia.makeCognimaRequest('nazuninha', budy2.replaceAll('@' + nazu.user.id.split(':')[0], ''), `nazuninha_${sender.split('@')[0]}`);
-            if (!resultConv.success) continue;
-            await reply(resultConv.reply);
-            break;
-
-          case 'ENVIAR_LEMBRETE':
-            if (dados && dados.lembrete && dados.destino && dados.data_hora) {
-              const Data = dados.data_hora;
-              const JsonAc = {
-                tipo: 'lembrete',
-                texto: dados.lembrete,
-                destino: dados.destino,
-                from,
-                sender,
-                data: {
-                  ano: Data.split('-')[0],
-                  mes: Data.split('-')[1],
-                  dia: Data.split('-').pop().split(' ')[0]
-                },
-                hora: {
-                  hora: Data.split(' ').pop().split(':')[0],
-                  minuto: Data.split(':').pop()
-                }
-              };
-              if (!fs.existsSync(DIR_PROGRAM)) {
-                await fs.writeFileSync(DIR_PROGRAM, JSON.stringify([], null, 2));
-              }
-              const ACTIONS = JSON.parse(fs.readFileSync(DIR_PROGRAM, 'utf-8'));
-              ACTIONS.push(JsonAc);
-              await fs.writeFileSync(DIR_PROGRAM, JSON.stringify(ACTIONS, null, 2));
-            }
-            break;
-
-          case 'PROGRAMAR_GRUPO':
-            if (dados && dados.acao && dados.data_hora) {
-              if (!isGroupAdmin && !isOwner) {
-                await reply('Apenas admins me dão ordem para abrir ou fechar o grupo 🙄');
-                continue;
-              }
-              const Data = dados.data_hora;
-              const JsonAc = {
-                tipo: 'grupo',
-                acao: dados.acao,
-                from,
-                sender,
-                data: {
-                  ano: Data.split('-')[0],
-                  mes: Data.split('-')[1],
-                  dia: Data.split('-').pop().split(' ')[0]
-                },
-                hora: {
-                  hora: Data.split(' ').pop().split(':')[0],
-                  minuto: Data.split(':').pop()
-                }
-              };
-              if (!fs.existsSync(DIR_PROGRAM)) {
-                await fs.writeFileSync(DIR_PROGRAM, JSON.stringify([], null, 2));
-              }
-              const ACTIONS = JSON.parse(fs.readFileSync(DIR_PROGRAM, 'utf-8'));
-              ACTIONS.push(JsonAc);
-              await fs.writeFileSync(DIR_PROGRAM, JSON.stringify(ACTIONS, null, 2));
-            }
-            break;
-
-          case 'PROGRAMAR_ACAO_REPETIDA':
-            if (dados && dados.acao_a_executar && dados.dados_acao && dados.frequencia && dados.hora) {
-              const JsonAc = {
-                tipo: 'acao_repetida',
-                acao: dados.acao_a_executar,
-                dados_acao: dados.dados_acao,
-                frequencia: dados.frequencia,
-                hora: {
-                  hora: dados.hora.split(':')[0],
-                  minuto: dados.hora.split(':')[1]
-                },
-                dia_da_semana: dados.dia_da_semana || null,
-                dia_do_mes: dados.dia_do_mes || null,
-                from,
-                sender
-              };
-              if (!fs.existsSync(DIR_PROGRAM)) {
-                await fs.writeFileSync(DIR_PROGRAM, JSON.stringify([], null, 2));
-              }
-              const ACTIONS = JSON.parse(fs.readFileSync(DIR_PROGRAM, 'utf-8'));
-              ACTIONS.push(JsonAc);
-              await fs.writeFileSync(DIR_PROGRAM, JSON.stringify(ACTIONS, null, 2));
-            }
-            break;
-
-          case 'EXCLUIR_ACAO_PROGRAMADA':
-            if (dados && dados.tipo && dados.id) {
-              if (!fs.existsSync(DIR_PROGRAM)) {
-                await reply('Nenhuma ação programada encontrada! 😕');
-                continue;
-              }
-              let ACTIONS = JSON.parse(fs.readFileSync(DIR_PROGRAM, 'utf-8'));
-              const initialLength = ACTIONS.length;
-              ACTIONS = ACTIONS.filter(action => action.id !== dados.id || action.tipo !== dados.tipo);
-              if (ACTIONS.length < initialLength) {
-                await fs.writeFileSync(DIR_PROGRAM, JSON.stringify(ACTIONS, null, 2));
-              } else {
-                await reply('Ação programada não encontrada! 😕');
-              }
-            }
-            break;
-        }
-      }
-    } else {
-      await reply('Ops, algo deu errado na resposta da IA! 😕 Tenta de novo?');
-    }
-  }
-}
+    if(respAssist.resp && respAssist.resp.length > 0) {
+      for(msgza of respAssist.resp) {
+        if(msgza.react) await nazu.react(msgza.react);
+        if(msgza.resp && msgza.resp.length > 0) await reply(msgza.resp);
+        if(msgza.actions) {
+          if(msgza.actions.comando) var command = msgza.actions.comando;
+          if(msgza.actions.params) {
+            if(Array.isArray(msgza.actions.params)) {
+            var q = msgza.actions.params.join(' ');
+            } else if(msgza.actions.params.length > 0) {
+            var q = msgza.actions.params;
+            };
+          };
+        };
+      };
+    };
+  };
+};
     
   
   //ANTI FLOOD DE MENSAGENS
@@ -3004,7 +2763,7 @@ case 'ytmp4':
   };
   break
 
-   case 'prefixo':case 'numerodono':case 'nomedono':case 'nomebot': case 'language': try {
+   case 'prefixo':case 'numerodono':case 'nomedono':case 'nomebot': try {
     if(!isOwner) return reply("Este comando é apenas para o meu dono");
     if (!q) return reply(`Uso correto: ${prefix}${command} <valor>`);
      let config = JSON.parse(fs.readFileSync(__dirname + '/config.json'));
@@ -6103,101 +5862,6 @@ ${weatherEmoji} *${weatherDescription}*`;
       await reply("Ocorreu um erro ao pesquisar o clima 💔");
     }
     break;
-    
-    case 'menu2': 
-      await nazu.sendMessage(from, {poll: {name: `╭┈⊰ 🌸 『 *${nomebot}* 』\n┊Olá, *${pushname}*!\n╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯`,values: ['•.̇𖥨֗🍓⭟ '+prefix+'menuia', '•.̇𖥨֗🍓⭟ '+prefix+'menudown', '•.̇𖥨֗🍓⭟ '+prefix+'menuadm', '•.̇𖥨֗🍓⭟ '+prefix+'menubn', '•.̇𖥨֗🍓⭟ '+prefix+'menudono', '•.̇𖥨֗🍓⭟ '+prefix+'menumemb', '•.̇𖥨֗🍓⭟ '+prefix+'ferramentas', '•.̇𖥨֗🍓⭟ '+prefix+'menufig', '•.̇𖥨֗🍓⭟ '+prefix+'alteradores'], selectableCount: 1}, messageContextInfo: { messageSecret: Math.random()}}, {from, options: { userJid: nazu?.user?.id }});
-    break
-    
-    case 'animekk':
-  try {
-    if (!q) return reply('Digite o nome do anime para pesquisar. Ex: !anime Naruto');
-
-    const searchResults = await anime.search(q);
-    if (!searchResults || searchResults.length === 0) {
-      return reply('Nenhum anime encontrado com esse nome. 😕 Tente outro termo!');
-    }
-
-    const userId = sender;
-    const pageSize = 10;
-    const totalPages = Math.ceil(searchResults.length / pageSize);
-    let currentPage = 1;
-
-    const searchData = {
-      query: q,
-      results: searchResults,
-      currentPage: currentPage,
-      totalPages: totalPages,
-      timestamp: Date.now()
-    };
-    
-    if (searchResults.length === 1) {
-      searchData.selectedAnime = searchResults[0];
-      saveAnimeSearchData(userId, searchData);
-
-      const DatinhaAnimez = await anime.getInfo(searchResults[0].animeLink);
-      const textoBonito = `🎬 *${DatinhaAnimez.animeTitle}*\n` +
-                         `🎙️ *Tipo:* ${DatinhaAnimez.type}\n` +
-                         `🏢 *Estúdio:* ${DatinhaAnimez.studio}\n` +
-                         `🌟 *Gêneros:* ${DatinhaAnimez.genres.join(', ')}\n\n` +
-                         `📝 *Sinopse:*\n${DatinhaAnimez.description}`;
-
-      if (isGroup) {
-        await reply('📬 Informações do anime enviadas no seu privado!');
-      }
-      await nazu.sendMessage(sender, {
-        image: { url: searchResults[0].thumbnail || DatinhaAnimez.imageUrl },
-        caption: textoBonito
-      }, { quoted: info });
-
-      const pollMessage = `Você selecionou: ${searchResults[0].animeName}\nO que deseja fazer?`;
-      await nazu.sendMessage(sender, {
-        poll: {
-          name: pollMessage,
-          values: ['Ver episódios', 'Excluir enquete'],
-          selectableCount: 1
-        },
-        messageContextInfo: { messageSecret: Math.random() }
-      }, { options: { userJid: nazu?.user?.id } });
-      return;
-    }
-
-    saveAnimeSearchData(userId, searchData);
-
-    const getPollValues = (page) => {
-      const start = (page - 1) * pageSize;
-      const end = start + pageSize;
-      const pageResults = searchResults.slice(start, end);
-      const pollValues = pageResults.map((anime, index) => {
-        const prefix = ['`', '•', '°', '⁕', '»', '«', '⁑', '※', '⁂', '⁺', '⁻'][index] || '•';
-        return `${prefix} ${anime.animeName}`;
-      });
-      if (totalPages > 1 && page < totalPages) {
-        pollValues.push('➡️ Próxima página');
-      }
-      if (page > 1) {
-        pollValues.push('⬅️ Página anterior');
-      }
-      return pollValues;
-    };
-
-    const pollMessage = `🔎 Resultados da pesquisa por "${q}"\n📃 Página ${currentPage} de ${totalPages}\n\nEscolha um anime:`;
-    if (isGroup) {
-      await reply('📬 Resultados da pesquisa de anime enviados no seu privado!');
-    }
-    await nazu.sendMessage(sender, {
-      poll: {
-        name: pollMessage,
-        values: getPollValues(currentPage),
-        selectableCount: 1
-      },
-      messageContextInfo: { messageSecret: Math.random() }
-    }, { options: { userJid: nazu?.user?.id } });
-
-  } catch (e) {
-    console.error('Erro no comando anime:', e);
-    await reply("Ocorreu um erro ao pesquisar o anime 💔");
-  }
-  break;
     
  default:
   if (isCmd && isAutoRepo) await nazu.react('❌');

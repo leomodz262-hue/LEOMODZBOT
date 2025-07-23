@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-
 const fs = require('fs').promises;
 const fsSync = require('fs');
 const path = require('path');
@@ -9,22 +8,21 @@ const readline = require('readline');
 const os = require('os');
 const { promisify } = require('util');
 const execAsync = promisify(exec);
-const { loadMessages, getMessages } = require('../langs/loader.js');
 
-
+// Configuration constants
 const CONFIG_FILE = path.join(process.cwd(), 'dados', 'src', 'config.json');
 const isWindows = os.platform() === 'win32';
 
-
+// Version extraction from package.json
 let version = 'Desconhecida';
 try {
   const packageJson = JSON.parse(fsSync.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
   version = packageJson.version;
 } catch (error) {
+  // Silently handle missing package.json
+}
 
-};
-
-
+// ANSI color codes for console output
 const colors = {
   reset: '\x1b[0m',
   green: '\x1b[1;32m',
@@ -35,187 +33,160 @@ const colors = {
   magenta: '\x1b[1;35m',
   dim: '\x1b[2m',
   bold: '\x1b[1m',
-  underline: '\x1b[4m'
+  underline: '\x1b[4m',
 };
 
-
+// Console message helpers
 function printMessage(text) {
   console.log(`${colors.green}${text}${colors.reset}`);
-};
+}
 
 function printWarning(text) {
   console.log(`${colors.red}${text}${colors.reset}`);
-};
+}
 
 function printInfo(text) {
   console.log(`${colors.cyan}${text}${colors.reset}`);
-};
+}
 
 function printDetail(text) {
   console.log(`${colors.dim}${text}${colors.reset}`);
-};
+}
 
 function printSeparator() {
   console.log(`${colors.blue}============================================${colors.reset}`);
-};
+}
 
-
+// Validate user input
 function validateInput(input, field) {
-    const lang = getMessages();
   switch (field) {
     case 'prefixo':
       if (input.length !== 1) {
-        printWarning(lang.invalid_prefix);
+        printWarning('⚠️ O prefixo deve ter exatamente 1 caractere.');
         return false;
-      };
+      }
       return true;
-      
+
     case 'numero':
       if (!/^[0-9]{10,15}$/.test(input)) {
-        printWarning(lang.invalid_number);
-        printDetail(lang.example_number);
+        printWarning('⚠️ Número inválido! Deve conter apenas dígitos (10 a 15).');
+        printDetail('📝 Exemplo: 5511999999999');
         return false;
-      };
+      }
       return true;
-    
-    case 'language':
-        const validLanguages = ['en', 'pt', 'es', 'fr', 'id'];
-        if (!validLanguages.includes(input)) {
-            printWarning(lang.invalid_language(validLanguages));
-            return false;
-        }
-        return true;
 
     default:
       return true;
-  };
-};
+  }
+}
 
-
+// Graceful shutdown setup
 function setupGracefulShutdown() {
-    const lang = getMessages();
   const shutdown = () => {
     console.log('\n');
-    printWarning(lang.config_cancelled);
+    printWarning('🛑 Configuração cancelada pelo usuário.');
     process.exit(0);
   };
-  
+
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
-};
+}
 
-
+// Install dependencies using npm install --no-optional --force --no-bin-links
 async function installDependencies() {
-    const lang = getMessages();
   printSeparator();
-  printMessage(lang.installing_dependencies);
-  
-  try {
-    const installCommand = isWindows ? 'npm install --no-optional --force --no-bin-links' : 'npm install --no-optional --force --no-bin-links';
+  printMessage('📦 Instalando dependências...');
 
+  try {
     await new Promise((resolve, reject) => {
-      const npmProcess = exec(installCommand, (error) => {
-        if (error) reject(error);
-        else resolve();
-      });
-      
+      const npmProcess = exec('npm install --no-optional --force --no-bin-links', { shell: isWindows }, (error) =>
+        error ? reject(error) : resolve()
+      );
+
       const spinner = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
       let i = 0;
       const interval = setInterval(() => {
-        process.stdout.write(`\r${spinner[i]} ${lang.installing_dependencies}`);
+        process.stdout.write(`\r${spinner[i]} Instalando dependências...`);
         i = (i + 1) % spinner.length;
       }, 100);
-      
+
       npmProcess.on('close', () => {
         clearInterval(interval);
         process.stdout.write('\r                                \r');
       });
     });
-    
-    printMessage(lang.install_complete);
+
+    printMessage('✅ Dependências instaladas com sucesso.');
   } catch (error) {
-    printWarning(lang.install_error(error.message));
-    printInfo(lang.manual_install_info);
+    printWarning(`❌ Erro ao instalar dependências: ${error.message}`);
+    printInfo('📝 Tente executar manualmente: npm run config:install');
     process.exit(1);
-  };
-};
+  }
+}
 
-
+// Display startup header
 async function displayHeader() {
-    const lang = getMessages();
   const header = [
-    `${colors.bold}${lang.config_welcome(version)}${colors.reset}`,
-    `${colors.bold}${lang.creator_message}${colors.reset}`
+    `${colors.bold}🚀 Configurador do Nazuna - Versão ${version}${colors.reset}`,
+    `${colors.bold}👨‍💻 Criado por Hiudy${colors.reset}`,
   ];
-  
-  printSeparator();
 
+  printSeparator();
   for (const line of header) {
-    await new Promise(resolve => {
+    await new Promise((resolve) => {
       process.stdout.write(line + '\n');
       setTimeout(resolve, 100);
     });
   }
-  
   printSeparator();
   console.log();
-};
+}
 
-
+// Main configuration function
 async function main() {
   try {
-    await loadMessages();
-    const lang = getMessages();
     setupGracefulShutdown();
 
     if (process.argv.includes('--install')) {
       await installDependencies();
       process.exit(0);
-    };
+    }
 
     await displayHeader();
 
     const defaultConfig = {
-      nomedono: "",
-      numerodono: "",
-      nomebot: "",
-      prefixo: "!",
-      language: "en",
+      nomedono: '',
+      numerodono: '',
+      nomebot: '',
+      prefixo: '!',
       aviso: false,
       debug: false,
-      enablePanel: false
+      enablePanel: false,
     };
 
-    const locale = os.userInfo().username.split('.')[0].toLowerCase();
-    if (['pt', 'es', 'fr', 'id'].includes(locale)) {
-      defaultConfig.language = locale;
-    }
-    
     let config = { ...defaultConfig };
-    
+
     try {
       if (fsSync.existsSync(CONFIG_FILE)) {
         const existingConfig = JSON.parse(await fs.readFile(CONFIG_FILE, 'utf8'));
         config = { ...config, ...existingConfig };
-        printInfo(lang.existing_config_loaded);
+        printInfo('📂 Configuração existente carregada.');
       }
     } catch (error) {
-      printWarning(lang.error_reading_config(error.message));
-      printInfo(lang.using_default_values);
+      printWarning(`⚠️ Erro ao ler config.json: ${error.message}`);
+      printInfo('📝 Usando valores padrão.');
     }
 
     const rl = readline.createInterface({
       input: process.stdin,
-      output: process.stdout
+      output: process.stdout,
     });
 
-    printInfo(`${colors.bold}${colors.underline}${lang.basic_config_title}${colors.reset}`);
-    config.nomedono = await promptInput(rl, lang.ask_owner_name, config.nomedono);
-    config.numerodono = await promptInput(rl, lang.ask_owner_number, config.numerodono, "numero");
-    config.nomebot = await promptInput(rl, lang.ask_bot_name, config.nomebot);
-    config.prefixo = await promptInput(rl, lang.ask_prefix, config.prefixo, "prefixo");
-    config.language = await promptInput(rl, lang.ask_language, config.language, "language");
-
+    printInfo(`${colors.bold}${colors.underline}🔧 Configurações Básicas${colors.reset}`);
+    config.nomedono = await promptInput(rl, '👤 Nome do dono do bot', config.nomedono);
+    config.numerodono = await promptInput(rl, '📱 Número do dono (com DDD, apenas dígitos)', config.numerodono, 'numero');
+    config.nomebot = await promptInput(rl, '🤖 Nome do bot', config.nomebot);
+    config.prefixo = await promptInput(rl, '🔣 Prefixo do bot (1 caractere)', config.prefixo, 'prefixo');
 
     config.aviso = false;
     config.debug = false;
@@ -230,60 +201,56 @@ async function main() {
       await fs.writeFile(CONFIG_FILE, JSON.stringify(config, null, 2));
 
       console.log();
-      printInfo(lang.config_summary);
-      printDetail(lang.owner_name_summary(config.nomedono));
-      printDetail(lang.owner_number_summary(config.numerodono));
-      printDetail(lang.bot_name_summary(config.nomebot));
-      printDetail(lang.prefix_summary(config.prefixo));
-      printDetail(lang.language_summary(config.language));
-
+      printInfo('📋 Resumo da Configuração');
+      printDetail(`👤 Nome do dono: ${config.nomedono}`);
+      printDetail(`📱 Número do dono: ${config.numerodono}`);
+      printDetail(`🤖 Nome do bot: ${config.nomebot}`);
+      printDetail(`🔣 Prefixo: ${config.prefixo}`);
 
       printSeparator();
-      printMessage(lang.config_saved_success);
+      printMessage('✅ Configuração salva com sucesso em config.json!');
       printSeparator();
-      
-      const installNow = await confirm(rl, lang.ask_install_deps, "s");
-      
+
+      const installNow = await confirm(rl, '📦 Deseja instalar as dependências agora?', 's');
+
       if (installNow) {
         rl.close();
         await installDependencies();
       } else {
-        printMessage(lang.install_later_info);
+        printMessage('📝 Você pode instalar as dependências depois com: npm run config:install');
       }
-      
+
       printSeparator();
-      printMessage(lang.nazuna_ready(version));
+      printMessage(`🎉 Nazuna configurado e pronto para uso! Versão: ${version}`);
       printSeparator();
     } catch (error) {
-      printWarning(lang.error_saving_config(error.message));
+      printWarning(`❌ Erro ao salvar configuração: ${error.message}`);
     }
-    
+
     rl.close();
   } catch (error) {
-    const lang = getMessages();
-    printWarning(lang.unexpected_error(error.message));
+    printWarning(`❌ Erro inesperado: ${error.message}`);
     process.exit(1);
   }
 }
 
-
+// Prompt user for input with validation
 async function promptInput(rl, prompt, defaultValue, field = null) {
-    const lang = getMessages();
   return new Promise((resolve) => {
-    const displayPrompt = `${prompt} ${colors.dim}${lang.prompt_input_current(defaultValue)}${colors.reset}: `;
-    rl.question(displayPrompt, (input) => {
+    const displayPrompt = `${prompt} ${colors.dim}(atual: ${defaultValue})${colors.reset}: `;
+    rl.question(displayPrompt, async (input) => {
       const value = input.trim() || defaultValue;
-      
+
       if (field && !validateInput(value, field)) {
-        return promptInput(rl, prompt, defaultValue, field).then(resolve);
+        return resolve(await promptInput(rl, prompt, defaultValue, field));
       }
-      
+
       resolve(value);
     });
   });
 }
 
-
+// Prompt user for yes/no input
 async function confirm(rl, prompt, defaultValue = 'n') {
   return new Promise((resolve) => {
     const defaultText = defaultValue.toLowerCase() === 's' ? 'S/n' : 's/N';
@@ -294,9 +261,8 @@ async function confirm(rl, prompt, defaultValue = 'n') {
   });
 }
 
-
-main().catch(error => {
-    const lang = getMessages();
-  printWarning(lang.fatal_error(error.message));
+// Execute main function
+main().catch((error) => {
+  printWarning(`❌ Erro fatal: ${error.message}`);
   process.exit(1);
-}); 
+});
