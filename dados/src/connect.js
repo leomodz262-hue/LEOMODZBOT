@@ -45,8 +45,6 @@ const ask = (question) => {
   }));
 };
 
-const groupCache = new NodeCache({ stdTTL: 5 * 60, useClones: false });
-
 let secondaryNazunaSock = null;
 let useSecondary = false;
 
