@@ -72,7 +72,6 @@ async function createBotSocket(authDir, isPrimary = true) {
     printQRInTerminal: !codeMode,
     logger,
     browser: ['Ubuntu', 'Edge', '110.0.1587.56'],
-    getMessage,
   });
 
   NazunaSock.ev.on('creds.update', saveCreds);
