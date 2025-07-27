@@ -2,13 +2,14 @@
 // Nazuna Bot - Index principal
 // Criado por: Hiudy
 // Versão: 4.0.0
-// Atualizado: 12/07/2025
+// Atualizado: 27/07/2025
 // Donate: https://cognima.com.br/donate
 // ====================
 
 
 const { downloadContentFromMessage } = require('@cognima/walib');
 const { exec, execSync } = require('child_process');
+const { parseHTML } = require('linkedom');
 const axios = require('axios');
 const pathz = require('path');
 const fs = require('fs');
@@ -1540,53 +1541,319 @@ if (isGroup && groupData.antifig && groupData.antifig.enabled && type === "stick
   
   //INTELIGENCIA ARTIFICIAL
   
-  case 'nazu': case 'nazuna': case 'ai': 
-    if (!q) return reply(`🤔 O que você gostaria de me perguntar ou pedir? É só digitar depois do comando ${prefix}${command}! 😊 Ex: ${prefix}${command} qual a previsão do tempo?`);
+  case 'gemma':
+    if (!q) return reply(`🤔 Qual sua dúvida para o Gemma? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
     try {
-      const bahz = await ia.makeCognimaRequest('nazuninha', q, `nazuninha_${sender.split('@')[0]}`);
-      await reply(`${bahz.reply}`);
+      await reply(`⏳ Só um segundinho, estou consultando o Gemma... ✨`);
+      const response = await ia.makeCognimaRequest('google/gemma-7b', q);
+      await reply(response.data.choices[0].message.content);
     } catch (e) {
-      console.error("Erro na API Nazuninha:", e);
-      await reply("🌸 Awnn... Minha conexão mental falhou por um instante! 🧠⚡️ Poderia repetir sua pergunta, por favorzinho? 🥺");
+      console.error('Erro na API Gemma:', e);
+      await reply(`😓 Poxa, algo deu errado com o Gemma! Tente novamente em alguns instantes, tá? 🌈`);
     }
-  break;
-  
-  case 'gpt': case 'gpt4': case 'chatgpt':
-    if (!q) return reply(`🤔 Qual pergunta você quer fazer para o GPT? Digite depois do comando ${prefix}${command}! 😊 Ex: ${prefix}${command} me explique sobre buracos negros.`);
-    try {      
-      await reply('Aguarde um momentinho... ☀️');
-      const bahz = await ia.makeCognimaRequest('gpt', q, `gpt_${sender.split('@')[0]}`);
-      await reply(`${bahz.reply}`);
-    } catch (e) {
-      console.error("Erro na API GPT:", e);
-      await reply("Puxa! 🥺 Parece que o GPT está tirando uma sonequinha... Tente novamente em instantes, tá? 💔");
-    }
-  break;
-  
-  case 'gemma': case 'gemma2': case 'gecko':
-    if (!q) return reply(`🤔 Qual sua pergunta para o Gemma? Digite depois do comando ${prefix}${command}! 😊 Ex: ${prefix}${command} quem descobriu o Brasil?`);
+    break;
+
+  case 'phi':
+  case 'phi3':
+    if (!q) return reply(`🤔 Qual sua dúvida para o Phi? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
     try {
-      await reply('Aguarde um momentinho... ☀️');
-      const bahz = await ia.makeCognimaRequest('gemma', q, `gemma_${sender.split('@')[0]}`);
-      await reply(`${bahz.reply}`);
+      await reply(`⏳ Só um segundinho, estou consultando o Phi... ✨`);
+      const response = await ia.makeCognimaRequest('microsoft/phi-3-medium-4k-instruct', q);
+      await reply(response.data.choices[0].message.content);
     } catch (e) {
-      console.error("Erro na API Gemma:", e);
-      await reply("Ah, que pena! 🥺 O Gemma parece estar brilhando em outro lugar agora... Tente chamá-lo de novo daqui a pouquinho, tá? 💔");
+      console.error('Erro na API Phi:', e);
+      await reply(`😓 Poxa, algo deu errado com o Phi! Tente novamente em alguns instantes, tá? 🌈`);
     }
-  break;
-  
+    break;
+
+  case 'qwen2':
+    if (!q) return reply(`🤔 Qual sua dúvida para o Qwen2? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
+    try {
+      await reply(`⏳ Só um segundinho, estou consultando o Qwen2... ✨`);
+      const response = await ia.makeCognimaRequest('qwen/qwen2-7b-instruct', q);
+      await reply(response.data.choices[0].message.content);
+    } catch (e) {
+      console.error('Erro na API Qwen2:', e);
+      await reply(`😓 Poxa, algo deu errado com o Qwen2! Tente novamente em alguns instantes, tá? 🌈`);
+    }
+    break;
+
+  case 'qwen':
+  case 'qwen3':
+    if (!q) return reply(`🤔 Qual sua dúvida para o Qwen? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
+    try {
+      await reply(`⏳ Só um segundinho, estou consultando o Qwen... ✨`);
+      const response = await ia.makeCognimaRequest('qwen/qwen3-235b-a22b', q);
+      await reply(response.data.choices[0].message.content);
+    } catch (e) {
+      console.error('Erro na API Qwen:', e);
+      await reply(`😓 Poxa, algo deu errado com o Qwen! Tente novamente em alguns instantes, tá? 🌈`);
+    }
+    break;
+
+  case 'llama':
+  case 'llama3':
+    if (!q) return reply(`🤔 Qual sua dúvida para o Llama? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
+    try {
+      await reply(`⏳ Só um segundinho, estou consultando o Llama... ✨`);
+      const response = await ia.makeCognimaRequest('abacusai/dracarys-llama-3.1-70b-instruct', q);
+      await reply(response.data.choices[0].message.content);
+    } catch (e) {
+      console.error('Erro na API Llama:', e);
+      await reply(`😓 Poxa, algo deu errado com o Llama! Tente novamente em alguns instantes, tá? 🌈`);
+    }
+    break;
+
+  case 'baichuan':
+  case 'baichuan2':
+    if (!q) return reply(`🤔 Qual sua dúvida para o Baichuan? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
+    try {
+      await reply(`⏳ Só um segundinho, estou consultando o Baichuan... ✨`);
+      const response = await ia.makeCognimaRequest('baichuan-inc/baichuan2-13b-chat', q);
+      await reply(response.data.choices[0].message.content);
+    } catch (e) {
+      console.error('Erro na API Baichuan:', e);
+      await reply(`😓 Poxa, algo deu errado com o Baichuan! Tente novamente em alguns instantes, tá? 🌈`);
+    }
+    break;
+
+  case 'marin':
+    if (!q) return reply(`🤔 Qual sua dúvida para o Marin? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
+    try {
+      await reply(`⏳ Só um segundinho, estou consultando o Marin... ✨`);
+      const response = await ia.makeCognimaRequest('marin/marin-8b-instruct', q);
+      await reply(response.data.choices[0].message.content);
+    } catch (e) {
+      console.error('Erro na API Marin:', e);
+      await reply(`😓 Poxa, algo deu errado com o Marin! Tente novamente em alguns instantes, tá? 🌈`);
+    }
+    break;
+
+  case 'kimi':
+  case 'kimik2':
+    if (!q) return reply(`🤔 Qual sua dúvida para o Kimi? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
+    try {
+      await reply(`⏳ Só um segundinho, estou consultando o Kimi... ✨`);
+      const response = await ia.makeCognimaRequest('moonshotai/kimi-k2-instruct', q);
+      await reply(response.data.choices[0].message.content);
+    } catch (e) {
+      console.error('Erro na API Kimi:', e);
+      await reply(`😓 Poxa, algo deu errado com o Kimi! Tente novamente em alguns instantes, tá? 🌈`);
+    }
+    break;
+
+  case 'mistral':
+    if (!q) return reply(`🤔 Qual sua dúvida para o Mistral? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
+    try {
+      await reply(`⏳ Só um segundinho, estou consultando o Mistral... ✨`);
+      const response = await ia.makeCognimaRequest('mistralai/mistral-small-24b-instruct', q);
+      await reply(response.data.choices[0].message.content);
+    } catch (e) {
+      console.error('Erro na API Mistral:', e);
+      await reply(`😓 Poxa, algo deu errado com o Mistral! Tente novamente em alguns instantes, tá? 🌈`);
+    }
+    break;
+
+  case 'magistral':
+    if (!q) return reply(`🤔 Qual sua dúvida para o Magistral? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
+    try {
+      await reply(`⏳ Só um segundinho, estou consultando o Magistral... ✨`);
+      const response = await ia.makeCognimaRequest('mistralai/magistral-small-2506', q);
+      await reply(response.data.choices[0].message.content);
+    } catch (e) {
+      console.error('Erro na API Magistral:', e);
+      await reply(`😓 Poxa, algo deu errado com o Magistral! Tente novamente em alguns instantes, tá? 🌈`);
+    }
+    break;
+
+  case 'rakutenai':
+  case 'rocket':
+    if (!q) return reply(`🤔 Qual sua dúvida para o RakutenAI? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
+    try {
+      await reply(`⏳ Só um segundinho, estou consultando o RakutenAI... ✨`);
+      const response = await ia.makeCognimaRequest('rakuten/rakutenai-7b-instruct', q);
+      await reply(response.data.choices[0].message.content);
+    } catch (e) {
+      console.error('Erro na API RakutenAI:', e);
+      await reply(`😓 Poxa, algo deu errado com o RakutenAI! Tente novamente em alguns instantes, tá? 🌈`);
+    }
+    break;
+
+  case 'yi':
+    if (!q) return reply(`🤔 Qual sua dúvida para o Yi? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
+    try {
+      await reply(`⏳ Só um segundinho, estou consultando o Yi... ✨`);
+      const response = await ia.makeCognimaRequest('01-ai/yi-large', q);
+      await reply(response.data.choices[0].message.content);
+    } catch (e) {
+      console.error('Erro na API Yi:', e);
+      await reply(`😓 Poxa, algo deu errado com o Yi! Tente novamente em alguns instantes, tá? 🌈`);
+    }
+    break;
+
+  case 'gemma2':
+    if (!q) return reply(`🤔 Qual sua dúvida para o Gemma2? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
+    try {
+      await reply(`⏳ Só um segundinho, estou consultando o Gemma2... ✨`);
+      const response = await ia.makeCognimaRequest('google/gemma-2-27b-it', q);
+      await reply(response.data.choices[0].message.content);
+    } catch (e) {
+      console.error('Erro na API Gemma2:', e);
+      await reply(`😓 Poxa, algo deu errado com o Gemma2! Tente novamente em alguns instantes, tá? 🌈`);
+    }
+    break;
+
+  case 'swallow':
+    if (!q) return reply(`🤔 Qual sua dúvida para o Swallow? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
+    try {
+      await reply(`⏳ Só um segundinho, estou consultando o Swallow... ✨`);
+      const response = await ia.makeCognimaRequest('institute-of-science-tokyo/llama-3.1-swallow-70b-instruct-v0.1', q);
+      await reply(response.data.choices[0].message.content);
+    } catch (e) {
+      console.error('Erro na API Swallow:', e);
+      await reply(`😓 Poxa, algo deu errado com o Swallow! Tente novamente em alguns instantes, tá? 🌈`);
+    }
+    break;
+
+  case 'falcon':
+    if (!q) return reply(`🤔 Qual sua dúvida para o Falcon? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
+    try {
+      await reply(`⏳ Só um segundinho, estou consultando o Falcon... ✨`);
+      const response = await ia.makeCognimaRequest('tiiuae/falcon3-7b-instruct', q);
+      await reply(response.data.choices[0].message.content);
+    } catch (e) {
+      console.error('Erro na API Falcon:', e);
+      await reply(`😓 Poxa, algo deu errado com o Falcon! Tente novamente em alguns instantes, tá? 🌈`);
+    }
+    break;
+
+  case 'qwencoder':
+    if (!q) return reply(`🤔 Qual sua dúvida para o Qwencoder? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
+    try {
+      await reply(`⏳ Só um segundinho, estou consultando o Qwencoder... ✨`);
+      const response = await ia.makeCognimaRequest('qwen/qwen2.5-coder-32b-instruct', q);
+      await reply(response.data.choices[0].message.content);
+    } catch (e) {
+      console.error('Erro na API Qwencoder:', e);
+      await reply(`😓 Poxa, algo deu errado com o Qwencoder! Tente novamente em alguns instantes, tá? 🌈`);
+    }
+    break;
+
+  case 'codegemma':
+    if (!q) return reply(`🤔 Qual sua dúvida para o CodeGemma? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
+    try {
+      await reply(`⏳ Só um segundinho, estou consultando o CodeGemma... ✨`);
+      const response = await ia.makeCognimaRequest('google/codegemma-7b', q);
+      await reply(response.data.choices[0].message.content);
+    } catch (e) {
+      console.error('Erro na API CodeGemma:', e);
+      await reply(`😓 Poxa, algo deu errado com o CodeGemma! Tente novamente em alguns instantes, tá? 🌈`);
+    }
+    break;
+
   case 'resumir':
-    if (!q) return reply(`📝 Quer que eu faça um resuminho? Me envie o texto logo após o comando ${prefix}resumir! 😊`);
+    if (!q) return reply(`📝 Quer um resumo? Envie o texto logo após o comando ${prefix}resumir! Exemplo: ${prefix}resumir [seu texto aqui] 😊`);
     try {
-      await reply('Aguarde um momentinho... ☀️');
-      const prompt = `Resuma o seguinte texto em poucos parágrafos, de forma clara, mantendo as informações mais importantes:\n\n${q}`;
-      const bahz = await ia.makeCognimaRequest('cognimai', prompt, `resumo_${sender.split('@')[0]}`);
-      await reply(`${bahz.reply}`);
+      await reply('⏳ Aguarde enquanto preparo um resumo bem caprichado... ✨');
+      const prompt = `Resuma o seguinte texto em poucos parágrafos, de forma clara e objetiva, destacando as informações mais importantes:\n\n${q}`;
+      const response = await ia.makeCognimaRequest('cognima/CognimAI', prompt);
+      await reply(response.data.choices[0].message.content);
     } catch (e) {
-      console.error("Erro ao resumir texto:", e);
-      await reply("Puxa vida! 🥺 Tive um probleminha para fazer o resumo... Poderia tentar de novo? 💔");
+      console.error('Erro ao resumir texto:', e);
+      await reply('😓 Ops, não consegui resumir agora! Que tal tentar de novo? 🌟');
     }
+    break;
+    
+  case 'resumirurl':
+    if (!q) return reply(`🌐 Quer resumir uma página? Envie a URL após o comando ${prefix}resumirurl! Exemplo: ${prefix}resumirurl https://exemplo.com/artigo 😊`);
+    try {
+      if (!q.startsWith('http://') && !q.startsWith('https://')) {
+        return reply(`🚫 Ops, parece que a URL é inválida! Certifique-se de incluir http:// ou https://. Exemplo: ${prefix}resumirurl https://exemplo.com/artigo 😊`);
+      }
+
+      await reply('⏳ Aguarde enquanto busco e resumo a página para você... ✨');
+
+      const response = await axios.get(q, {
+        timeout: 10000,
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Bot/1.0)' }
+      });
+
+      const { document } = parseHTML(response.data);
+
+      document.querySelectorAll('script, style, noscript, iframe').forEach(el => el.remove());
+
+      const cleanText = document.body.textContent.replace(/\s+/g, ' ').trim();
+
+      if (!cleanText || cleanText.length < 50) {
+        return reply(`😓 Ops, não encontrei conteúdo suficiente para resumir nessa página! Tente outra URL, tá? 🌐`);
+      }
+
+      const prompt = `Resuma o seguinte conteúdo extraído de uma página web em poucos parágrafos, de forma clara e objetiva, destacando os pontos principais:\n\n${cleanText.substring(0, 5000)}`; // Limita a 5000 caracteres
+
+      const iaResponse = await ia.makeCognimaRequest('cognima/CognimAI', prompt);
+      await reply(iaResponse.data.choices[0].message.content);
+    } catch (e) {
+      console.error('Erro ao resumir URL:', e.message);
+      if (e.code === 'ECONNABORTED') {
+        await reply('😓 Ops, a página demorou muito para responder! Tente outra URL. 🌐');
+      } else if (e.response) {
+        await reply(`😓 Não consegui acessar a página (código ${e.response.status}). Verifique a URL e tente novamente, tá? 🌟`);
+      } else {
+        await reply('😓 Vixe, algo deu errado ao resumir a página! Tente novamente em breve, combinado? 🌈');
+      }
+    }
+    break;
+
+    case 'ideias': case 'ideia':
+  if (!q) return reply(`💡 Quer ideias criativas? Diga o tema após o comando ${prefix}ideias! Exemplo: ${prefix}ideias nomes para um aplicativo de receitas 😊`);
+  try {
+    await reply('⏳ Um segundinho, estou pensando em ideias incríveis... ✨');
+    const prompt = `Gere 15 ideias criativas e detalhadas para o seguinte tema: ${q}`;
+    const response = await ia.makeCognimaRequest('cognima/CognimAI', prompt);
+    await reply(response.data.choices[0].message.content);
+  } catch (e) {
+    console.error('Erro ao gerar ideias:', e);
+    await reply('😓 Poxa, não consegui gerar ideias agora! Tente de novo em breve, tá? 🌈');
+  }
   break;
+  
+  case 'explicar': case 'explique':
+  if (!q) return reply(`🤓 Quer entender algo? Diga o que deseja explicar após o comando ${prefix}explicar! Exemplo: ${prefix}explicar o que é inteligência artificial 😊`);
+  try {
+    await reply('⏳ Um momentinho, estou preparando uma explicação bem clara... ✨');
+    const prompt = `Explique o seguinte conceito de forma simples e clara, como se fosse para alguém sem conhecimento prévio: ${q}`;
+    const response = await ia.makeCognimaRequest('cognima/CognimAI', prompt);
+    await reply(response.data.choices[0].message.content);
+  } catch (e) {
+    console.error('Erro ao explicar conceito:', e);
+    await reply('😓 Vixe, não consegui explicar agora! Tente de novo em alguns instantes, tá? 🌈');
+  }
+  break;
+  
+  case 'corrigir': case 'correcao':
+  if (!q) return reply(`✍️ Quer corrigir um texto? Envie o texto após o comando ${prefix}corrigir! Exemplo: ${prefix}corrigir Eu foi no mercado e comprei frutas. 😊`);
+  try {
+    await reply('⏳ Aguarde enquanto dou um polimento no seu texto... ✨');
+    const prompt = `Corrija os erros gramaticais, ortográficos e de estilo no seguinte texto, mantendo o significado original: ${q}`;
+    const response = await ia.makeCognimaRequest('cognima/CognimAI', prompt);
+    await reply(response.data.choices[0].message.content);
+  } catch (e) {
+    console.error('Erro ao corrigir texto:', e);
+    await reply('😓 Ops, não consegui corrigir o texto agora! Tente novamente, tá? 🌟');
+  }
+  break;
+
+  case 'cog':
+    if (!q) return reply(`📢 Ei, falta a pergunta! Me diga o que quer saber após o comando ${prefix}cog! 😴`);
+    try {
+      await reply('⏳ Um momentinho, estou pensando na melhor resposta... 🌟');
+      const response = await ia.makeCognimaRequest('cognima/CognimAI', q);
+      await reply(response.data.choices[0].message.content);
+    } catch (e) {
+      console.error('Erro na API CognimAI:', e);
+      await reply('😓 Vixe, algo deu errado por aqui! Tente novamente em breve, combinado? 🌈');
+    }
+    break;
   
   case 'tradutor': case 'translator':
     if (!q) return reply(`🌍 Quer traduzir algo? Me diga o idioma e o texto assim: ${prefix}${command} idioma | texto
@@ -1601,8 +1868,8 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
       const idioma = partes[0].trim();
       const texto = partes.slice(1).join('|').trim();
       const prompt = `Traduza o seguinte texto para ${idioma}:\n\n${texto}\n\nForneça apenas a tradução, sem explicações adicionais.`;
-      const bahz = await ia.makeCognimaRequest('cognimai', prompt, `tradutor_${sender.split('@')[0]}`);
-      await reply(`🌐✨ *Prontinho! Sua tradução para ${idioma.toUpperCase()} está aqui:*\n\n${bahz.reply}`);
+      const bahz = await ia.makeCognimaRequest('cognima/CognimAI', prompt);
+      await reply(`🌐✨ *Prontinho! Sua tradução para ${idioma.toUpperCase()} está aqui:*\n\n${bahz.data.choices[0].message.content}`);
     } catch (e) {
       console.error("Erro ao traduzir texto:", e);
       await reply("Awnn... 🥺 Não consegui fazer a tradução agora... Poderia tentar de novo, por favorzinho? 💔");
@@ -1708,8 +1975,8 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
       }
       if (!definicaoEncontrada) {
         const prompt = `Defina a palavra "${palavra}" em português de forma completa e fofa. Inclua a classe gramatical, os principais significados e um exemplo de uso em uma frase curta e bonitinha.`;
-        const bahz = await ia.makeCognimaRequest('cognimai', prompt, `dicionario_${sender.split('@')[0]}`);
-        await reply(`${bahz.reply}`);
+        const bahz = await ia.makeCognimaRequest('cognima/CognimAI', prompt);
+        await reply(`${bahz.data.choices[0].message.content}`);
         definicaoEncontrada = true;
       }
 
@@ -2025,43 +2292,6 @@ case 'ranklevel':
       await reply("❌ Ocorreu um erro inesperado ao gerar o código.");
     }
     break;
-   
-  
-  case 'code-gen': try {
-  if(!isPremium) return reply('Apenas usuários premium.');
-  if(!q) return reply("Falta digitar o prompt 🤔");
-  await reply('Aguarde um momentinho... ☀️');
-  const response = await axios.get(`https://api.cognima.com.br/api/ia/code-gen?key=CognimaTeamFreeKey&q=${q}`, { responseType: 'arraybuffer' });
-  const mimeType = response.headers['content-type'];
-  const contentDisposition = response.headers['content-disposition'];
-  let nomeArquivo = Date.now();
-  if (contentDisposition) {
-    const match = contentDisposition.match(/filename="?([^"]+)"?/);
-    if (match) nomeArquivo = match[1];
-  };
-  if (!nomeArquivo.includes('.')) {
-    const extensoes = { 'application/json': 'json', 'text/plain': 'txt', 'application/javascript': 'js', 'application/zip': 'zip', 'application/pdf': 'pdf' };
-    nomeArquivo += '.' + (extensoes[mimeType] || 'bin');
-  };
-  await nazu.sendMessage(from, { document: response.data, mimetype: mimeType, fileName: nomeArquivo }, { quoted: info });
-  } catch(e) {
-  console.error(e);
-  await reply("🐝 Oh não! Aconteceu um errinho inesperado aqui. Tente de novo daqui a pouquinho, por favor! 🥺");
-  };
-  break
-  
-  case 'cog':
-  try {
-    if (!q) return await reply('Falta o prompt 🥱');
-    const resultPriv = await ia.makeCognimaRequest('cognimai', q, `cog_${sender.split('@')[0]}`);
-    if (!resultPriv.success) return reply("ocorreu um erro 💔");
-    let responseText = resultPriv.reply;
-    await reply(responseText);
-  } catch (e) {
-    console.error(e);
-    await reply("🐝 Oh não! Aconteceu um errinho inesperado aqui. Tente de novo daqui a pouquinho, por favor! 🥺");
-  }
-  break;
   
   //FERRAMENTAS
   case 'encurtalink': case 'tinyurl': try {
