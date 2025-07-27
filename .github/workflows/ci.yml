@@ -133,7 +133,6 @@ jobs:
           https://api.github.com/repos/${{ github.repository }}/actions/workflows/$WORKFLOW_ID/runs?status=in_progress,queued \
           | jq '.workflow_runs[] | select(.id != ${{ github.run_id }}) | .id')
         
-        # Cancela cada workflow ativo (exceto o atual)
         for RUN_ID in $RUNS; do
           echo "Cancelando workflow run ID: $RUN_ID"
           curl -X POST \
