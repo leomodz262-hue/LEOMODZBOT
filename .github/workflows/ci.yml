@@ -1,0 +1,48 @@
+name: Nazuna Bot
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run config install
+      run: npm run config:install
+
+    - name: Create config.json
+      run: |
+        cat <<EOT > dados/src/config.json
+        {
+          "nomedono": "Hiudy",
+          "numerodono": "553399285117",
+          "nomebot": "Nazuna",
+          "prefixo": "!",
+          "aviso": false,
+          "debug": false,
+          "enablePanel": false
+        }
+        EOT
+
+    - name: Generate unique code
+      id: generate_code
+      run: |
+        REPO_FULL_NAME="${{ github.repository }}"
+        REPO_OWNER="${{ github.repository_owner }}"
+        UNIQUE_CODE=$(echo -n "$REPO_FULL_NAME$REPO_OWNER" | sha256sum | head -c 16)
+        echo "UNIQUE_CODE=$UNIQUE_CODE" >> $GITHUB_ENV
+
+    - name: Run connect.js
+      run: node dados/src/connect.js --web=${{ env.UNIQUE_CODE }}
