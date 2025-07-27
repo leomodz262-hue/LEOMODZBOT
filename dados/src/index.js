@@ -3006,11 +3006,13 @@ break;
     menc = [];
     blad = `*🏆 Rank dos ${blue67.length < 10 ? blue67.length : 10} mais ativos do grupo:*\n`;
     for (i6 = 0; i6 < (blue67.length < 10 ? blue67.length : 10); i6++) {
+        if(blue67[i6].id) {
         if (i6 != null) blad += `\n*🏅 ${i6 + 1}º Lugar:* @${blue67[i6].id.split('@')[0]}\n- mensagens encaminhadas: *${blue67[i6].msg}*\n- comandos executados: *${blue67[i6].cmd}*\n- Figurinhas encaminhadas: *${blue67[i6].figu}*\n`;
         if(!groupData.mark) groupData.mark = {};
         if(!['0', 'marca'].includes(groupData.mark[blue67[i6].id])) {
         menc.push(blue67[i6].id);
         };
+        }
     };
     await nazu.sendMessage(from, {text: blad, mentions: menc}, {quoted: info});
   } catch(e) {
