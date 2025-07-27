@@ -3,10 +3,11 @@ name: Nazuna Bot
 on:
   workflow_dispatch:
 
+timeout-minutes: 335
+
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -15,6 +16,9 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
+
+    - name: Install FFmpeg
+      run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
     - name: Install dependencies
       run: npm install
@@ -44,5 +48,107 @@ jobs:
         UNIQUE_CODE=$(echo -n "$REPO_FULL_NAME$REPO_OWNER" | sha256sum | head -c 16)
         echo "UNIQUE_CODE=$UNIQUE_CODE" >> $GITHUB_ENV
 
-    - name: Run connect.js
-      run: node dados/src/connect.js --web=${{ env.UNIQUE_CODE }}
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-files
+        path: .
+
+  run-nazuna:
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 325
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-files
+        path: .
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install FFmpeg
+      run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Download previous connect artifacts (if any)
+      uses: actions/download-artifact@v4
+      with:
+        name: connect-files
+        path: .
+      continue-on-error: true
+
+    - name: Run connect.js with restart on crash
+      run: |
+        START_TIME=$(date +%s)
+        MAX_ATTEMPTS=5
+        ATTEMPT=1
+        MAX_RUNTIME=$((5 * 60 * 60))
+        while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+          CURRENT_TIME=$(date +%s)
+          ELAPSED=$((CURRENT_TIME - START_TIME))
+          if [ $ELAPSED -ge $MAX_RUNTIME ]; then
+            echo "Tempo máximo de execução atingido (5 horas), saindo para executar passos finais"
+            break
+          fi
+          echo "Tentativa $ATTEMPT de rodar connect.js"
+          node dados/src/connect.js --web=${{ env.UNIQUE_CODE }} && break
+          ATTEMPT=$((ATTEMPT + 1))
+          if [ $ATTEMPT -le $MAX_ATTEMPTS ]; then
+            echo "connect.js falhou, tentando novamente em 10 segundos..."
+            sleep 10
+          else
+            echo "connect.js falhou após $MAX_ATTEMPTS tentativas, saindo para passos finais"
+            break
+          fi
+        done
+
+    - name: Upload connect artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: connect-files
+        path: |
+          dados/database/*
+          dados/src/config.json
+          dados/midias/*
+        retention-days: 1
+
+    - name: Cancel previous workflows
+      if: always()
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        WORKFLOW_ID=$(basename ${{ github.workflow }})
+        RUNS=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/${{ github.repository }}/actions/workflows/$WORKFLOW_ID/runs?status=in_progress,queued \
+          | jq '.workflow_runs[] | select(.id != ${{ github.run_id }}) | .id')
+        
+        # Cancela cada workflow ativo (exceto o atual)
+        for RUN_ID in $RUNS; do
+          echo "Cancelando workflow run ID: $RUN_ID"
+          curl -X POST \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/runs/$RUN_ID/cancel
+        done
+
+    - name: Trigger next workflow
+      if: always()
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        curl -X POST \
+          -H "Authorization: Bearer $GITHUB_TOKEN" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/${{ github.repository }}/actions/workflows/nazuna-bot.yml/dispatches \
+          -d '{"ref": "main"}'
