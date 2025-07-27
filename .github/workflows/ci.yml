@@ -3,8 +3,6 @@ name: Nazuna Bot
 on:
   workflow_dispatch:
 
-timeout-minutes: 335
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -87,6 +85,8 @@ jobs:
       continue-on-error: true
 
     - name: Run connect.js with restart on crash
+      env:
+        UNIQUE_CODE: ${{ env.UNIQUE_CODE }}
       run: |
         START_TIME=$(date +%s)
         MAX_ATTEMPTS=5
