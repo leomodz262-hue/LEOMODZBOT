@@ -44,22 +44,22 @@ jobs:
     - name: Create config.json if it does not exist
       run: |
         CONFIG_FILE="dados/src/config.json"
-        if [ ! -f "$CONFIG_FILE" ]; then
-          mkdir -p $(dirname "$CONFIG_FILE")
-          cat <<'EOT' > "$CONFIG_FILE"
-{
-"nomedono": "Hiudy",
-"numerodono": "553399285117",
-"nomebot": "Nazuna",
-"prefixo": "!",
-"aviso": false,
-"debug": false,
-"enablePanel": false
-}
+        if [ ! -f \"$CONFIG_FILE\" ]; then
+          mkdir -p $(dirname \"$CONFIG_FILE\")
+          cat <<'EOT' > \"$CONFIG_FILE\"
+          {
+          "nomedono": "Hiudy",
+          "numerodono": "553399285117",
+          "nomebot": "Nazuna",
+          "prefixo": "!",
+          "aviso": false,
+          "debug": false,
+          "enablePanel": false
+          }
 EOT
-          echo "$CONFIG_FILE criado com sucesso."
+          echo \"$CONFIG_FILE criado com sucesso.\"
         else
-          echo "$CONFIG_FILE já existe, pulando a criação."
+          echo \"$CONFIG_FILE já existe, pulando a criação.\"
         fi
 
     - name: Run connect.js with restart on crash
