@@ -11,20 +11,19 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0 # Necessário para trabalhar com o histórico do repositório
+        fetch-depth: 0
 
     - name: Remove database folder from repository only
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
-        # Cria uma cópia temporária da pasta database para preservar localmente
-        cp -r dados/database dados/database_temp || echo "No database folder to copy"
-        # Remove a pasta database do índice do Git
-        git rm -r --cached dados/database/ || echo "No database folder to remove"
-        git commit -m "Remove database folder from repository to keep it private [skip ci]" || echo "No changes to commit"
-        git push origin main
-        # Restaura a pasta database localmente
-        mv dados/database_temp dados/database || echo "No database_temp to restore"
+        if git ls-files --error-unmatch dados/database/ > /dev/null 2>&1; then
+          git rm -r --cached dados/database/
+          git commit -m "Remove database folder from repository to keep it private [skip ci]"
+          git push origin main
+        else
+          echo "A pasta 'dados/database' não está no índice do Git ou já foi removida. Nenhuma ação necessária."
+        fi
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -44,8 +43,10 @@ jobs:
 
     - name: Create config.json if it does not exist
       run: |
-        if [ ! -f dados/src/config.json ]; then
-          cat <<EOT > dados/src/config.json
+        CONFIG_FILE="dados/src/config.json"
+        if [ ! -f "$CONFIG_FILE" ]; then
+          mkdir -p $(dirname "$CONFIG_FILE")
+          cat <<EOT > "$CONFIG_FILE"
           {
             "nomedono": "Hiudy",
             "numerodono": "553399285117",
@@ -56,9 +57,9 @@ jobs:
             "enablePanel": false
           }
           EOT
-          echo "config.json created"
+          echo "$CONFIG_FILE criado com sucesso."
         else
-          echo "config.json already exists, skipping creation"
+          echo "$CONFIG_FILE já existe, pulando a criação."
         fi
 
     - name: Run connect.js with restart on crash
@@ -70,22 +71,33 @@ jobs:
         MAX_ATTEMPTS=5
         ATTEMPT=1
         MAX_RUNTIME=$((5 * 60 * 60))
+
         while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
           CURRENT_TIME=$(date +%s)
           ELAPSED=$((CURRENT_TIME - START_TIME))
+
           if [ $ELAPSED -ge $MAX_RUNTIME ]; then
-            echo "Tempo máximo de execução atingido (5 horas), saindo para executar passos finais"
+            echo "Tempo máximo de execução atingido ($((MAX_RUNTIME / 3600)) horas), saindo para executar passos finais."
             break
           fi
-          echo "Tentativa $ATTEMPT de rodar connect.js"
-          node dados/src/connect.js --web=$UNIQUE_CODE && break
-          ATTEMPT=$((ATTEMPT + 1))
-          if [ $ATTEMPT -le $MAX_ATTEMPTS ]; then
-            echo "connect.js falhou, tentando novamente em 10 segundos..."
-            sleep 10
-          else
-            echo "connect.js falhou após $MAX_ATTEMPTS tentativas, saindo para passos finais"
+
+          echo "Tentativa $ATTEMPT de rodar connect.js..."
+          node dados/src/connect.js --web=$UNIQUE_CODE
+          EXIT_CODE=$?
+
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "connect.js executado com sucesso."
             break
+          else
+            echo "connect.js falhou com código de saída $EXIT_CODE."
+            ATTEMPT=$((ATTEMPT + 1))
+            if [ $ATTEMPT -le $MAX_ATTEMPTS ]; then
+              echo "Tentando novamente em 5 segundos..."
+              sleep 5
+            else
+              echo "connect.js falhou após $MAX_ATTEMPTS tentativas. Encerrando."
+              exit 1
+            fi
           fi
         done
 
@@ -94,9 +106,13 @@ jobs:
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
-        git add dados/database/* dados/src/config.json dados/midias/*
-        git commit -m "Update config, database, and midias files [skip ci]" || echo "No changes to commit"
-        git push origin main
+        git add dados
+        if ! git diff-index --quiet HEAD; then
+          git commit -m "Update config and midias files [skip ci]"
+          git push origin main
+        else
+          echo "Nenhuma alteração para comitar."
+        fi
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
