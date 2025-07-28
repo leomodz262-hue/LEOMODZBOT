@@ -10,6 +10,23 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Necessário para trabalhar com o histórico do repositório
+
+    - name: Remove database folder from repository only
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        # Cria uma cópia temporária da pasta database para preservar localmente
+        cp -r dados/database dados/database_temp || echo "No database folder to copy"
+        # Remove a pasta database do índice do Git
+        git rm -r --cached dados/database/ || echo "No database folder to remove"
+        git commit -m "Remove database folder from repository to keep it private [skip ci]" || echo "No changes to commit"
+        git push origin main
+        # Restaura a pasta database localmente
+        mv dados/database_temp dados/database || echo "No database_temp to restore"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -25,26 +42,24 @@ jobs:
     - name: Run config install
       run: npm run config:install
 
-    - name: Create config.json
+    - name: Create config.json if it does not exist
       run: |
-        cat <<EOT > dados/src/config.json
-        {
-          "nomedono": "Hiudy",
-          "numerodono": "553399285117",
-          "nomebot": "Nazuna",
-          "prefixo": "!",
-          "aviso": false,
-          "debug": false,
-          "enablePanel": false
-        }
-        EOT
-
-    - name: Download previous connect artifacts (if any)
-      uses: actions/download-artifact@v4
-      with:
-        name: connect-files
-        path: .
-      continue-on-error: true
+        if [ ! -f dados/src/config.json ]; then
+          cat <<EOT > dados/src/config.json
+          {
+            "nomedono": "Hiudy",
+            "numerodono": "553399285117",
+            "nomebot": "Nazuna",
+            "prefixo": "!",
+            "aviso": false,
+            "debug": false,
+            "enablePanel": false
+          }
+          EOT
+          echo "config.json created"
+        else
+          echo "config.json already exists, skipping creation"
+        fi
 
     - name: Run connect.js with restart on crash
       run: |
@@ -74,16 +89,16 @@ jobs:
           fi
         done
 
-    - name: Upload connect artifacts
+    - name: Commit and push changes to repository
       if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: connect-files
-        path: |
-          dados/database/*
-          dados/src/config.json
-          dados/midias/*
-        retention-days: 1
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        git add dados/database/* dados/src/config.json dados/midias/*
+        git commit -m "Update config, database, and midias files [skip ci]" || echo "No changes to commit"
+        git push origin main
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Trigger next workflow
       if: always()
