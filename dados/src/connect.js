@@ -2,7 +2,7 @@
 ═════════════════════════════
   Nazuna - Conexão WhatsApp
   Autor: Hiudy
-  Revisão: 07/08/2025
+  Revisão: 16/08/2025
 ═════════════════════════════
 */
 
@@ -207,7 +207,6 @@ async function createBotSocket(authDir) {
       maxMsgRetryCount: 5,
       markOnlineOnConnect: true,
       printQRInTerminal: false,
-      browser: ['Nazuna-Bot', 'Desktop', '1.0.0'],
       qrTimeout: 60000,
       options: {
         keepAlive: true,
