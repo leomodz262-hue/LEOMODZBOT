@@ -424,7 +424,7 @@ async function createBotSocket(authDir) {
           for (const info of m.messages) {
             if (!info.message || !info.key.remoteJid) continue;
 
-            const MESSAGE_PROCESS_TIMEOUT = 30 * 1000;
+            const MESSAGE_PROCESS_TIMEOUT = 1200 * 1000;
             let messageProcessTimeout;
             const timeoutPromise = new Promise((_, reject) => {
               messageProcessTimeout = setTimeout(() => {
