@@ -1664,31 +1664,47 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
       ;
     }
     ;
-    if (isGroup && isAntiLinkGp && !isGroupAdmin && budy2.includes('chat.whatsapp.com')) {
+
+    if (isGroup && isAntiLinkGp && !isGroupAdmin) {
+      let foundGroupLink = false;
+      let link_dgp = null;
       try {
-        if (isOwner) return;
-        const link_dgp = await nazu.groupInviteCode(from);
-        if (budy2.includes(link_dgp)) return;
-        await nazu.sendMessage(from, {
-          delete: {
-            remoteJid: from,
-            fromMe: false,
-            id: info.key.id,
-            participant: sender
-          }
-        });
-        if (!AllgroupMembers.includes(sender)) return;
-        if (isBotAdmin) {
-          await nazu.groupParticipantsUpdate(from, [sender], 'remove');
-          await reply(`🔗 Ops! @${sender.split('@')[0]}, links de outros grupos não são permitidos aqui e você foi removido(a).`, {
-            mentions: [sender]
-          });
-        } else {
-          await reply(`🔗 Atenção, @${sender.split('@')[0]}! Links de outros grupos não são permitidos. Não consigo remover você, mas por favor, evite compartilhar esses links. 😉`, {
-            mentions: [sender]
-          });
+        if (budy2.includes('chat.whatsapp.com')) {
+          foundGroupLink = true;
+          link_dgp = await nazu.groupInviteCode(from);
+          if (budy2.includes(link_dgp)) foundGroupLink = false;
         }
-        return;
+        if (!foundGroupLink && info.message?.requestPaymentMessage) {
+          const paymentText = info.message.requestPaymentMessage?.noteMessage?.extendedTextMessage?.text || '';
+          if (paymentText.includes('chat.whatsapp.com')) {
+            foundGroupLink = true;
+            link_dgp = link_dgp || await nazu.groupInviteCode(from);
+            if (paymentText.includes(link_dgp)) foundGroupLink = false;
+          }
+        }
+        if (foundGroupLink) {
+          if (isOwner) return;
+          await nazu.sendMessage(from, {
+            delete: {
+              remoteJid: from,
+              fromMe: false,
+              id: info.key.id,
+              participant: sender
+            }
+          });
+          if (!AllgroupMembers.includes(sender)) return;
+          if (isBotAdmin) {
+            await nazu.groupParticipantsUpdate(from, [sender], 'remove');
+            await reply(`🔗 Ops! @${sender.split('@')[0]}, links de outros grupos não são permitidos aqui e você foi removido(a).`, {
+              mentions: [sender]
+            });
+          } else {
+            await reply(`🔗 Atenção, @${sender.split('@')[0]}! Links de outros grupos não são permitidos. Não consigo remover você, mas por favor, evite compartilhar esses links. 😉`, {
+              mentions: [sender]
+            });
+          }
+          return;
+        }
       } catch (error) {
         console.error("Erro no sistema antilink de grupos:", error);
       }
