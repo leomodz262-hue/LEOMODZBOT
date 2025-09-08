@@ -3,8 +3,7 @@
 import fs from 'fs/promises';
 import * as fsSync from 'fs';
 import path from 'path';
-import { execSync, exec } from 'child_process';
-import readline from 'readline';
+import { exec } from 'child_process';
 import os from 'os';
 import { promisify } from 'util';
 
@@ -15,7 +14,7 @@ const BACKUP_DIR = path.join(process.cwd(), `backup_${new Date().toISOString().r
 const TEMP_DIR = path.join(process.cwd(), 'temp_nazuna');
 const isWindows = os.platform() === 'win32';
 
-const CACHE = new Map();
+// Removido: CACHE não utilizado
 
 const colors = {
   reset: '\x1b[0m',
@@ -131,7 +130,7 @@ async function confirmUpdate() {
 }
 
 async function createBackup() {
-  print.message('Criando backup dos arquivos...');
+  // Mensagem inicial removida para evitar duplicidade com o cabeçalho do passo
 
   try {
     await createBackupDirectories();
@@ -186,7 +185,7 @@ async function backupMidias() {
 }
 
 async function downloadUpdate() {
-  print.message('Baixando a versão mais recente do Nazuna...');
+  // Mensagem inicial removida para evitar duplicidade com o cabeçalho do passo
 
   try {
     await cleanupTempDir();
@@ -254,7 +253,7 @@ async function checkConnectivity() {
 }
 
 async function cleanOldFiles() {
-  print.message('Limpando arquivos antigos...');
+  // Mensagem inicial removida para evitar duplicidade com o cabeçalho do passo
 
   try {
     await removeSpecificFiles();
@@ -314,7 +313,7 @@ async function cleanDataDirectory() {
 }
 
 async function applyUpdate() {
-  print.message('Aplicando atualização...');
+  // Mensagem inicial removida para evitar duplicidade com o cabeçalho do passo
 
   try {
     await fs.cp(TEMP_DIR, process.cwd(), { recursive: true });
@@ -327,7 +326,7 @@ async function applyUpdate() {
 }
 
 async function restoreBackup() {
-  print.message('Restaurando backup...');
+  // Mensagem inicial removida para evitar duplicidade com o cabeçalho do passo
 
   try {
     await createDataDirectories();
@@ -382,7 +381,7 @@ async function restoreMidias() {
 }
 
 async function installDependencies() {
-  print.message('Instalando dependências...');
+  // Mensagem inicial removida para evitar duplicidade com o cabeçalho do passo
 
   try {
     await runCommandWithSpinner('npm run config:install', 'Instalando dependências...');
@@ -417,7 +416,7 @@ async function runCommandWithSpinner(command, message) {
 }
 
 async function cleanup() {
-  print.message('Finalizando e limpando arquivos temporários...');
+  // Mensagem inicial removida para evitar duplicidade com o cabeçalho do passo
 
   try {
     if (fsSync.existsSync(BACKUP_DIR)) {
