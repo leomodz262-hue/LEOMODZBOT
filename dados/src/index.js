@@ -1037,7 +1037,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
     debug
   } = config;
   var KeyCog = config.apikey || false;
-  const menusModule = await import(pathz.join(__dirname, 'menus', 'index.js'));
+  const menusModule = await import(new URL('./menus/index.js', import.meta.url));
   const menus = await menusModule.default;
   const {
     menu,
@@ -1055,7 +1055,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
   } = menus;
   var prefix = prefixo;
   var numerodono = String(numerodono);
-  const loadedModulesPromise = await import(pathz.join(__dirname, 'funcs', 'exports.js'));
+  const loadedModulesPromise = await import(new URL('./funcs/exports.js', import.meta.url));
   const modules = await loadedModulesPromise.default;
   const {
     youtube,
