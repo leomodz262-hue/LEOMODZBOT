@@ -83,6 +83,7 @@ ${middleBorder}${menuItemIcon}${prefix}listasubdonos
 ${middleBorder}${menuItemIcon}${prefix}addpremium
 ${middleBorder}${menuItemIcon}${prefix}delpremium
 ${middleBorder}${menuItemIcon}${prefix}listprem
+${middleBorder}${menuItemIcon}${prefix}resetgold
 ${middleBorder}${menuItemIcon}${prefix}bangp
 ${middleBorder}${menuItemIcon}${prefix}unbangp
 ${middleBorder}${menuItemIcon}${prefix}listbangp

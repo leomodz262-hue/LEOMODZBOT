@@ -33,6 +33,7 @@ const NO_PREFIX_COMMANDS_FILE = pathz.join(DATABASE_DIR, 'noPrefixCommands.json'
 const COMMAND_ALIASES_FILE = pathz.join(DATABASE_DIR, 'commandAliases.json');
 const GLOBAL_BLACKLIST_FILE = pathz.join(DONO_DIR, 'globalBlacklist.json');
 const MENU_DESIGN_FILE = pathz.join(DONO_DIR, 'menuDesign.json');
+const ECONOMY_FILE = pathz.join(DATABASE_DIR, 'economy.json');
 
 function formatUptime(seconds, longFormat = false, showZero = false) {
   const d = Math.floor(seconds / (24 * 3600));
@@ -143,6 +144,24 @@ ensureJsonFileExists(MENU_DESIGN_FILE, {
   menuItemIcon: "•.̇𖥨֗🍓⭟",
   separatorIcon: "❁",
   middleBorder: "┊"
+});
+ensureJsonFileExists(ECONOMY_FILE, {
+  users: {},
+  shop: {
+    "pickaxe": { name: "Picareta", price: 500, type: "tool", effect: { mineBonus: 0.2 } },
+    "vault": { name: "Cofre", price: 1000, type: "upgrade", effect: { bankCapacity: 5000 } },
+    "lucky": { name: "Amuleto da Sorte", price: 1500, type: "upgrade", effect: { workBonus: 0.2 } },
+    "rod": { name: "Vara de Pesca", price: 400, type: "tool", effect: { fishBonus: 0.2 } },
+  "lamp": { name: "Lanterna", price: 600, type: "tool", effect: { exploreBonus: 0.2 } },
+  "bow": { name: "Arco de Caça", price: 800, type: "tool", effect: { huntBonus: 0.25 } },
+  "forge": { name: "Kit de Forja", price: 1200, type: "tool", effect: { forgeBonus: 0.25 } }
+  },
+  jobCatalog: {
+    "estagiario": { name: "Estagiário", min: 80, max: 140 },
+    "designer": { name: "Designer", min: 150, max: 250 },
+    "programador": { name: "Programador", min: 200, max: 350 },
+    "gerente": { name: "Gerente", min: 260, max: 420 }
+  }
 });
 ensureJsonFileExists(LEVELING_FILE, {
   users: {},
@@ -649,6 +668,53 @@ function getPatent(level, patents) {
   }
   return "Iniciante";
 }
+
+// ====== Economia (Gold) Helpers ======
+function loadEconomy() {
+  return loadJsonFile(ECONOMY_FILE, { users: {}, shop: {}, jobCatalog: {} });
+}
+function saveEconomy(data) {
+  try {
+    fs.writeFileSync(ECONOMY_FILE, JSON.stringify(data, null, 2));
+    return true;
+  } catch (e) { console.error('❌ Erro ao salvar economy.json:', e); return false; }
+}
+function getEcoUser(econ, userId) {
+  econ.users[userId] = econ.users[userId] || { wallet: 0, bank: 0, cooldowns: {}, inventory: {}, job: null };
+  return econ.users[userId];
+}
+function parseAmount(text, maxValue) {
+  if (!text) return NaN;
+  const t = text.trim().toLowerCase();
+  if (['all', 'tudo', 'max'].includes(t)) return maxValue;
+  const n = parseInt(t.replace(/[^0-9]/g, ''));
+  return isNaN(n) ? NaN : Math.max(0, n);
+}
+function fmt(n) { return new Intl.NumberFormat('pt-BR').format(Math.floor(n)); }
+function timeLeft(targetMs) {
+  const diff = targetMs - Date.now();
+  if (diff <= 0) return '0s';
+  const s = Math.ceil(diff / 1000);
+  const m = Math.floor(s / 60); const rs = s % 60; const h = Math.floor(m / 60); const rm = m % 60;
+  return h > 0 ? `${h}h ${rm}m` : (m > 0 ? `${m}m ${rs}s` : `${rs}s`);
+}
+function applyShopBonuses(user, econ) {
+  const inv = user.inventory || {};
+  const shop = econ.shop || {};
+  let mineBonus = 0; let workBonus = 0; let bankCapacity = Infinity; let fishBonus = 0; let exploreBonus = 0; let huntBonus = 0; let forgeBonus = 0;
+  Object.entries(inv).forEach(([key, qty]) => {
+    if (!qty || !shop[key]) return;
+    const eff = shop[key].effect || {};
+    if (eff.mineBonus) mineBonus += eff.mineBonus * qty;
+    if (eff.workBonus) workBonus += eff.workBonus * qty;
+    if (eff.bankCapacity) bankCapacity = isFinite(bankCapacity) ? bankCapacity + eff.bankCapacity * qty : (eff.bankCapacity * qty);
+    if (eff.fishBonus) fishBonus += eff.fishBonus * qty;
+    if (eff.exploreBonus) exploreBonus += eff.exploreBonus * qty;
+    if (eff.huntBonus) huntBonus += eff.huntBonus * qty;
+    if (eff.forgeBonus) forgeBonus += eff.forgeBonus * qty;
+  });
+  return { mineBonus, workBonus, bankCapacity, fishBonus, exploreBonus, huntBonus, forgeBonus };
+}
 function checkLevelUp(userId, userData, levelingData, nazu, from) {
   const nextLevelXp = calculateNextLevelXp(userData.level);
   if (userData.xp >= nextLevelXp) {
@@ -1049,9 +1115,10 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
     menuFerramentas,
     menuSticker,
     menuIa,
-    menuAlterador,
-    menuLogos,
-    menuTopCmd
+  menuAlterador,
+  menuLogos,
+  menuTopCmd,
+  menuGold
   } = menus;
   var prefix = prefixo;
   var numerodono = String(numerodono);
@@ -1154,6 +1221,8 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
           mark: {}
         };
       };
+  // default flags
+  groupData.modogold = typeof groupData.modogold === 'boolean' ? groupData.modogold : false;
       groupData.minMessage = groupData.minMessage || null;
       groupData.moderators = groupData.moderators || [];
       groupData.allowedModCommands = groupData.allowedModCommands || [];
@@ -2264,7 +2333,339 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
     }
     ;
     switch (command) {
-      //ALTERADORES
+      // ====== MENUS ======
+      case 'menugold': {
+        const design = getMenuDesignWithDefaults(nomebot, pushname);
+        const txt = await menuGold(prefix, nomebot, pushname, design);
+        await reply(txt);
+        break;
+      }
+
+      // ====== ADMIN: ATIVAR/DESATIVAR MODO GOLD (POR GRUPO) ======
+      case 'modogold': {
+        if (!isGroup) return reply('Este comando só funciona em grupos.');
+        if (!isGroupAdmin) return reply('Apenas administradores podem usar este comando.');
+        groupData.modogold = !groupData.modogold;
+        fs.writeFileSync(groupFile, JSON.stringify(groupData, null, 2));
+        await reply(`💰 Modo Gold ${groupData.modogold ? 'ATIVADO' : 'DESATIVADO'} neste grupo.`);
+        break;
+      }
+
+      // ====== ECONOMIA (requer modogold ativo no grupo) ======
+  case 'perfil':
+      case 'carteira':
+      case 'banco':
+      case 'depositar':
+      case 'dep':
+      case 'sacar':
+      case 'saque':
+      case 'transferir':
+      case 'pix':
+      case 'loja':
+      case 'lojagold':
+      case 'comprar':
+      case 'buy':
+  case 'inventario':
+  case 'inv':
+  case 'apostar':
+  case 'bet':
+  case 'slots':
+      case 'minerar':
+      case 'mine':
+      case 'trabalhar':
+      case 'work':
+  case 'emprego':
+  case 'vagas':
+  case 'demitir':
+  case 'pescar':
+  case 'fish':
+  case 'explorar':
+  case 'explore':
+  case 'cacar':
+  case 'caçar':
+  case 'hunt':
+  case 'forjar':
+  case 'forge':
+  case 'crime':
+      case 'assaltar':
+      case 'roubar':
+      case 'topgold':
+      case 'diario':
+      case 'daily':
+      case 'resetgold':
+      {
+        if (!isGroup) return reply('💰 Os comandos de economia funcionam apenas em grupos.');
+  if (!groupData.modogold) return reply(`💤 O Modo Gold está desativado aqui. Um admin pode ativar com: ${prefix}modogold`);
+        const econ = loadEconomy();
+  const me = getEcoUser(econ, sender);
+  const { mineBonus, workBonus, bankCapacity, fishBonus, exploreBonus, huntBonus, forgeBonus } = applyShopBonuses(me, econ);
+
+        const sub = command;
+        const mentioned = (menc_jid2 && menc_jid2[0]) || (q.includes('@') ? q.split(' ')[0].replace('@','')+"@s.whatsapp.net" : null);
+
+        if (sub === 'resetgold') {
+          if (!(isOwner && !isSubOwner && sender === nmrdn)) return reply('Apenas o Dono principal pode resetar usuários.');
+          const target = (menc_jid2 && menc_jid2[0]) || null;
+          const scope = (q||'').toLowerCase();
+          if (scope.includes('all') || scope.includes('todos')) {
+            let count = 0;
+            for (const p of (AllgroupMembers||[])) {
+              if (econ.users[p]) { delete econ.users[p]; count++; }
+            }
+            saveEconomy(econ);
+            return reply(`✅ Resetado o gold de ${count} membros do grupo.`);
+          }
+          if (!target) return reply('Marque um usuário para resetar ou use "all".');
+          delete econ.users[target];
+          saveEconomy(econ);
+          return reply(`✅ Gold resetado para @${target.split('@')[0]}.`, { mentions:[target] });
+        }
+
+        // Visualizações
+        if (sub === 'perfil' || sub === 'carteira') {
+          const total = (me.wallet||0) + (me.bank||0);
+          return reply(`👤 Perfil Financeiro
+💼 Carteira: ${fmt(me.wallet)}
+🏦 Banco: ${fmt(me.bank)}
+💠 Total: ${fmt(total)}
+ 💼 Emprego: ${me.job ? econ.jobCatalog[me.job]?.name || me.job : 'Desempregado(a)'}
+`);
+        }
+        if (sub === 'banco') {
+          const cap = isFinite(bankCapacity) ? bankCapacity : '∞';
+          return reply(`🏦 Banco
+Saldo: ${fmt(me.bank)}
+Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
+`);
+        }
+
+        if (sub === 'depositar' || sub === 'dep') {
+          const amount = parseAmount(q.split(' ')[0], me.wallet);
+          if (!isFinite(amount) || amount <= 0) return reply('Informe um valor válido (ou "all").');
+          if (amount > me.wallet) return reply('Você não tem tudo isso na carteira.');
+          const cap = isFinite(bankCapacity) ? bankCapacity : Infinity;
+          const space = cap - me.bank;
+          if (space <= 0) return reply('Seu banco está cheio. Compre um Cofre na loja para aumentar a capacidade.');
+          const toDep = Math.min(amount, space);
+          me.wallet -= toDep; me.bank += toDep;
+          saveEconomy(econ);
+          return reply(`✅ Depositado ${fmt(toDep)}. Banco: ${fmt(me.bank)} | Carteira: ${fmt(me.wallet)}`);
+        }
+        if (sub === 'sacar' || sub === 'saque') {
+          const amount = parseAmount(q.split(' ')[0], me.bank);
+          if (!isFinite(amount) || amount <= 0) return reply('Informe um valor válido (ou "all").');
+          if (amount > me.bank) return reply('Saldo insuficiente no banco.');
+          me.bank -= amount; me.wallet += amount;
+          saveEconomy(econ);
+          return reply(`✅ Sacado ${fmt(amount)}. Banco: ${fmt(me.bank)} | Carteira: ${fmt(me.wallet)}`);
+        }
+
+        if (sub === 'transferir' || sub === 'pix') {
+          if (!mentioned) return reply('Marque o usuário e informe o valor. Ex: '+prefix+sub+' @user 100');
+          const amount = parseAmount(args.slice(-1)[0], me.wallet);
+          if (!isFinite(amount) || amount <= 0) return reply('Informe um valor válido.');
+          if (amount > me.wallet) return reply('Você não tem esse valor na carteira.');
+          const other = getEcoUser(econ, mentioned);
+          if (mentioned === sender) return reply('Você não pode transferir para si mesmo.');
+          me.wallet -= amount; other.wallet += amount;
+          saveEconomy(econ);
+          return reply(`💸 Transferido ${fmt(amount)} para @${mentioned.split('@')[0]}.`, { mentions:[mentioned] });
+        }
+
+        if (sub === 'loja' || sub === 'lojagold') {
+          const items = Object.entries(econ.shop||{});
+          if (items.length === 0) return reply('A loja está vazia no momento.');
+          let text = '🛍️ Loja de Itens\n\n';
+          for (const [k, it] of items) {
+            text += `• ${k} — ${it.name} — ${fmt(it.price)}\n`;
+          }
+          text += `\nCompre com: ${prefix}comprar <item>`;
+          return reply(text);
+        }
+        if (sub === 'comprar' || sub === 'buy') {
+          const key = (args[0]||'').toLowerCase();
+          if (!key) return reply('Informe o item. Ex: '+prefix+'comprar pickaxe');
+          const it = (econ.shop||{})[key];
+          if (!it) return reply('Item não encontrado. Veja a loja com '+prefix+'loja');
+          if (me.wallet < it.price) return reply('Saldo insuficiente na carteira.');
+          me.wallet -= it.price;
+          me.inventory[key] = (me.inventory[key]||0)+1;
+          saveEconomy(econ);
+          return reply(`✅ Você comprou ${it.name} por ${fmt(it.price)}!`);
+        }
+
+        if (sub === 'inventario' || sub === 'inv') {
+          const entries = Object.entries(me.inventory||{}).filter(([,q])=>q>0);
+          if (entries.length===0) return reply('Seu inventário está vazio.');
+          let text = '🎒 Inventário\n\n';
+          for (const [k,q] of entries) {
+            const it = (econ.shop||{})[k];
+            text += `• ${it?.name || k} x${q}\n`;
+          }
+          return reply(text);
+        }
+
+        if (sub === 'apostar' || sub === 'bet') {
+          const amount = parseAmount(args[0], me.wallet);
+          if (!isFinite(amount) || amount <= 0) return reply('Valor inválido.');
+          if (amount > me.wallet) return reply('Saldo insuficiente.');
+          const win = Math.random() < 0.47;
+          if (win) { me.wallet += amount; saveEconomy(econ); return reply(`🍀 Você ganhou ${fmt(amount)}!`); }
+          me.wallet -= amount; saveEconomy(econ); return reply(`💥 Você perdeu ${fmt(amount)}.`);
+        }
+        if (sub === 'slots') {
+          const amount = parseAmount(args[0]||'100', me.wallet);
+          if (!isFinite(amount) || amount <= 0) return reply('Valor inválido.');
+          if (amount > me.wallet) return reply('Saldo insuficiente.');
+          const symbols = ['🍒','🍋','🍉','⭐','🔔'];
+          const r = [0,0,0].map(()=>symbols[Math.floor(Math.random()*symbols.length)]);
+          let mult = 0;
+          if (r[0]===r[1] && r[1]===r[2]) mult = 3;
+          else if (r[0]===r[1] || r[1]===r[2] || r[0]===r[2]) mult = 1.5;
+          const delta = Math.floor(amount * (mult-1));
+          me.wallet += delta; // delta pode ser negativo
+          saveEconomy(econ);
+          return reply(`🎰 ${r.join(' | ')}\n${mult>1?`Você ganhou ${fmt(Math.floor(amount*(mult-1)))}!`:`Você perdeu ${fmt(amount)}`}`);
+        }
+
+        if (sub === 'vagas') {
+          const jobs = econ.jobCatalog||{}; let txt='💼 Vagas de Emprego\n\n';
+          Object.entries(jobs).forEach(([k,j])=>{ txt += `• ${k} — ${j.name} (${fmt(j.min)}-${fmt(j.max)})\n`; });
+          txt += `\nUse: ${prefix}emprego <vaga>`; return reply(txt);
+        }
+        if (sub === 'emprego') {
+          const key = (args[0]||'').toLowerCase(); if (!key) return reply('Informe a vaga. Veja com '+prefix+'vagas');
+          const job = (econ.jobCatalog||{})[key]; if (!job) return reply('Vaga inexistente.');
+          me.job = key; saveEconomy(econ); return reply(`✅ Agora você trabalha como ${job.name}. Ganhos ao usar ${prefix}trabalhar aumentam conforme a vaga.`);
+        }
+        if (sub === 'demitir') { me.job = null; saveEconomy(econ); return reply('👋 Você pediu demissão.'); }
+
+        if (sub === 'pescar' || sub === 'fish') {
+          const cd = me.cooldowns?.fish || 0; if (Date.now()<cd) return reply(`⏳ Aguarde ${timeLeft(cd)} para pescar novamente.`);
+          const base = 40 + Math.floor(Math.random()*61); // 40-100
+          const bonus = Math.floor(base * (fishBonus||0)); const total = base + bonus;
+          me.wallet += total; me.cooldowns.fish = Date.now() + 2*60*1000; saveEconomy(econ);
+          return reply(`🎣 Você pescou e ganhou ${fmt(total)} ${bonus>0?`(bônus ${fmt(bonus)})`:''}!`);
+        }
+
+        if (sub === 'explorar' || sub === 'explore') {
+          const cd = me.cooldowns?.explore || 0; if (Date.now()<cd) return reply(`⏳ Aguarde ${timeLeft(cd)} para explorar novamente.`);
+          const base = 60 + Math.floor(Math.random()*91); // 60-150
+          const bonus = Math.floor(base * (exploreBonus||0)); const total = base + bonus;
+          me.wallet += total; me.cooldowns.explore = Date.now() + 3*60*1000; saveEconomy(econ);
+          return reply(`🧭 Você explorou e encontrou ${fmt(total)} ${bonus>0?`(bônus ${fmt(bonus)})`:''}!`);
+        }
+
+        if (sub === 'cacar' || sub === 'caçar' || sub === 'hunt') {
+          const cd = me.cooldowns?.hunt || 0; if (Date.now()<cd) return reply(`⏳ Aguarde ${timeLeft(cd)} para caçar novamente.`);
+          const base = 70 + Math.floor(Math.random()*111); // 70-180
+          const bonus = Math.floor(base * (huntBonus||0)); const total = base + bonus;
+          me.wallet += total; me.cooldowns.hunt = Date.now() + 3*60*1000; saveEconomy(econ);
+          return reply(`🏹 Você caçou e ganhou ${fmt(total)} ${bonus>0?`(bônus ${fmt(bonus)})`:''}!`);
+        }
+
+        if (sub === 'forjar' || sub === 'forge') {
+          const cd = me.cooldowns?.forge || 0; if (Date.now()<cd) return reply(`⏳ Aguarde ${timeLeft(cd)} para forjar novamente.`);
+          const cost = 100; if (me.wallet < cost) return reply(`Você precisa de ${fmt(cost)} para materiais.`);
+          me.wallet -= cost;
+          const success = Math.random()<0.6;
+          if (success) {
+            const gain = 180 + Math.floor(Math.random()*221); // 180-400
+            const bonus = Math.floor(gain * (forgeBonus||0)); const total = gain + bonus;
+            me.wallet += total; me.cooldowns.forge = Date.now()+6*60*1000; saveEconomy(econ);
+            return reply(`⚒️ Forja bem-sucedida! Lucro ${fmt(total)} ${bonus>0?`(bônus ${fmt(bonus)})`:''}.`);
+          } else {
+            me.cooldowns.forge = Date.now()+6*60*1000; saveEconomy(econ);
+            return reply(`🔥 A forja falhou e os materiais foram perdidos.`);
+          }
+        }
+
+        if (sub === 'crime') {
+          const cd = me.cooldowns?.crime || 0; if (Date.now()<cd) return reply(`⏳ Aguarde ${timeLeft(cd)} para tentar de novo.`);
+          const success = Math.random() < 0.4; // 40% sucesso
+          if (success) {
+            const gain = 150 + Math.floor(Math.random()*251); me.wallet += gain; me.cooldowns.crime = Date.now()+8*60*1000; saveEconomy(econ);
+            return reply(`🕵️ Você cometeu um crime e lucrou ${fmt(gain)}. Cuidado para não ser pego!`);
+          } else {
+            const fine = 100 + Math.floor(Math.random()*201); const pay = Math.min(me.wallet, fine); me.wallet -= pay; me.cooldowns.crime = Date.now()+8*60*1000; saveEconomy(econ);
+            return reply(`🚔 Você foi pego! Pagou multa de ${fmt(pay)}.`);
+          }
+        }
+
+        if (sub === 'minerar' || sub === 'mine') {
+          const cd = me.cooldowns?.mine || 0;
+          if (Date.now() < cd) return reply(`⏳ Aguarde ${timeLeft(cd)} para minerar novamente.`);
+          const base = 50 + Math.floor(Math.random()*71); // 50-120
+          const bonus = Math.floor(base * mineBonus);
+          const total = base + bonus;
+          me.wallet += total;
+          me.cooldowns.mine = Date.now() + 60*1000; // 1 min
+          saveEconomy(econ);
+          return reply(`⛏️ Você minerou e ganhou ${fmt(total)} ${bonus>0?`(bônus ${fmt(bonus)})`:''}!`);
+        }
+
+        if (sub === 'trabalhar' || sub === 'work') {
+          const cd = me.cooldowns?.work || 0;
+          if (Date.now() < cd) return reply(`⏳ Aguarde ${timeLeft(cd)} para trabalhar novamente.`);
+          const base = 100 + Math.floor(Math.random()*151); // 100-250
+          const bonus = Math.floor(base * workBonus);
+          const total = base + bonus;
+          me.wallet += total;
+          me.cooldowns.work = Date.now() + 5*60*1000; // 5 min
+          saveEconomy(econ);
+          return reply(`💼 Você trabalhou e recebeu ${fmt(total)} ${bonus>0?`(bônus ${fmt(bonus)})`:''}!`);
+        }
+
+        if (sub === 'assaltar' || sub === 'roubar') {
+          if (!mentioned) return reply('Marque alguém para assaltar.');
+          if (mentioned === sender) return reply('Você não pode assaltar a si mesmo.');
+          const cd = me.cooldowns?.rob || 0;
+          if (Date.now() < cd) return reply(`⏳ Aguarde ${timeLeft(cd)} para tentar novamente.`);
+          const target = getEcoUser(econ, mentioned);
+          const chance = Math.random();
+          const maxSteal = Math.min(target.wallet, 300);
+          if (maxSteal <= 0) {
+            me.cooldowns.rob = Date.now() + 10*60*1000; // 10 min
+            saveEconomy(econ);
+            return reply('A vítima está sem dinheiro na carteira. Roubo falhou.');
+          }
+          if (chance < 0.5) {
+            const amt = 50 + Math.floor(Math.random() * Math.max(1, maxSteal-49));
+            target.wallet -= amt; me.wallet += amt;
+            me.cooldowns.rob = Date.now() + 10*60*1000;
+            saveEconomy(econ);
+            return reply(`🦹 Sucesso! Você roubou ${fmt(amt)} de @${mentioned.split('@')[0]}.`, { mentions:[mentioned] });
+          } else {
+            const multa = 80 + Math.floor(Math.random()*121); // 80-200
+            const pay = Math.min(me.wallet, multa);
+            me.wallet -= pay; target.wallet += pay;
+            me.cooldowns.rob = Date.now() + 10*60*1000;
+            saveEconomy(econ);
+            return reply(`🚨 Você foi pego! Pagou ${fmt(pay)} de multa para @${mentioned.split('@')[0]}.`, { mentions:[mentioned] });
+          }
+        }
+
+        if (sub === 'diario' || sub === 'daily') {
+          const cd = me.cooldowns?.daily || 0;
+          if (Date.now() < cd) return reply(`⏳ Você já coletou hoje. Volte em ${timeLeft(cd)}.`);
+          const reward = 500;
+          me.wallet += reward; me.cooldowns.daily = Date.now() + 24*60*60*1000;
+          saveEconomy(econ);
+          return reply(`🎁 Recompensa diária coletada: ${fmt(reward)}!`);
+        }
+
+        if (sub === 'topgold') {
+          const arr = Object.entries(econ.users).map(([id,u])=>[id,(u.wallet||0)+(u.bank||0)]).sort((a,b)=>b[1]-a[1]).slice(0,10);
+          if (arr.length===0) return reply('Sem dados suficientes para ranking.');
+          let text = '🏆 Ranking de Riqueza\n\n';
+          const mentions = [];
+          arr.forEach(([id,total],i)=>{ text += `${i+1}. @${id.split('@')[0]} — ${fmt(total)}\n`; mentions.push(id); });
+          return reply(text, { mentions });
+        }
+
+        return reply('Comando de economia inválido. Use '+prefix+'menugold para ver os comandos.');
+      }
+      
       case 'speedup':
       case 'boyvoice':
       case 'vozmenino':
