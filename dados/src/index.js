@@ -32,6 +32,8 @@ const DIVULGACAO_FILE = pathz.join(DONO_DIR, 'divulgacao.json');
 const NO_PREFIX_COMMANDS_FILE = pathz.join(DATABASE_DIR, 'noPrefixCommands.json');
 const COMMAND_ALIASES_FILE = pathz.join(DATABASE_DIR, 'commandAliases.json');
 const GLOBAL_BLACKLIST_FILE = pathz.join(DONO_DIR, 'globalBlacklist.json');
+const MENU_DESIGN_FILE = pathz.join(DONO_DIR, 'menuDesign.json');
+
 function formatUptime(seconds, longFormat = false, showZero = false) {
   const d = Math.floor(seconds / (24 * 3600));
   const h = Math.floor(seconds % (24 * 3600) / 3600);
@@ -132,6 +134,15 @@ ensureJsonFileExists(COMMAND_ALIASES_FILE, {
 ensureJsonFileExists(GLOBAL_BLACKLIST_FILE, {
   users: {},
   groups: {}
+});
+ensureJsonFileExists(MENU_DESIGN_FILE, {
+  header: `╭┈⊰ 🌸 『 *{botName}* 』\n┊Olá, {userName}!\n╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯`,
+  menuTopBorder: "╭┈",
+  bottomBorder: "╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯",
+  menuTitleIcon: "🍧ฺꕸ▸",
+  menuItemIcon: "•.̇𖥨֗🍓⭟",
+  separatorIcon: "❁",
+  middleBorder: "┊"
 });
 ensureJsonFileExists(LEVELING_FILE, {
   users: {},
@@ -679,6 +690,170 @@ const saveCustomAutoResponses = responses => {
     return false;
   }
 };
+
+// Funções para auto-respostas com suporte a mídia
+const loadGroupAutoResponses = (groupId) => {
+  const groupFile = pathz.join(GRUPOS_DIR, `${groupId}.json`);
+  const groupData = loadJsonFile(groupFile, {});
+  return groupData.autoResponses || [];
+};
+
+const saveGroupAutoResponses = (groupId, autoResponses) => {
+  try {
+    const groupFile = pathz.join(GRUPOS_DIR, `${groupId}.json`);
+    let groupData = loadJsonFile(groupFile, {});
+    groupData.autoResponses = autoResponses;
+    fs.writeFileSync(groupFile, JSON.stringify(groupData, null, 2));
+    return true;
+  } catch (error) {
+    console.error('❌ Erro ao salvar auto-respostas do grupo:', error);
+    return false;
+  }
+};
+
+const addAutoResponse = async (groupId, trigger, responseData, isGlobal = false) => {
+  try {
+    const newResponse = {
+      id: Date.now().toString(),
+      trigger: normalizar(trigger),
+      response: responseData,
+      createdAt: new Date().toISOString(),
+      isGlobal: isGlobal
+    };
+
+    if (isGlobal) {
+      const globalResponses = loadCustomAutoResponses();
+      globalResponses.push(newResponse);
+      return saveCustomAutoResponses(globalResponses);
+    } else {
+      const groupResponses = loadGroupAutoResponses(groupId);
+      groupResponses.push(newResponse);
+      return saveGroupAutoResponses(groupId, groupResponses);
+    }
+  } catch (error) {
+    console.error('❌ Erro ao adicionar auto-resposta:', error);
+    return false;
+  }
+};
+
+const deleteAutoResponse = (groupId, responseId, isGlobal = false) => {
+  try {
+    if (isGlobal) {
+      const globalResponses = loadCustomAutoResponses();
+      const filteredResponses = globalResponses.filter(r => r.id !== responseId);
+      if (filteredResponses.length === globalResponses.length) return false;
+      return saveCustomAutoResponses(filteredResponses);
+    } else {
+      const groupResponses = loadGroupAutoResponses(groupId);
+      const filteredResponses = groupResponses.filter(r => r.id !== responseId);
+      if (filteredResponses.length === groupResponses.length) return false;
+      return saveGroupAutoResponses(groupId, filteredResponses);
+    }
+  } catch (error) {
+    console.error('❌ Erro ao deletar auto-resposta:', error);
+    return false;
+  }
+};
+
+const processAutoResponse = async (nazu, from, triggerText, info) => {
+  try {
+    const normalizedTrigger = normalizar(triggerText);
+    
+    // Verificar auto-respostas globais (do dono)
+    const globalResponses = loadCustomAutoResponses();
+    for (const response of globalResponses) {
+      if (normalizedTrigger.includes(response.trigger || response.received)) {
+        await sendAutoResponse(nazu, from, response, info);
+        return true;
+      }
+    }
+
+    // Verificar auto-respostas do grupo (dos admins)
+    if (from.endsWith('@g.us')) {
+      const groupResponses = loadGroupAutoResponses(from);
+      for (const response of groupResponses) {
+        if (normalizedTrigger.includes(response.trigger)) {
+          await sendAutoResponse(nazu, from, response, info);
+          return true;
+        }
+      }
+    }
+
+    return false;
+  } catch (error) {
+    console.error('❌ Erro ao processar auto-resposta:', error);
+    return false;
+  }
+};
+
+const sendAutoResponse = async (nazu, from, response, quotedMessage) => {
+  try {
+    const responseData = response.response || response;
+    
+    // Compatibilidade com sistema antigo (apenas texto)
+    if (typeof responseData === 'string') {
+      await nazu.sendMessage(from, { text: responseData }, { quoted: quotedMessage });
+      return;
+    }
+
+    // Sistema novo com suporte a mídia
+    const messageContent = {};
+    const sendOptions = { quoted: quotedMessage };
+
+    switch (responseData.type) {
+      case 'text':
+        messageContent.text = responseData.content;
+        break;
+
+      case 'image':
+        if (responseData.buffer) {
+          messageContent.image = Buffer.from(responseData.buffer, 'base64');
+        } else if (responseData.url) {
+          messageContent.image = { url: responseData.url };
+        }
+        if (responseData.caption) {
+          messageContent.caption = responseData.caption;
+        }
+        break;
+
+      case 'video':
+        if (responseData.buffer) {
+          messageContent.video = Buffer.from(responseData.buffer, 'base64');
+        } else if (responseData.url) {
+          messageContent.video = { url: responseData.url };
+        }
+        if (responseData.caption) {
+          messageContent.caption = responseData.caption;
+        }
+        break;
+
+      case 'audio':
+        if (responseData.buffer) {
+          messageContent.audio = Buffer.from(responseData.buffer, 'base64');
+        } else if (responseData.url) {
+          messageContent.audio = { url: responseData.url };
+        }
+        messageContent.mimetype = 'audio/mp4';
+        messageContent.ptt = responseData.ptt || false;
+        break;
+
+      case 'sticker':
+        if (responseData.buffer) {
+          messageContent.sticker = Buffer.from(responseData.buffer, 'base64');
+        } else if (responseData.url) {
+          messageContent.sticker = { url: responseData.url };
+        }
+        break;
+
+      default:
+        messageContent.text = responseData.content || 'Resposta automática';
+    }
+
+    await nazu.sendMessage(from, messageContent, sendOptions);
+  } catch (error) {
+    console.error('❌ Erro ao enviar auto-resposta:', error);
+  }
+};
 const loadNoPrefixCommands = () => {
   return loadJsonFile(NO_PREFIX_COMMANDS_FILE, {
     commands: []
@@ -790,6 +965,68 @@ const removeGlobalBlacklist = userId => {
 const getGlobalBlacklist = () => {
   return loadGlobalBlacklist();
 };
+
+// Funções para gerenciar o design do menu
+const loadMenuDesign = () => {
+  try {
+    if (fs.existsSync(MENU_DESIGN_FILE)) {
+      return JSON.parse(fs.readFileSync(MENU_DESIGN_FILE, 'utf-8'));
+    } else {
+      // Design padrão caso o arquivo não exista
+      return {
+        header: `╭┈⊰ 🌸 『 *{botName}* 』\n┊Olá, {userName}!\n╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯`,
+        menuTopBorder: "╭┈",
+        bottomBorder: "╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯",
+        menuTitleIcon: "🍧ฺꕸ▸",
+        menuItemIcon: "•.̇𖥨֗🍓⭟",
+        separatorIcon: "❁",
+        middleBorder: "┊"
+      };
+    }
+  } catch (error) {
+    console.error(`❌ Erro ao carregar design do menu: ${error.message}`);
+    // Retorna design padrão em caso de erro
+    return {
+      header: `╭┈⊰ 🌸 『 *{botName}* 』\n┊Olá, {userName}!\n╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯`,
+      menuTopBorder: "╭┈",
+      bottomBorder: "╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯",
+      menuTitleIcon: "🍧ฺꕸ▸",
+      menuItemIcon: "•.̇𖥨֗🍓⭟",
+      separatorIcon: "❁",
+      middleBorder: "┊"
+    };
+  }
+};
+
+const saveMenuDesign = (design) => {
+  try {
+    ensureDirectoryExists(DONO_DIR);
+    fs.writeFileSync(MENU_DESIGN_FILE, JSON.stringify(design, null, 2));
+    return true;
+  } catch (error) {
+    console.error(`❌ Erro ao salvar design do menu: ${error.message}`);
+    return false;
+  }
+};
+
+const getMenuDesignWithDefaults = (botName, userName) => {
+  const design = loadMenuDesign();
+  
+  // Substitui os placeholders pelos valores atuais
+  const processedDesign = {};
+  for (const [key, value] of Object.entries(design)) {
+    if (typeof value === 'string') {
+      processedDesign[key] = value
+        .replace(/{botName}/g, botName)
+        .replace(/{userName}/g, userName);
+    } else {
+      processedDesign[key] = value;
+    }
+  }
+  
+  return processedDesign;
+};
+
 async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
   var config = JSON.parse(fs.readFileSync(__dirname + '/config.json'));
   var {
@@ -3321,13 +3558,14 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           if (!q || !q.includes('/')) return reply(`Por favor, forneça a mensagem recebida e a resposta separadas por /. Ex: ${groupPrefix}addauto bom dia/Olá, bom dia!`);
           const [received, response] = q.split('/').map(s => s.trim());
           if (!received || !response) return reply("Formato inválido. Use: mensagem recebida/mensagem do bot");
-          const autoResponses = loadCustomAutoResponses();
-          autoResponses.push({
-            received: normalizar(received),
-            response
-          });
-          if (saveCustomAutoResponses(autoResponses)) {
-            await reply(`✅ Auto-resposta adicionada!\nMensagem recebida: ${received}\nResposta: ${response}`);
+          
+          const responseData = {
+            type: 'text',
+            content: response
+          };
+          
+          if (await addAutoResponse(from, received, responseData, true)) {
+            await reply(`✅ Auto-resposta global adicionada!\nTrigger: ${received}\nResposta: ${response}`);
           } else {
             await reply("😥 Erro ao salvar a auto-resposta. Tente novamente!");
           }
@@ -3336,21 +3574,218 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           await reply("Ocorreu um erro ao adicionar auto-resposta 💔");
         }
         break;
+
+      case 'addautomedia':
+      case 'addautomidia':
+        try {
+          if (!isOwner) return reply('🚫 Este comando é apenas para o dono do bot!');
+          if (!q) return reply(`📝 Como usar:\n\n1️⃣ ${groupPrefix}addautomidia [trigger]\n2️⃣ Responda uma mídia (imagem, vídeo, áudio ou sticker)\n3️⃣ Opcionalmente adicione uma legenda\n\nExemplo: ${groupPrefix}addautomidia oi (respondendo uma imagem)`);
+          
+          const trigger = q.trim();
+          let responseData = null;
+          
+          // Verificar se é resposta a uma mídia
+          if (quotedMessageContent) {
+            if (isQuotedImage) {
+              const imageBuffer = await getFileBuffer(quotedMessageContent.imageMessage, 'image');
+              responseData = {
+                type: 'image',
+                buffer: imageBuffer.toString('base64'),
+                caption: quotedMessageContent.imageMessage.caption || ''
+              };
+            } else if (isQuotedVideo) {
+              const videoBuffer = await getFileBuffer(quotedMessageContent.videoMessage, 'video');
+              responseData = {
+                type: 'video',
+                buffer: videoBuffer.toString('base64'),
+                caption: quotedMessageContent.videoMessage.caption || ''
+              };
+            } else if (isQuotedAudio) {
+              const audioBuffer = await getFileBuffer(quotedMessageContent.audioMessage, 'audio');
+              responseData = {
+                type: 'audio',
+                buffer: audioBuffer.toString('base64'),
+                ptt: quotedMessageContent.audioMessage.ptt || false
+              };
+            } else if (isQuotedSticker) {
+              const stickerBuffer = await getFileBuffer(quotedMessageContent.stickerMessage, 'sticker');
+              responseData = {
+                type: 'sticker',
+                buffer: stickerBuffer.toString('base64')
+              };
+            } else {
+              return reply('❌ Por favor, responda a uma mídia válida (imagem, vídeo, áudio ou sticker)!');
+            }
+          } else {
+            return reply('❌ Por favor, responda a uma mídia para adicionar como auto-resposta!');
+          }
+          
+          if (await addAutoResponse(from, trigger, responseData, true)) {
+            await reply(`✅ Auto-resposta global com mídia adicionada!\nTrigger: ${trigger}\nTipo: ${responseData.type}`);
+          } else {
+            await reply("😥 Erro ao salvar a auto-resposta. Tente novamente!");
+          }
+        } catch (e) {
+          console.error('Erro no comando addautomidia:', e);
+          await reply("Ocorreu um erro ao adicionar auto-resposta com mídia 💔");
+        }
+        break;
+
+      case 'addautoadm':
+      case 'addautoadmin':
+        try {
+          if (!isGroup) return reply('🚫 Este comando só funciona em grupos!');
+          if (!isGroupAdmin) return reply('🚫 Este comando é apenas para administradores do grupo!');
+          if (!q || !q.includes('/')) return reply(`Por favor, forneça a mensagem recebida e a resposta separadas por /. Ex: ${groupPrefix}addautoadm oi/Olá! Como posso ajudar?`);
+          const [received, response] = q.split('/').map(s => s.trim());
+          if (!received || !response) return reply("Formato inválido. Use: mensagem recebida/mensagem do bot");
+          
+          const responseData = {
+            type: 'text',
+            content: response
+          };
+          
+          if (await addAutoResponse(from, received, responseData, false)) {
+            await reply(`✅ Auto-resposta do grupo adicionada!\nTrigger: ${received}\nResposta: ${response}`);
+          } else {
+            await reply("😥 Erro ao salvar a auto-resposta. Tente novamente!");
+          }
+        } catch (e) {
+          console.error('Erro no comando addautoadm:', e);
+          await reply("Ocorreu um erro ao adicionar auto-resposta do grupo 💔");
+        }
+        break;
+
+      case 'addautoadmidia':
+      case 'addautoadmmidia':
+        try {
+          if (!isGroup) return reply('🚫 Este comando só funciona em grupos!');
+          if (!isGroupAdmin) return reply('🚫 Este comando é apenas para administradores do grupo!');
+          if (!q) return reply(`📝 Como usar:\n\n1️⃣ ${groupPrefix}addautoadmidia [trigger]\n2️⃣ Responda uma mídia (imagem, vídeo, áudio ou sticker)\n3️⃣ Opcionalmente adicione uma legenda\n\nExemplo: ${groupPrefix}addautoadmidia bemvindo (respondendo uma imagem)`);
+          
+          const trigger = q.trim();
+          let responseData = null;
+          
+          // Verificar se é resposta a uma mídia
+          if (quotedMessageContent) {
+            if (isQuotedImage) {
+              const imageBuffer = await getFileBuffer(quotedMessageContent.imageMessage, 'image');
+              responseData = {
+                type: 'image',
+                buffer: imageBuffer.toString('base64'),
+                caption: quotedMessageContent.imageMessage.caption || ''
+              };
+            } else if (isQuotedVideo) {
+              const videoBuffer = await getFileBuffer(quotedMessageContent.videoMessage, 'video');
+              responseData = {
+                type: 'video',
+                buffer: videoBuffer.toString('base64'),
+                caption: quotedMessageContent.videoMessage.caption || ''
+              };
+            } else if (isQuotedAudio) {
+              const audioBuffer = await getFileBuffer(quotedMessageContent.audioMessage, 'audio');
+              responseData = {
+                type: 'audio',
+                buffer: audioBuffer.toString('base64'),
+                ptt: quotedMessageContent.audioMessage.ptt || false
+              };
+            } else if (isQuotedSticker) {
+              const stickerBuffer = await getFileBuffer(quotedMessageContent.stickerMessage, 'sticker');
+              responseData = {
+                type: 'sticker',
+                buffer: stickerBuffer.toString('base64')
+              };
+            } else {
+              return reply('❌ Por favor, responda a uma mídia válida (imagem, vídeo, áudio ou sticker)!');
+            }
+          } else {
+            return reply('❌ Por favor, responda a uma mídia para adicionar como auto-resposta!');
+          }
+          
+          if (await addAutoResponse(from, trigger, responseData, false)) {
+            await reply(`✅ Auto-resposta do grupo com mídia adicionada!\nTrigger: ${trigger}\nTipo: ${responseData.type}`);
+          } else {
+            await reply("😥 Erro ao salvar a auto-resposta. Tente novamente!");
+          }
+        } catch (e) {
+          console.error('Erro no comando addautoadmidia:', e);
+          await reply("Ocorreu um erro ao adicionar auto-resposta do grupo com mídia 💔");
+        }
+        break;
       case 'listautoresponses':
       case 'listauto':
         try {
           if (!isOwner) return reply('🚫 Este comando é apenas para o dono do bot!');
           const autoResponses = loadCustomAutoResponses();
-          if (autoResponses.length === 0) return reply("📜 Nenhuma auto-resposta definida.");
-          let responseText = `📜 *Auto-Respostas do Grupo ${groupName}*\n\n`;
+          if (autoResponses.length === 0) return reply("📜 Nenhuma auto-resposta global definida.");
+          
+          let responseText = `📜 *Auto-Respostas Globais (${autoResponses.length})*\n\n`;
           autoResponses.forEach((item, index) => {
+            const trigger = item.trigger || item.received;
+            const responseInfo = item.response;
             
-            responseText += `${index + 1}. Recebida: ${item.received}\n   Resposta: ${item.response}\n`;
+            if (typeof responseInfo === 'string') {
+              // Compatibilidade com sistema antigo
+              responseText += `${index + 1}. 📝 **${trigger}**\n   ↳ ${responseInfo}\n\n`;
+            } else {
+              // Sistema novo com mídia
+              const typeEmoji = {
+                text: '📝',
+                image: '🖼️',
+                video: '🎥',
+                audio: '🎵',
+                sticker: '🎭'
+              };
+              responseText += `${index + 1}. ${typeEmoji[responseInfo.type] || '📝'} **${trigger}**\n   ↳ Tipo: ${responseInfo.type}`;
+              if (responseInfo.caption) {
+                responseText += `\n   ↳ Legenda: ${responseInfo.caption}`;
+              }
+              responseText += `\n\n`;
+            }
           });
+          responseText += `🔧 Use ${groupPrefix}delauto [número] para remover`;
           await reply(responseText);
         } catch (e) {
           console.error('Erro no comando listauto:', e);
           await reply("Ocorreu um erro ao listar auto-respostas 💔");
+        }
+        break;
+
+      case 'listautoadm':
+      case 'listautoadmin':
+        try {
+          if (!isGroup) return reply('🚫 Este comando só funciona em grupos!');
+          if (!isGroupAdmin) return reply('🚫 Este comando é apenas para administradores do grupo!');
+          
+          const autoResponses = loadGroupAutoResponses(from);
+          if (autoResponses.length === 0) return reply("📜 Nenhuma auto-resposta do grupo definida.");
+          
+          let responseText = `📜 *Auto-Respostas do Grupo (${autoResponses.length})*\n\n`;
+          autoResponses.forEach((item, index) => {
+            const responseInfo = item.response;
+            
+            if (typeof responseInfo === 'string') {
+              responseText += `${index + 1}. 📝 **${item.trigger}**\n   ↳ ${responseInfo}\n\n`;
+            } else {
+              const typeEmoji = {
+                text: '📝',
+                image: '🖼️',
+                video: '🎥',
+                audio: '🎵',
+                sticker: '🎭'
+              };
+              responseText += `${index + 1}. ${typeEmoji[responseInfo.type] || '📝'} **${item.trigger}**\n   ↳ Tipo: ${responseInfo.type}`;
+              if (responseInfo.caption) {
+                responseText += `\n   ↳ Legenda: ${responseInfo.caption}`;
+              }
+              responseText += `\n\n`;
+            }
+          });
+          responseText += `🔧 Use ${groupPrefix}delautoadm [número] para remover`;
+          await reply(responseText);
+        } catch (e) {
+          console.error('Erro no comando listautoadm:', e);
+          await reply("Ocorreu um erro ao listar auto-respostas do grupo 💔");
         }
         break;
       case 'delautoresponse':
@@ -3363,13 +3798,113 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           if (index < 0 || index >= autoResponses.length) return reply(`❌ Número inválido. Use ${groupPrefix}listauto para ver a lista.`);
           const removed = autoResponses.splice(index, 1)[0];
           if (saveCustomAutoResponses(autoResponses)) {
-            await reply(`🗑️ Auto-resposta removida:\nMensagem recebida: ${removed.received}\nResposta: ${removed.response}`);
+            const trigger = removed.trigger || removed.received;
+            await reply(`🗑️ Auto-resposta global removida:\nTrigger: ${trigger}`);
           } else {
             await reply("😥 Erro ao remover a auto-resposta. Tente novamente!");
           }
         } catch (e) {
           console.error('Erro no comando delauto:', e);
           await reply("Ocorreu um erro ao remover auto-resposta 💔");
+        }
+        break;
+
+      case 'delautoadm':
+      case 'delautoadmin':
+        try {
+          if (!isGroup) return reply('🚫 Este comando só funciona em grupos!');
+          if (!isGroupAdmin) return reply('🚫 Este comando é apenas para administradores do grupo!');
+          if (!q || isNaN(parseInt(q))) return reply(`Por favor, forneça o número da auto-resposta a ser removida. Ex: ${groupPrefix}delautoadm 1`);
+          const index = parseInt(q) - 1;
+          const autoResponses = loadGroupAutoResponses(from);
+          if (index < 0 || index >= autoResponses.length) return reply(`❌ Número inválido. Use ${groupPrefix}listautoadm para ver a lista.`);
+          const removed = autoResponses.splice(index, 1)[0];
+          if (saveGroupAutoResponses(from, autoResponses)) {
+            await reply(`🗑️ Auto-resposta do grupo removida:\nTrigger: ${removed.trigger}`);
+          } else {
+            await reply("😥 Erro ao remover a auto-resposta. Tente novamente!");
+          }
+        } catch (e) {
+          console.error('Erro no comando delautoadm:', e);
+          await reply("Ocorreu um erro ao remover auto-resposta do grupo 💔");
+        }
+        break;
+
+      case 'autoresponses':
+      case 'autorespostas':
+        try {
+          if (!isGroup) return reply('🚫 Este comando só funciona em grupos!');
+          if (!isGroupAdmin) return reply('🚫 Este comando é apenas para administradores do grupo!');
+          
+          const globalResponses = loadCustomAutoResponses();
+          const groupResponses = loadGroupAutoResponses(from);
+          
+          let responseText = `📋 *Sistema de Auto-Respostas*\n\n`;
+          
+          if (globalResponses.length > 0) {
+            responseText += `🌍 **Auto-Respostas Globais (${globalResponses.length})**\n`;
+            globalResponses.forEach((item, index) => {
+              const trigger = item.trigger || item.received;
+              const responseInfo = item.response;
+              
+              if (typeof responseInfo === 'string') {
+                responseText += `${index + 1}. 📝 ${trigger}\n`;
+              } else {
+                const typeEmoji = {
+                  text: '📝',
+                  image: '🖼️',
+                  video: '🎥',
+                  audio: '🎵',
+                  sticker: '🎭'
+                };
+                responseText += `${index + 1}. ${typeEmoji[responseInfo.type] || '📝'} ${trigger}\n`;
+              }
+            });
+            responseText += '\n';
+          }
+          
+          if (groupResponses.length > 0) {
+            responseText += `👥 **Auto-Respostas do Grupo (${groupResponses.length})**\n`;
+            groupResponses.forEach((item, index) => {
+              const responseInfo = item.response;
+              
+              if (typeof responseInfo === 'string') {
+                responseText += `${index + 1}. 📝 ${item.trigger}\n`;
+              } else {
+                const typeEmoji = {
+                  text: '📝',
+                  image: '🖼️',
+                  video: '🎥',
+                  audio: '🎵',
+                  sticker: '🎭'
+                };
+                responseText += `${index + 1}. ${typeEmoji[responseInfo.type] || '📝'} ${item.trigger}\n`;
+              }
+            });
+            responseText += '\n';
+          }
+          
+          if (globalResponses.length === 0 && groupResponses.length === 0) {
+            responseText += '📜 Nenhuma auto-resposta configurada.\n\n';
+          }
+          
+          responseText += `📝 **Comandos Disponíveis:**\n`;
+          responseText += `• ${groupPrefix}addautoadm [trigger]/[resposta] - Adicionar texto\n`;
+          responseText += `• ${groupPrefix}addautoadmidia [trigger] - Adicionar mídia\n`;
+          responseText += `• ${groupPrefix}listautoadm - Listar do grupo\n`;
+          responseText += `• ${groupPrefix}delautoadm [número] - Remover do grupo\n\n`;
+          
+          if (isOwner) {
+            responseText += `🔧 **Comandos do Dono:**\n`;
+            responseText += `• ${groupPrefix}addauto [trigger]/[resposta] - Adicionar global\n`;
+            responseText += `• ${groupPrefix}addautomidia [trigger] - Adicionar mídia global\n`;
+            responseText += `• ${groupPrefix}listauto - Listar globais`;
+          }
+          
+          await reply(responseText);
+        } catch (e) {
+          console.error('Erro no comando autoresponses:', e);
+          await reply("Ocorreu um erro ao listar auto-respostas 💔");
         }
         break;
       case 'addnoprefix':
@@ -4020,7 +4555,11 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           const useVideo = fs.existsSync(menuVideoPath);
           const mediaPath = useVideo ? menuVideoPath : menuImagePath;
           const mediaBuffer = fs.readFileSync(mediaPath);
-          const menuText = await menu(prefix, nomebot, pushname);
+          
+          // Obtém o design personalizado do menu
+          const customDesign = getMenuDesignWithDefaults(nomebot, pushname);
+          const menuText = await menu(prefix, nomebot, pushname, customDesign);
+          
           await nazu.sendMessage(from, {
             [useVideo ? 'video' : 'image']: mediaBuffer,
             caption: menuText,
@@ -4031,7 +4570,9 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           });
         } catch (error) {
           console.error('Erro ao enviar menu:', error);
-          const menuText = await menu(prefix, nomebot, pushname);
+          // Obtém o design personalizado mesmo em caso de erro
+          const customDesign = getMenuDesignWithDefaults(nomebot, pushname);
+          const menuText = await menu(prefix, nomebot, pushname, customDesign);
           await reply(`${menuText}\n\n⚠️ *Nota*: Ocorreu um erro ao carregar a mídia do menu.`);
         }
         break;
@@ -4146,7 +4687,17 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           const useVideo = fs.existsSync(menuVideoPath);
           const mediaPath = useVideo ? menuVideoPath : menuImagePath;
           const mediaBuffer = fs.readFileSync(mediaPath);
-          const menuText = typeof menuFunction === 'function' ? typeof menuFunction.then === 'function' ? await menuFunction : await menuFunction(prefix, nomebot, pushname) : 'Menu não disponível';
+          
+          // Obtém o design personalizado do menu
+          const customDesign = getMenuDesignWithDefaults(nomebot, pushname);
+          
+          // Aplica o design personalizado ao menu
+          const menuText = typeof menuFunction === 'function' ? 
+            (typeof menuFunction.then === 'function' ? 
+              await menuFunction : 
+              await menuFunction(prefix, nomebot, pushname, customDesign)) : 
+            'Menu não disponível';
+          
           await nazu.sendMessage(from, {
             [useVideo ? 'video' : 'image']: mediaBuffer,
             caption: menuText,
@@ -4585,6 +5136,224 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           reply("ocorreu um erro 💔");
         }
         break;
+      
+      // ================================
+      // COMANDOS DE DESIGN DO MENU
+      // ================================
+      
+      case 'setborda':
+      case 'setbordatopo':
+      case 'settopborder':
+        try {
+          if (!isOwner) return reply("Este comando é apenas para o meu dono");
+          if (!q) return reply(`Uso: ${prefix + command} <emoji/texto>\n\nExemplo: ${prefix + command} ╭─⊰`);
+          
+          const currentDesign = loadMenuDesign();
+          currentDesign.menuTopBorder = q;
+          
+          if (saveMenuDesign(currentDesign)) {
+            await reply(`✅ Borda superior do menu definida como: ${q}`);
+          } else {
+            await reply("❌ Erro ao salvar configurações do design do menu.");
+          }
+        } catch (e) {
+          console.error(e);
+          await reply("🐝 Ops! Ocorreu um erro inesperado. Tente novamente em alguns instantes! 🥺");
+        }
+        break;
+
+      case 'setbordafim':
+      case 'setbottomborder':
+      case 'setbordabaixo':
+        try {
+          if (!isOwner) return reply("Este comando é apenas para o meu dono");
+          if (!q) return reply(`Uso: ${prefix + command} <emoji/texto>\n\nExemplo: ${prefix + command} ╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯`);
+          
+          const currentDesign = loadMenuDesign();
+          currentDesign.bottomBorder = q;
+          
+          if (saveMenuDesign(currentDesign)) {
+            await reply(`✅ Borda inferior do menu definida como: ${q}`);
+          } else {
+            await reply("❌ Erro ao salvar configurações do design do menu.");
+          }
+        } catch (e) {
+          console.error(e);
+          await reply("🐝 Ops! Ocorreu um erro inesperado. Tente novamente em alguns instantes! 🥺");
+        }
+        break;
+
+      case 'setbordameio':
+      case 'setmiddleborder':
+      case 'setbordamiddle':
+        try {
+          if (!isOwner) return reply("Este comando é apenas para o meu dono");
+          if (!q) return reply(`Uso: ${prefix + command} <emoji/texto>\n\nExemplo: ${prefix + command} ┊`);
+          
+          const currentDesign = loadMenuDesign();
+          currentDesign.middleBorder = q;
+          
+          if (saveMenuDesign(currentDesign)) {
+            await reply(`✅ Borda do meio do menu definida como: ${q}`);
+          } else {
+            await reply("❌ Erro ao salvar configurações do design do menu.");
+          }
+        } catch (e) {
+          console.error(e);
+          await reply("🐝 Ops! Ocorreu um erro inesperado. Tente novamente em alguns instantes! 🥺");
+        }
+        break;
+
+      case 'setitemicon':
+      case 'seticoneitem':
+      case 'setitem':
+        try {
+          if (!isOwner) return reply("Este comando é apenas para o meu dono");
+          if (!q) return reply(`Uso: ${prefix + command} <emoji/texto>\n\nExemplo: ${prefix + command} •.̇𖥨֗🍓⭟`);
+          
+          const currentDesign = loadMenuDesign();
+          currentDesign.menuItemIcon = q;
+          
+          if (saveMenuDesign(currentDesign)) {
+            await reply(`✅ Ícone dos itens do menu definido como: ${q}`);
+          } else {
+            await reply("❌ Erro ao salvar configurações do design do menu.");
+          }
+        } catch (e) {
+          console.error(e);
+          await reply("🐝 Ops! Ocorreu um erro inesperado. Tente novamente em alguns instantes! 🥺");
+        }
+        break;
+
+      case 'setseparador':
+      case 'setseparatoricon':
+      case 'seticoneseparador':
+        try {
+          if (!isOwner) return reply("Este comando é apenas para o meu dono");
+          if (!q) return reply(`Uso: ${prefix + command} <emoji/texto>\n\nExemplo: ${prefix + command} ❁`);
+          
+          const currentDesign = loadMenuDesign();
+          currentDesign.separatorIcon = q;
+          
+          if (saveMenuDesign(currentDesign)) {
+            await reply(`✅ Ícone separador do menu definido como: ${q}`);
+          } else {
+            await reply("❌ Erro ao salvar configurações do design do menu.");
+          }
+        } catch (e) {
+          console.error(e);
+          await reply("🐝 Ops! Ocorreu um erro inesperado. Tente novamente em alguns instantes! 🥺");
+        }
+        break;
+
+      case 'settitleicon':
+      case 'seticonetitulo':
+      case 'settitulo':
+        try {
+          if (!isOwner) return reply("Este comando é apenas para o meu dono");
+          if (!q) return reply(`Uso: ${prefix + command} <emoji/texto>\n\nExemplo: ${prefix + command} 🍧ฺꕸ▸`);
+          
+          const currentDesign = loadMenuDesign();
+          currentDesign.menuTitleIcon = q;
+          
+          if (saveMenuDesign(currentDesign)) {
+            await reply(`✅ Ícone do título do menu definido como: ${q}`);
+          } else {
+            await reply("❌ Erro ao salvar configurações do design do menu.");
+          }
+        } catch (e) {
+          console.error(e);
+          await reply("🐝 Ops! Ocorreu um erro inesperado. Tente novamente em alguns instantes! 🥺");
+        }
+        break;
+
+      case 'setheader':
+      case 'setcabecalho':
+      case 'setheadermenu':
+        try {
+          if (!isOwner) return reply("Este comando é apenas para o meu dono");
+          if (!q) return reply(`Uso: ${prefix + command} <texto>\n\nExemplo: ${prefix + command} ╭┈⊰ 🌸 『 *{botName}* 』\\n┊Olá, {userName}!\\n╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯\n\n*Placeholders disponíveis:*\n{botName} - Nome do bot\n{userName} - Nome do usuário`);
+          
+          const currentDesign = loadMenuDesign();
+          // Processa quebras de linha explícitas
+          currentDesign.header = q.replace(/\\n/g, '\n');
+          
+          if (saveMenuDesign(currentDesign)) {
+            await reply(`✅ Cabeçalho do menu definido com sucesso!\n\n*Preview:*\n${currentDesign.header.replace(/{botName}/g, nomebot).replace(/{userName}/g, pushname)}`);
+          } else {
+            await reply("❌ Erro ao salvar configurações do design do menu.");
+          }
+        } catch (e) {
+          console.error(e);
+          await reply("🐝 Ops! Ocorreu um erro inesperado. Tente novamente em alguns instantes! 🥺");
+        }
+        break;
+
+      case 'resetdesign':
+      case 'resetarmenu':
+      case 'resetdesignmenu':
+        try {
+          if (!isOwner) return reply("Este comando é apenas para o meu dono");
+          
+          const defaultDesign = {
+            header: `╭┈⊰ 🌸 『 *{botName}* 』\n┊Olá, {userName}!\n╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯`,
+            menuTopBorder: "╭┈",
+            bottomBorder: "╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯",
+            menuTitleIcon: "🍧ฺꕸ▸",
+            menuItemIcon: "•.̇𖥨֗🍓⭟",
+            separatorIcon: "❁",
+            middleBorder: "┊"
+          };
+          
+          if (saveMenuDesign(defaultDesign)) {
+            await reply("✅ Design do menu resetado para o padrão com sucesso!");
+          } else {
+            await reply("❌ Erro ao resetar o design do menu.");
+          }
+        } catch (e) {
+          console.error(e);
+          await reply("🐝 Ops! Ocorreu um erro inesperado. Tente novamente em alguns instantes! 🥺");
+        }
+        break;
+
+      case 'designmenu':
+      case 'verdesign':
+      case 'configmenu':
+        try {
+          if (!isOwner) return reply("Este comando é apenas para o meu dono");
+          
+          const currentDesign = loadMenuDesign();
+          const designText = `╭─⊰ 🎨 *CONFIGURAÇÕES DO DESIGN* 🎨 ⊱─╮
+┊
+┊ 🔸 *Cabeçalho:*
+┊ ${currentDesign.header.replace(/{botName}/g, nomebot).replace(/{userName}/g, pushname)}
+┊
+┊ 🔸 *Borda Superior:* ${currentDesign.menuTopBorder}
+┊ 🔸 *Borda Inferior:* ${currentDesign.bottomBorder}
+┊ 🔸 *Borda do Meio:* ${currentDesign.middleBorder}
+┊ 🔸 *Ícone do Item:* ${currentDesign.menuItemIcon}
+┊ 🔸 *Ícone Separador:* ${currentDesign.separatorIcon}
+┊ 🔸 *Ícone do Título:* ${currentDesign.menuTitleIcon}
+┊
+┊ 📝 *Comandos disponíveis:*
+┊ ${prefix}setborda - Alterar borda superior
+┊ ${prefix}setbordafim - Alterar borda inferior  
+┊ ${prefix}setbordameio - Alterar borda do meio
+┊ ${prefix}setitem - Alterar ícone dos itens
+┊ ${prefix}setseparador - Alterar ícone separador
+┊ ${prefix}settitulo - Alterar ícone do título
+┊ ${prefix}setheader - Alterar cabeçalho
+┊ ${prefix}resetdesign - Resetar para padrão
+┊
+╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯`;
+          
+          await reply(designText);
+        } catch (e) {
+          console.error(e);
+          await reply("🐝 Ops! Ocorreu um erro inesperado. Tente novamente em alguns instantes! 🥺");
+        }
+        break;
+
       case 'listagp':
       case 'listgp':
         try {
@@ -8598,13 +9367,7 @@ ${groupData.rules.length}. ${q}`);
           key: info.key
         });
         if (!isCmd && isAutoRepo) {
-          const autoResponses = loadCustomAutoResponses();
-          const normalizedBody = normalizar(body);
-          const matchedResponse = autoResponses.find(item => normalizedBody.includes(item.received));
-          if (matchedResponse) {
-            await reply(matchedResponse.response);
-          }
-          ;
+          await processAutoResponse(nazu, from, body, info);
         }
         ;
     }

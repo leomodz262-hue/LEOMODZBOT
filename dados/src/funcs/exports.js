@@ -2,45 +2,46 @@ import { promises as fs } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// Configuração de caminhos para o ambiente ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-/**
- * Carrega um módulo JavaScript local de forma assíncrona usando import() dinâmico.
- * @param {string} modulePath - O caminho relativo ou absoluto para o módulo.
- * @returns {Promise<any | undefined>} Uma Promise que resolve com o módulo carregado.
- */
+const moduleCache = new Map();
+const jsonCache = new Map();
+
 async function loadModuleAsync(modulePath) {
+    if (moduleCache.has(modulePath)) return moduleCache.get(modulePath);
     try {
         const fullPath = path.join(__dirname, modulePath);
         const module = await import(fullPath);
-        return module.default || module; // Retorna a exportação padrão ou o módulo inteiro
+        const result = module.default || module;
+        moduleCache.set(modulePath, result);
+        return result;
     } catch (error) {
-        console.warn(`[AVISO] Não foi possível carregar o módulo local: ${modulePath}. Erro: ${error.message}`);
+        console.warn(`Não foi possível carregar o módulo local: ${modulePath}. Erro: ${error.message}`);
         return undefined;
     }
 }
 
-/**
- * Carrega e faz o parse de um arquivo JSON de forma assíncrona.
- * @param {string} filePath - O caminho relativo ou absoluto para o arquivo JSON.
- * @returns {Promise<any | undefined>} O objeto JSON ou undefined se falhar.
- */
 async function loadJson(filePath) {
+    if (jsonCache.has(filePath)) return jsonCache.get(filePath);
     try {
         const fullPath = path.join(__dirname, filePath);
         const data = await fs.readFile(fullPath, "utf-8");
-        return JSON.parse(data);
+        const result = JSON.parse(data);
+        jsonCache.set(filePath, result);
+        return result;
     } catch (error) {
-        console.error(`[ERRO] Falha ao carregar o arquivo JSON: ${filePath}. Erro: ${error.message}`);
+        console.error(`Falha ao carregar o arquivo JSON: ${filePath}. Erro: ${error.message}`);
         return undefined;
     }
 }
 
-// Caminhos dos módulos locais organizados por pastas
+export function clearCache() {
+    moduleCache.clear();
+    jsonCache.clear();
+}
+
 const localModulePaths = {
-    // --- downloads ---
     youtube: "downloads/youtube.js",
     tiktok: "downloads/tiktok.js",
     pinterest: "downloads/pinterest.js",
@@ -48,8 +49,6 @@ const localModulePaths = {
     Lyrics: "downloads/lyrics.js",
     mcPlugin: "downloads/mcplugins.js",
     FilmesDL: "downloads/filmes.js",
-
-    // --- utils ---
     styleText: "utils/gerarnick.js",
     VerifyUpdate: "utils/update-verify.js",
     emojiMix: "utils/emojimix.js",
@@ -57,43 +56,46 @@ const localModulePaths = {
     tictactoe: "utils/tictactoe.js",
     stickerModule: "utils/sticker.js",
     commandStats: "utils/commandStats.js",
-
-    // --- private ---
     ia: "private/ia.js",
     banner: "private/banner.js",
 };
 
 export default (async () => {
     try {
-        // Carrega todos os módulos locais em paralelo
         const localModulePromises = Object.entries(localModulePaths).map(async ([key, filePath]) => {
             const module = await loadModuleAsync(filePath);
             return [key, module];
         });
 
-        // Carrega os JSONs
         const jsonPromises = [
+            loadJson("json/games.json").then((data) => ["gamesJson", data]),
+            loadJson("json/gamestext.json").then((data) => ["gamestextJson", data]),
+            loadJson("json/gamestext2.json").then((data) => ["gamestext2Json", data]),
+            loadJson("json/markgame.json").then((data) => ["markgameJson", data]),
+            loadJson("json/ranks.json").then((data) => ["ranksJson", data]),
             loadJson("json/tools.json").then((data) => ["toolsJson", data]),
             loadJson("json/vab.json").then((data) => ["vabJson", data]),
         ];
 
-        // Aguarda a resolução de todas as promises
-        const results = await Promise.all([...localModulePromises, ...jsonPromises]);
+        const batch1 = await Promise.all(localModulePromises);
+        const batch2 = await Promise.all(jsonPromises);
+        const loadedResources = Object.fromEntries([...batch1, ...batch2]);
 
-        // Converte o array de resultados em um objeto único
-        const loadedResources = Object.fromEntries(results);
-
-        // Monta o objeto final para exportação
         return {
             ...loadedResources,
             sendSticker: loadedResources.stickerModule?.sendSticker,
             stickerModule: undefined,
+            gamesJson: () => loadedResources.gamesJson,
+            gamestextJson: () => loadedResources.gamestextJson,
+            gamestext2Json: () => loadedResources.gamestext2Json,
+            markgameJson: () => loadedResources.markgameJson,
+            ranksJson: () => loadedResources.ranksJson,
             toolsJson: () => loadedResources.toolsJson,
             vabJson: () => loadedResources.vabJson,
+            clearCache,
         };
     } catch (error) {
-        console.error(`[ERRO FATAL] Ocorreu um erro crítico durante a inicialização:`, error.message);
-        console.log(`[SISTEMA] Encerrando a aplicação devido a uma falha na inicialização.`);
+        console.error(`Erro durante a inicialização: ${error.message}`);
         process.exit(1);
     }
-})();
+});
