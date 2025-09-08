@@ -148,13 +148,27 @@ ensureJsonFileExists(MENU_DESIGN_FILE, {
 ensureJsonFileExists(ECONOMY_FILE, {
   users: {},
   shop: {
-    "pickaxe": { name: "Picareta", price: 500, type: "tool", effect: { mineBonus: 0.2 } },
+    "pickaxe_bronze": { name: "Picareta de Bronze", price: 500, type: "tool", toolType: "pickaxe", tier: "bronze", durability: 20, effect: { mineBonus: 0.1 } },
+    "pickaxe_ferro": { name: "Picareta de Ferro", price: 1500, type: "tool", toolType: "pickaxe", tier: "ferro", durability: 60, effect: { mineBonus: 0.25 } },
+    "pickaxe_diamante": { name: "Picareta de Diamante", price: 5000, type: "tool", toolType: "pickaxe", tier: "diamante", durability: 150, effect: { mineBonus: 0.5 } },
+    "repairkit": { name: "Kit de Reparos", price: 350, type: "consumable", effect: { repair: 40 } },
     "vault": { name: "Cofre", price: 1000, type: "upgrade", effect: { bankCapacity: 5000 } },
     "lucky": { name: "Amuleto da Sorte", price: 1500, type: "upgrade", effect: { workBonus: 0.2 } },
     "rod": { name: "Vara de Pesca", price: 400, type: "tool", effect: { fishBonus: 0.2 } },
-  "lamp": { name: "Lanterna", price: 600, type: "tool", effect: { exploreBonus: 0.2 } },
-  "bow": { name: "Arco de Caça", price: 800, type: "tool", effect: { huntBonus: 0.25 } },
-  "forge": { name: "Kit de Forja", price: 1200, type: "tool", effect: { forgeBonus: 0.25 } }
+    "lamp": { name: "Lanterna", price: 600, type: "tool", effect: { exploreBonus: 0.2 } },
+    "bow": { name: "Arco de Caça", price: 800, type: "tool", effect: { huntBonus: 0.25 } },
+    "forge": { name: "Kit de Forja", price: 1200, type: "tool", effect: { forgeBonus: 0.25 } }
+  },
+  materialsPrices: {
+    pedra: 2,
+    ferro: 6,
+    ouro: 12,
+    diamante: 30
+  },
+  recipes: {
+    pickaxe_bronze: { requires: { pedra: 10, ferro: 2 }, gold: 100 },
+    pickaxe_ferro: { requires: { ferro: 10, ouro: 2 }, gold: 300 },
+    pickaxe_diamante: { requires: { ouro: 10, diamante: 4 }, gold: 1200 }
   },
   jobCatalog: {
     "estagiario": { name: "Estagiário", min: 80, max: 140 },
@@ -680,8 +694,15 @@ function saveEconomy(data) {
   } catch (e) { console.error('❌ Erro ao salvar economy.json:', e); return false; }
 }
 function getEcoUser(econ, userId) {
-  econ.users[userId] = econ.users[userId] || { wallet: 0, bank: 0, cooldowns: {}, inventory: {}, job: null };
-  return econ.users[userId];
+  econ.users[userId] = econ.users[userId] || { wallet: 0, bank: 0, cooldowns: {}, inventory: {}, job: null, tools: {}, materials: {}, challenge: null };
+  const u = econ.users[userId];
+  u.cooldowns = u.cooldowns || {};
+  u.inventory = u.inventory || {};
+  if (typeof u.job === 'undefined') u.job = null;
+  u.tools = u.tools || {};
+  u.materials = u.materials || {};
+  u.challenge = u.challenge || null;
+  return u;
 }
 function parseAmount(text, maxValue) {
   if (!text) return NaN;
@@ -714,6 +735,64 @@ function applyShopBonuses(user, econ) {
     if (eff.forgeBonus) forgeBonus += eff.forgeBonus * qty;
   });
   return { mineBonus, workBonus, bankCapacity, fishBonus, exploreBonus, huntBonus, forgeBonus };
+}
+// ===== Economia: Ferramentas, Materiais, Desafios =====
+const PICKAXE_TIER_MULT = { bronze: 1.0, ferro: 1.25, diamante: 1.6 };
+const PICKAXE_TIER_ORDER = { bronze: 1, ferro: 2, diamante: 3 };
+function getActivePickaxe(user) {
+  const pk = user.tools?.pickaxe;
+  if (!pk || pk.dur <= 0) return null;
+  return pk;
+}
+function ensureEconomyDefaults(econ) {
+  let changed = false;
+  econ.shop = econ.shop || {};
+  const defs = {
+    "pickaxe_bronze": { name: "Picareta de Bronze", price: 500, type: "tool", toolType: "pickaxe", tier: "bronze", durability: 20, effect: { mineBonus: 0.1 } },
+    "pickaxe_ferro": { name: "Picareta de Ferro", price: 1500, type: "tool", toolType: "pickaxe", tier: "ferro", durability: 60, effect: { mineBonus: 0.25 } },
+    "pickaxe_diamante": { name: "Picareta de Diamante", price: 5000, type: "tool", toolType: "pickaxe", tier: "diamante", durability: 150, effect: { mineBonus: 0.5 } },
+    "repairkit": { name: "Kit de Reparos", price: 350, type: "consumable", effect: { repair: 40 } }
+  };
+  for (const [k,v] of Object.entries(defs)) { if (!econ.shop[k]) { econ.shop[k]=v; changed=true; } }
+  econ.materialsPrices = econ.materialsPrices || { pedra: 2, ferro: 6, ouro: 12, diamante: 30 };
+  econ.recipes = econ.recipes || {
+    pickaxe_bronze: { requires: { pedra: 10, ferro: 2 }, gold: 100 },
+    pickaxe_ferro: { requires: { ferro: 10, ouro: 2 }, gold: 300 },
+    pickaxe_diamante: { requires: { ouro: 10, diamante: 4 }, gold: 1200 }
+  };
+  return changed;
+}
+function giveMaterial(user, key, qty) {
+  user.materials[key] = (user.materials[key] || 0) + Math.max(0, Math.floor(qty));
+}
+function generateDailyChallenge(now=new Date()) {
+  const end = new Date(now);
+  end.setHours(23,59,59,999);
+  const pick = (arr,n) => arr.sort(()=>Math.random()-0.5).slice(0,n);
+  const types = ['mine','work','fish','explore','hunt','crimeSuccess'];
+  const chosen = pick(types,3).map(t=>({ type:t, target: 3 + Math.floor(Math.random()*5), progress:0 }));
+  const reward = 300 + Math.floor(Math.random()*401); // 300-700
+  return { expiresAt: end.getTime(), tasks: chosen, reward, claimed:false };
+}
+function ensureUserChallenge(user){
+  const now = Date.now();
+  if (!user.challenge || now > (user.challenge.expiresAt||0)) {
+    user.challenge = generateDailyChallenge(new Date());
+  }
+}
+function updateChallenge(user, type, inc=1, successFlag=true){
+  ensureUserChallenge(user);
+  const ch = user.challenge; if (!ch || ch.claimed) return;
+  ch.tasks.forEach(task=>{
+    if (task.type === type) {
+      if (type.endsWith('Success')) { if (!successFlag) return; }
+      task.progress = Math.min(task.target, (task.progress||0) + inc);
+    }
+  });
+}
+function isChallengeCompleted(user){
+  const ch = user.challenge; if (!ch) return false;
+  return ch.tasks.every(t=> (t.progress||0) >= t.target);
 }
 function checkLevelUp(userId, userData, levelingData, nazu, from) {
   const nextLevelXp = calculateNextLevelXp(userData.level);
@@ -2382,6 +2461,12 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
   case 'cacar':
   case 'caçar':
   case 'hunt':
+  case 'materiais':
+  case 'precos':
+  case 'preços':
+  case 'vender':
+  case 'reparar':
+  case 'desafio':
   case 'forjar':
   case 'forge':
   case 'crime':
@@ -2394,9 +2479,12 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
       {
         if (!isGroup) return reply('💰 Os comandos de economia funcionam apenas em grupos.');
   if (!groupData.modogold) return reply(`💤 O Modo Gold está desativado aqui. Um admin pode ativar com: ${prefix}modogold`);
-        const econ = loadEconomy();
+    const econ = loadEconomy();
+    const changedEconomy = ensureEconomyDefaults(econ);
   const me = getEcoUser(econ, sender);
+  ensureUserChallenge(me);
   const { mineBonus, workBonus, bankCapacity, fishBonus, exploreBonus, huntBonus, forgeBonus } = applyShopBonuses(me, econ);
+  if (changedEconomy) saveEconomy(econ);
 
         const sub = command;
         const mentioned = (menc_jid2 && menc_jid2[0]) || (q.includes('@') ? q.split(' ')[0].replace('@','')+"@s.whatsapp.net" : null);
@@ -2482,11 +2570,19 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
         }
         if (sub === 'comprar' || sub === 'buy') {
           const key = (args[0]||'').toLowerCase();
-          if (!key) return reply('Informe o item. Ex: '+prefix+'comprar pickaxe');
+          if (!key) return reply('Informe o item. Ex: '+prefix+'comprar pickaxe_bronze');
           const it = (econ.shop||{})[key];
           if (!it) return reply('Item não encontrado. Veja a loja com '+prefix+'loja');
           if (me.wallet < it.price) return reply('Saldo insuficiente na carteira.');
           me.wallet -= it.price;
+          // Se for ferramenta (picareta), equipa automaticamente
+          if (it.type === 'tool' && it.toolType === 'pickaxe') {
+            me.tools = me.tools || {};
+            me.tools.pickaxe = { tier: it.tier, dur: it.durability, max: it.durability, key };
+            saveEconomy(econ);
+            return reply(`✅ Você comprou e equipou ${it.name} (durabilidade ${it.durability}).`);
+          }
+          // Caso contrário, vai para o inventário
           me.inventory[key] = (me.inventory[key]||0)+1;
           saveEconomy(econ);
           return reply(`✅ Você comprou ${it.name} por ${fmt(it.price)}!`);
@@ -2494,12 +2590,104 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
 
         if (sub === 'inventario' || sub === 'inv') {
           const entries = Object.entries(me.inventory||{}).filter(([,q])=>q>0);
-          if (entries.length===0) return reply('Seu inventário está vazio.');
           let text = '🎒 Inventário\n\n';
-          for (const [k,q] of entries) {
-            const it = (econ.shop||{})[k];
-            text += `• ${it?.name || k} x${q}\n`;
+          if (entries.length>0) {
+            for (const [k,q] of entries) {
+              const it = (econ.shop||{})[k];
+              text += `• ${it?.name || k} x${q}\n`;
+            }
+          } else {
+            text += '• (vazio)\n';
           }
+          // Ferramentas
+          const pk = me.tools?.pickaxe;
+          text += '\n🛠️ Ferramentas\n';
+          if (pk) {
+            const tierName = pk.tier || 'desconhecida';
+            const dur = pk.dur ?? 0; const max = pk.max ?? (pk.tier==='bronze'?20:pk.tier==='ferro'?60:pk.tier==='diamante'?150:0);
+            text += `• Picareta ${tierName} — ${dur}/${max}\n`;
+          } else {
+            text += '• Picareta — nenhuma\n';
+          }
+          return reply(text);
+        }
+
+        // Materiais e preços
+        if (sub === 'materiais') {
+          const mats = me.materials || {};
+          const keys = Object.keys(mats).filter(k=>mats[k]>0);
+          if (keys.length===0) return reply('⛏️ Você não possui materiais. Mine para coletar.');
+          let text = '⛏️ Materiais\n\n';
+          for (const k of keys) text += `• ${k}: ${mats[k]}\n`;
+          return reply(text);
+        }
+        if (sub === 'precos' || sub === 'preços') {
+          const mp = econ.materialsPrices || {};
+          let text = '💱 Preço dos Materiais (unidade)\n\n';
+          for (const [k,v] of Object.entries(mp)) text += `• ${k}: ${fmt(v)}\n`;
+          // Receitas básicas
+          const r = econ.recipes || {};
+          if (Object.keys(r).length>0) {
+            text += '\n📜 Receitas\n';
+            for (const [key,rec] of Object.entries(r)) {
+              const shopItem = econ.shop?.[key];
+              const name = shopItem?.name || key;
+              const req = Object.entries(rec.requires||{}).map(([mk,mq])=>`${mk} x${mq}`).join(', ');
+              text += `• ${name}: ${req} + ${fmt(rec.gold||0)} gold\n`;
+            }
+          }
+          return reply(text);
+        }
+        if (sub === 'vender') {
+          const matKey = (args[0]||'').toLowerCase();
+          if (!matKey) return reply(`Use: ${prefix}vender <material> <quantidade|all>`);
+          const price = (econ.materialsPrices||{})[matKey];
+          if (!price) return reply('Material inválido. Veja preços com '+prefix+'precos');
+          const have = me.materials?.[matKey] || 0;
+          if (have<=0) return reply('Você não possui esse material.');
+          const qtyArg = args[1]||'all';
+          const qty = ['all','tudo','max'].includes((qtyArg||'').toLowerCase()) ? have : parseAmount(qtyArg, have);
+          if (!isFinite(qty) || qty<=0) return reply('Quantidade inválida.');
+          const gain = qty * price;
+          me.materials[matKey] = have - qty;
+          me.wallet += gain;
+          saveEconomy(econ);
+          return reply(`💰 Você vendeu ${qty}x ${matKey} por ${fmt(gain)}.`);
+        }
+        if (sub === 'reparar') {
+          const pk = getActivePickaxe(me) || me.tools?.pickaxe;
+          if (!pk) return reply('Você não tem picareta equipada. Compre uma na '+prefix+'loja.');
+          const kits = me.inventory?.repairkit || 0;
+          if (kits<=0) return reply(`Você não tem Kit de Reparos. Compre com ${prefix}comprar repairkit.`);
+          const repair = econ.shop?.repairkit?.effect?.repair || 40;
+          const max = pk.max ?? (pk.tier==='bronze'?20:pk.tier==='ferro'?60:pk.tier==='diamante'?150:pk.dur);
+          const before = pk.dur;
+          pk.dur = Math.min(max, pk.dur + repair);
+          me.inventory.repairkit = kits - 1;
+          me.tools.pickaxe = { ...pk, max };
+          saveEconomy(econ);
+          return reply(`🛠️ Picareta reparada: ${before} ➜ ${pk.dur}/${max}.`);
+        }
+        if (sub === 'desafio') {
+          ensureUserChallenge(me);
+          const ch = me.challenge;
+          if ((args[0]||'').toLowerCase()==='coletar') {
+            if (ch.claimed) return reply('Você já coletou a recompensa de hoje.');
+            if (!isChallengeCompleted(me)) return reply('Complete todas as tarefas diárias para coletar.');
+            me.wallet += ch.reward;
+            ch.claimed = true;
+            saveEconomy(econ);
+            return reply(`🎉 Recompensa diária coletada: ${fmt(ch.reward)}!`);
+          }
+          const labels = {
+            mine: 'Minerações', work:'Trabalhos', fish:'Pescarias', explore:'Explorações', hunt:'Caçadas', crimeSuccess:'Crimes bem-sucedidos'
+          };
+          let text = '🏅 Desafio Diário\n\n';
+          for (const t of ch.tasks||[]) {
+            text += `• ${labels[t.type]||t.type}: ${t.progress||0}/${t.target}\n`;
+          }
+          text += `\nPrêmio: ${fmt(ch.reward)} ${ch.claimed?'(coletado)':''}`;
+          if (isChallengeCompleted(me) && !ch.claimed) text += `\n\nUse: ${prefix}desafio coletar`;
           return reply(text);
         }
 
@@ -2542,7 +2730,7 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
           const cd = me.cooldowns?.fish || 0; if (Date.now()<cd) return reply(`⏳ Aguarde ${timeLeft(cd)} para pescar novamente.`);
           const base = 40 + Math.floor(Math.random()*61); // 40-100
           const bonus = Math.floor(base * (fishBonus||0)); const total = base + bonus;
-          me.wallet += total; me.cooldowns.fish = Date.now() + 2*60*1000; saveEconomy(econ);
+          me.wallet += total; me.cooldowns.fish = Date.now() + 2*60*1000; updateChallenge(me,'fish',1,true); saveEconomy(econ);
           return reply(`🎣 Você pescou e ganhou ${fmt(total)} ${bonus>0?`(bônus ${fmt(bonus)})`:''}!`);
         }
 
@@ -2550,7 +2738,7 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
           const cd = me.cooldowns?.explore || 0; if (Date.now()<cd) return reply(`⏳ Aguarde ${timeLeft(cd)} para explorar novamente.`);
           const base = 60 + Math.floor(Math.random()*91); // 60-150
           const bonus = Math.floor(base * (exploreBonus||0)); const total = base + bonus;
-          me.wallet += total; me.cooldowns.explore = Date.now() + 3*60*1000; saveEconomy(econ);
+          me.wallet += total; me.cooldowns.explore = Date.now() + 3*60*1000; updateChallenge(me,'explore',1,true); saveEconomy(econ);
           return reply(`🧭 Você explorou e encontrou ${fmt(total)} ${bonus>0?`(bônus ${fmt(bonus)})`:''}!`);
         }
 
@@ -2558,11 +2746,38 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
           const cd = me.cooldowns?.hunt || 0; if (Date.now()<cd) return reply(`⏳ Aguarde ${timeLeft(cd)} para caçar novamente.`);
           const base = 70 + Math.floor(Math.random()*111); // 70-180
           const bonus = Math.floor(base * (huntBonus||0)); const total = base + bonus;
-          me.wallet += total; me.cooldowns.hunt = Date.now() + 3*60*1000; saveEconomy(econ);
+          me.wallet += total; me.cooldowns.hunt = Date.now() + 3*60*1000; updateChallenge(me,'hunt',1,true); saveEconomy(econ);
           return reply(`🏹 Você caçou e ganhou ${fmt(total)} ${bonus>0?`(bônus ${fmt(bonus)})`:''}!`);
         }
 
         if (sub === 'forjar' || sub === 'forge') {
+          // Modo 1: craft a partir de receitas
+          const craftKey = (args[0]||'').toLowerCase();
+          if (craftKey && (econ.recipes||{})[craftKey]) {
+            const rec = econ.recipes[craftKey];
+            const reqs = rec.requires || {};
+            // Verifica materiais
+            for (const [mk,mq] of Object.entries(reqs)) {
+              if ((me.materials?.[mk]||0) < mq) return reply(`Faltam materiais: ${mk} x${mq}. Veja ${prefix}materiais.`);
+            }
+            // Verifica gold
+            const goldCost = rec.gold || 0;
+            if (me.wallet < goldCost) return reply(`Você precisa de ${fmt(goldCost)} para forjar.`);
+            // Consome
+            for (const [mk,mq] of Object.entries(reqs)) { me.materials[mk] -= mq; }
+            me.wallet -= goldCost;
+            const item = (econ.shop||{})[craftKey];
+            if (item?.type==='tool' && item.toolType==='pickaxe') {
+              me.tools.pickaxe = { tier: item.tier, dur: item.durability, max: item.durability, key: craftKey };
+              saveEconomy(econ);
+              return reply(`⚒️ Você forjou e equipou ${item.name}! Durabilidade ${item.durability}.`);
+            }
+            // Senão, adiciona ao inventário
+            me.inventory[craftKey] = (me.inventory[craftKey]||0)+1;
+            saveEconomy(econ);
+            return reply(`⚒️ Você forjou ${item?.name||craftKey}!`);
+          }
+          // Modo 2: minigame de forja (antigo)
           const cd = me.cooldowns?.forge || 0; if (Date.now()<cd) return reply(`⏳ Aguarde ${timeLeft(cd)} para forjar novamente.`);
           const cost = 100; if (me.wallet < cost) return reply(`Você precisa de ${fmt(cost)} para materiais.`);
           me.wallet -= cost;
@@ -2578,11 +2793,11 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
           }
         }
 
-        if (sub === 'crime') {
+    if (sub === 'crime') {
           const cd = me.cooldowns?.crime || 0; if (Date.now()<cd) return reply(`⏳ Aguarde ${timeLeft(cd)} para tentar de novo.`);
           const success = Math.random() < 0.4; // 40% sucesso
           if (success) {
-            const gain = 150 + Math.floor(Math.random()*251); me.wallet += gain; me.cooldowns.crime = Date.now()+8*60*1000; saveEconomy(econ);
+      const gain = 150 + Math.floor(Math.random()*251); me.wallet += gain; me.cooldowns.crime = Date.now()+8*60*1000; updateChallenge(me,'crimeSuccess',1,true); saveEconomy(econ);
             return reply(`🕵️ Você cometeu um crime e lucrou ${fmt(gain)}. Cuidado para não ser pego!`);
           } else {
             const fine = 100 + Math.floor(Math.random()*201); const pay = Math.min(me.wallet, fine); me.wallet -= pay; me.cooldowns.crime = Date.now()+8*60*1000; saveEconomy(econ);
@@ -2593,13 +2808,35 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
         if (sub === 'minerar' || sub === 'mine') {
           const cd = me.cooldowns?.mine || 0;
           if (Date.now() < cd) return reply(`⏳ Aguarde ${timeLeft(cd)} para minerar novamente.`);
-          const base = 50 + Math.floor(Math.random()*71); // 50-120
-          const bonus = Math.floor(base * mineBonus);
-          const total = base + bonus;
+          const pk = getActivePickaxe(me);
+          if (!pk) return reply(`⛏️ Você precisa de uma picareta para minerar. Compre na ${prefix}loja (ex: ${prefix}comprar pickaxe_bronze) ou repare com ${prefix}reparar.`);
+          // Cálculo de ouro com base na picareta e bônus
+          const tierMult = PICKAXE_TIER_MULT[pk.tier] || 1.0;
+          const base = 40 + Math.floor(Math.random()*61); // 40-100
+          const raw = Math.floor(base * tierMult);
+          const bonus = Math.floor(raw * (mineBonus||0));
+          const total = raw + bonus;
           me.wallet += total;
+          // Quedas de materiais
+          let drops = { pedra: 1 + Math.floor(Math.random()*4) };
+          if (pk.tier==='ferro' || pk.tier==='diamante') {
+            drops.ferro = (drops.ferro||0) + Math.floor(Math.random()*3); // 0-2
+          }
+          if (pk.tier==='diamante') {
+            drops.ferro = (drops.ferro||0) + (1 + Math.floor(Math.random()*2)); // +1-2 adicionais
+            drops.ouro = (drops.ouro||0) + Math.floor(Math.random()*2); // 0-1
+            if (Math.random()<0.2) drops.diamante = (drops.diamante||0) + 1; // chance de diamante
+          }
+          for (const [mk,mq] of Object.entries(drops)) if (mq>0) giveMaterial(me, mk, mq);
+          // Durabilidade
+          const before = pk.dur; pk.dur = Math.max(0, pk.dur - 1);
+          me.tools.pickaxe = { ...pk, max: pk.max ?? (pk.tier==='bronze'?20:pk.tier==='ferro'?60:pk.tier==='diamante'?150:pk.dur) };
           me.cooldowns.mine = Date.now() + 60*1000; // 1 min
+          updateChallenge(me,'mine',1,true);
           saveEconomy(econ);
-          return reply(`⛏️ Você minerou e ganhou ${fmt(total)} ${bonus>0?`(bônus ${fmt(bonus)})`:''}!`);
+          let dropTxt = Object.entries(drops).filter(([,q])=>q>0).map(([k,q])=>`${k} x${q}`).join(', ');
+          const broke = pk.dur===0 && before>0;
+          return reply(`⛏️ Você minerou e ganhou ${fmt(total)} ${bonus>0?`(bônus ${fmt(bonus)})`:''}!\n📦 Drops: ${dropTxt||'—'}\n🛠️ Picareta: ${pk.dur}/${me.tools.pickaxe.max}${broke?' — quebrou!':''}`);
         }
 
         if (sub === 'trabalhar' || sub === 'work') {
@@ -2610,6 +2847,7 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
           const total = base + bonus;
           me.wallet += total;
           me.cooldowns.work = Date.now() + 5*60*1000; // 5 min
+          updateChallenge(me,'work',1,true);
           saveEconomy(econ);
           return reply(`💼 Você trabalhou e recebeu ${fmt(total)} ${bonus>0?`(bônus ${fmt(bonus)})`:''}!`);
         }

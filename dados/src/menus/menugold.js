@@ -53,6 +53,16 @@ ${middleBorder}
 ${middleBorder}${menuItemIcon} ${prefix}loja
 ${middleBorder}${menuItemIcon} ${prefix}comprar <item>
 ${middleBorder}${menuItemIcon} ${prefix}inventario
+${middleBorder}${menuItemIcon} ${prefix}materiais
+${middleBorder}${menuItemIcon} ${prefix}precos
+${middleBorder}${menuItemIcon} ${prefix}vender <material> <qtd|all>
+${middleBorder}${menuItemIcon} ${prefix}reparar
+${bottomBorder}
+
+${menuTopBorder}${separatorIcon} ${menuTitleIcon} DESAFIO DIÁRIO ${menuTitleIcon}
+${middleBorder}
+${middleBorder}${menuItemIcon} ${prefix}desafio
+${middleBorder}${menuItemIcon} ${prefix}desafio coletar
 ${bottomBorder}
 `;
 }
