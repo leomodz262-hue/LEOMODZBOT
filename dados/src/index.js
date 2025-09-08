@@ -694,7 +694,7 @@ function saveEconomy(data) {
   } catch (e) { console.error('❌ Erro ao salvar economy.json:', e); return false; }
 }
 function getEcoUser(econ, userId) {
-  econ.users[userId] = econ.users[userId] || { wallet: 0, bank: 0, cooldowns: {}, inventory: {}, job: null, tools: {}, materials: {}, challenge: null };
+  econ.users[userId] = econ.users[userId] || { wallet: 0, bank: 0, cooldowns: {}, inventory: {}, job: null, tools: {}, materials: {}, challenge: null, weeklyChallenge: null, monthlyChallenge: null, skills: {}, properties: {} };
   const u = econ.users[userId];
   u.cooldowns = u.cooldowns || {};
   u.inventory = u.inventory || {};
@@ -702,6 +702,10 @@ function getEcoUser(econ, userId) {
   u.tools = u.tools || {};
   u.materials = u.materials || {};
   u.challenge = u.challenge || null;
+  u.weeklyChallenge = u.weeklyChallenge || null;
+  u.monthlyChallenge = u.monthlyChallenge || null;
+  u.skills = u.skills || {};
+  u.properties = u.properties || {};
   return u;
 }
 function parseAmount(text, maxValue) {
@@ -760,6 +764,14 @@ function ensureEconomyDefaults(econ) {
     pickaxe_ferro: { requires: { ferro: 10, ouro: 2 }, gold: 300 },
     pickaxe_diamante: { requires: { ouro: 10, diamante: 4 }, gold: 1200 }
   };
+  // Mercado e Propriedades
+  if (!Array.isArray(econ.market)) { econ.market = []; changed = true; }
+  if (typeof econ.marketCounter !== 'number') { econ.marketCounter = 1; changed = true; }
+  econ.propertiesCatalog = econ.propertiesCatalog || {
+    casa: { name: 'Casa', price: 5000, upkeepPerDay: 50, incomeGoldPerDay: 80 },
+    fazenda: { name: 'Fazenda', price: 15000, upkeepPerDay: 150, incomeMaterialsPerDay: { pedra: 6, ferro: 1 } },
+    mina_privada: { name: 'Mina Privada', price: 30000, upkeepPerDay: 400, incomeMaterialsPerDay: { pedra: 12, ferro: 3, ouro: 1 } }
+  };
   return changed;
 }
 function giveMaterial(user, key, qty) {
@@ -793,6 +805,82 @@ function updateChallenge(user, type, inc=1, successFlag=true){
 function isChallengeCompleted(user){
   const ch = user.challenge; if (!ch) return false;
   return ch.tasks.every(t=> (t.progress||0) >= t.target);
+}
+
+// ===== Habilidades (Skills) e Desafios Periódicos =====
+const SKILL_LIST = ['mining','working','fishing','exploring','hunting','forging','crime'];
+function ensureUserSkills(user){
+  user.skills = user.skills || {};
+  for (const s of SKILL_LIST){
+    user.skills[s] = user.skills[s] || { level: 1, xp: 0 };
+  }
+}
+function skillXpForNext(level){
+  return Math.floor(50 * Math.pow(1.35, Math.max(0, level - 1)));
+}
+function addSkillXP(user, skill, amount=1){
+  ensureUserSkills(user);
+  if (!SKILL_LIST.includes(skill)) return;
+  const sk = user.skills[skill];
+  sk.xp += Math.max(0, Math.floor(amount));
+  let leveled = 0;
+  while (sk.xp >= skillXpForNext(sk.level)){
+    sk.xp -= skillXpForNext(sk.level);
+    sk.level += 1; leveled++;
+    if (sk.level > 1000) break; // hard cap
+  }
+  return leveled;
+}
+function getSkillBonus(user, skill){
+  ensureUserSkills(user);
+  const lvl = user.skills[skill]?.level || 1;
+  return 0.02 * Math.max(0, (lvl - 1)); // +2% por nível
+}
+
+function endOfWeekTimestamp(date=new Date()){
+  // Considera semana terminando no domingo 23:59:59
+  const d = new Date(date);
+  const day = d.getDay(); // 0=Dom
+  const diff = (7 - day) % 7; // dias até domingo
+  d.setDate(d.getDate() + diff);
+  d.setHours(23,59,59,999);
+  return d.getTime();
+}
+function endOfMonthTimestamp(date=new Date()){
+  const d = new Date(date.getFullYear(), date.getMonth()+1, 0, 23,59,59,999);
+  return d.getTime();
+}
+function generateWeeklyChallenge(now=new Date()){
+  const types = ['mine','work','fish','explore','hunt','crimeSuccess'];
+  const chosen = types.sort(()=>Math.random()-0.5).slice(0,4).map(t=>({ type:t, target: 15 + Math.floor(Math.random()*16), progress:0 }));
+  const reward = 3000 + Math.floor(Math.random()*2001); // 3000-5000
+  return { expiresAt: endOfWeekTimestamp(now), tasks: chosen, reward, claimed:false };
+}
+function generateMonthlyChallenge(now=new Date()){
+  const types = ['mine','work','fish','explore','hunt','crimeSuccess'];
+  const chosen = types.sort(()=>Math.random()-0.5).slice(0,5).map(t=>({ type:t, target: 60 + Math.floor(Math.random()*41), progress:0 }));
+  const reward = 15000 + Math.floor(Math.random()*5001); // 15000-20000
+  return { expiresAt: endOfMonthTimestamp(now), tasks: chosen, reward, claimed:false };
+}
+function ensureUserPeriodChallenges(user){
+  const now = Date.now();
+  if (!user.weeklyChallenge || now > (user.weeklyChallenge.expiresAt||0)) user.weeklyChallenge = generateWeeklyChallenge(new Date());
+  if (!user.monthlyChallenge || now > (user.monthlyChallenge.expiresAt||0)) user.monthlyChallenge = generateMonthlyChallenge(new Date());
+}
+function updatePeriodChallenge(user, type, inc=1, successFlag=true){
+  ensureUserPeriodChallenges(user);
+  for (const ch of [user.weeklyChallenge, user.monthlyChallenge]){
+    if (!ch || ch.claimed) continue;
+    ch.tasks.forEach(task=>{
+      if (task.type === type){
+        if (type.endsWith('Success') && !successFlag) return;
+        task.progress = Math.min(task.target, (task.progress||0) + inc);
+      }
+    });
+  }
+}
+function isPeriodCompleted(ch){
+  if (!ch) return false; return ch.tasks.every(t=> (t.progress||0) >= t.target);
 }
 function checkLevelUp(userId, userData, levelingData, nazu, from) {
   const nextLevelXp = calculateNextLevelXp(userData.level);
@@ -2461,6 +2549,17 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
   case 'cacar':
   case 'caçar':
   case 'hunt':
+  case 'mercado':
+  case 'listar':
+  case 'comprarmercado':
+  case 'meusanuncios':
+  case 'cancelar':
+  case 'propriedades':
+  case 'comprarpropriedade':
+  case 'coletarpropriedades':
+  case 'habilidades':
+  case 'desafiosemanal':
+  case 'desafiomensal':
   case 'materiais':
   case 'precos':
   case 'preços':
@@ -2728,25 +2827,31 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
 
         if (sub === 'pescar' || sub === 'fish') {
           const cd = me.cooldowns?.fish || 0; if (Date.now()<cd) return reply(`⏳ Aguarde ${timeLeft(cd)} para pescar novamente.`);
-          const base = 40 + Math.floor(Math.random()*61); // 40-100
-          const bonus = Math.floor(base * (fishBonus||0)); const total = base + bonus;
-          me.wallet += total; me.cooldowns.fish = Date.now() + 2*60*1000; updateChallenge(me,'fish',1,true); saveEconomy(econ);
+          const base = 25 + Math.floor(Math.random()*36); // 25-60, mais lento
+          const skillB = getSkillBonus(me,'fishing');
+          const bonus = Math.floor(base * ((fishBonus||0) + skillB)); const total = base + bonus;
+          me.wallet += total; me.cooldowns.fish = Date.now() + 4*60*1000; // cooldown maior
+          addSkillXP(me,'fishing',1); updateChallenge(me,'fish',1,true); updatePeriodChallenge(me,'fish',1,true); saveEconomy(econ);
           return reply(`🎣 Você pescou e ganhou ${fmt(total)} ${bonus>0?`(bônus ${fmt(bonus)})`:''}!`);
         }
 
         if (sub === 'explorar' || sub === 'explore') {
           const cd = me.cooldowns?.explore || 0; if (Date.now()<cd) return reply(`⏳ Aguarde ${timeLeft(cd)} para explorar novamente.`);
-          const base = 60 + Math.floor(Math.random()*91); // 60-150
-          const bonus = Math.floor(base * (exploreBonus||0)); const total = base + bonus;
-          me.wallet += total; me.cooldowns.explore = Date.now() + 3*60*1000; updateChallenge(me,'explore',1,true); saveEconomy(econ);
+          const base = 35 + Math.floor(Math.random()*56); // 35-90
+          const skillB = getSkillBonus(me,'exploring');
+          const bonus = Math.floor(base * ((exploreBonus||0) + skillB)); const total = base + bonus;
+          me.wallet += total; me.cooldowns.explore = Date.now() + 5*60*1000; // cooldown maior
+          addSkillXP(me,'exploring',1); updateChallenge(me,'explore',1,true); updatePeriodChallenge(me,'explore',1,true); saveEconomy(econ);
           return reply(`🧭 Você explorou e encontrou ${fmt(total)} ${bonus>0?`(bônus ${fmt(bonus)})`:''}!`);
         }
 
         if (sub === 'cacar' || sub === 'caçar' || sub === 'hunt') {
           const cd = me.cooldowns?.hunt || 0; if (Date.now()<cd) return reply(`⏳ Aguarde ${timeLeft(cd)} para caçar novamente.`);
-          const base = 70 + Math.floor(Math.random()*111); // 70-180
-          const bonus = Math.floor(base * (huntBonus||0)); const total = base + bonus;
-          me.wallet += total; me.cooldowns.hunt = Date.now() + 3*60*1000; updateChallenge(me,'hunt',1,true); saveEconomy(econ);
+          const base = 45 + Math.floor(Math.random()*76); // 45-120
+          const skillB = getSkillBonus(me,'hunting');
+          const bonus = Math.floor(base * ((huntBonus||0) + skillB)); const total = base + bonus;
+          me.wallet += total; me.cooldowns.hunt = Date.now() + 6*60*1000;
+          addSkillXP(me,'hunting',1); updateChallenge(me,'hunt',1,true); updatePeriodChallenge(me,'hunt',1,true); saveEconomy(econ);
           return reply(`🏹 Você caçou e ganhou ${fmt(total)} ${bonus>0?`(bônus ${fmt(bonus)})`:''}!`);
         }
 
@@ -2795,12 +2900,15 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
 
     if (sub === 'crime') {
           const cd = me.cooldowns?.crime || 0; if (Date.now()<cd) return reply(`⏳ Aguarde ${timeLeft(cd)} para tentar de novo.`);
-          const success = Math.random() < 0.4; // 40% sucesso
+          const success = Math.random() < 0.35; // 35% sucesso, mais difícil
           if (success) {
-      const gain = 150 + Math.floor(Math.random()*251); me.wallet += gain; me.cooldowns.crime = Date.now()+8*60*1000; updateChallenge(me,'crimeSuccess',1,true); saveEconomy(econ);
+            const base = 90 + Math.floor(Math.random()*141); // 90-230, menor
+            const skillB = getSkillBonus(me,'crime');
+            const gain = Math.floor(base * (1 + skillB));
+            me.wallet += gain; me.cooldowns.crime = Date.now()+10*60*1000; addSkillXP(me,'crime',1); updateChallenge(me,'crimeSuccess',1,true); updatePeriodChallenge(me,'crimeSuccess',1,true); saveEconomy(econ);
             return reply(`🕵️ Você cometeu um crime e lucrou ${fmt(gain)}. Cuidado para não ser pego!`);
           } else {
-            const fine = 100 + Math.floor(Math.random()*201); const pay = Math.min(me.wallet, fine); me.wallet -= pay; me.cooldowns.crime = Date.now()+8*60*1000; saveEconomy(econ);
+            const fine = 120 + Math.floor(Math.random()*201); const pay = Math.min(me.wallet, fine); me.wallet -= pay; me.cooldowns.crime = Date.now()+10*60*1000; saveEconomy(econ);
             return reply(`🚔 Você foi pego! Pagou multa de ${fmt(pay)}.`);
           }
         }
@@ -2812,9 +2920,10 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
           if (!pk) return reply(`⛏️ Você precisa de uma picareta para minerar. Compre na ${prefix}loja (ex: ${prefix}comprar pickaxe_bronze) ou repare com ${prefix}reparar.`);
           // Cálculo de ouro com base na picareta e bônus
           const tierMult = PICKAXE_TIER_MULT[pk.tier] || 1.0;
-          const base = 40 + Math.floor(Math.random()*61); // 40-100
+          const base = 30 + Math.floor(Math.random()*41); // 30-70
+          const skillB = getSkillBonus(me,'mining');
           const raw = Math.floor(base * tierMult);
-          const bonus = Math.floor(raw * (mineBonus||0));
+          const bonus = Math.floor(raw * ((mineBonus||0) + skillB));
           const total = raw + bonus;
           me.wallet += total;
           // Quedas de materiais
@@ -2831,8 +2940,8 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
           // Durabilidade
           const before = pk.dur; pk.dur = Math.max(0, pk.dur - 1);
           me.tools.pickaxe = { ...pk, max: pk.max ?? (pk.tier==='bronze'?20:pk.tier==='ferro'?60:pk.tier==='diamante'?150:pk.dur) };
-          me.cooldowns.mine = Date.now() + 60*1000; // 1 min
-          updateChallenge(me,'mine',1,true);
+          me.cooldowns.mine = Date.now() + 2*60*1000; // 2 min
+          addSkillXP(me,'mining',1); updateChallenge(me,'mine',1,true); updatePeriodChallenge(me,'mine',1,true);
           saveEconomy(econ);
           let dropTxt = Object.entries(drops).filter(([,q])=>q>0).map(([k,q])=>`${k} x${q}`).join(', ');
           const broke = pk.dur===0 && before>0;
@@ -2842,14 +2951,165 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
         if (sub === 'trabalhar' || sub === 'work') {
           const cd = me.cooldowns?.work || 0;
           if (Date.now() < cd) return reply(`⏳ Aguarde ${timeLeft(cd)} para trabalhar novamente.`);
-          const base = 100 + Math.floor(Math.random()*151); // 100-250
-          const bonus = Math.floor(base * workBonus);
+          const base = 70 + Math.floor(Math.random()*111); // 70-180
+          const skillB = getSkillBonus(me,'working');
+          const bonus = Math.floor(base * (workBonus + skillB));
           const total = base + bonus;
           me.wallet += total;
-          me.cooldowns.work = Date.now() + 5*60*1000; // 5 min
-          updateChallenge(me,'work',1,true);
+          me.cooldowns.work = Date.now() + 7*60*1000; // 7 min
+          addSkillXP(me,'working',1); updateChallenge(me,'work',1,true); updatePeriodChallenge(me,'work',1,true);
           saveEconomy(econ);
           return reply(`💼 Você trabalhou e recebeu ${fmt(total)} ${bonus>0?`(bônus ${fmt(bonus)})`:''}!`);
+        }
+
+        // ===== Mercado entre usuários =====
+        if (sub === 'mercado') {
+          const items = econ.market || [];
+          if (items.length===0) return reply('🛒 O mercado está vazio. Use listar para anunciar algo.');
+          let text = '🛒 Mercado (ofertas abertas)\n\n';
+          for (const ofr of items) {
+            text += `#${ofr.id} • ${ofr.type==='item'?`${ofr.key} x${ofr.qty}`:`${ofr.mat} x${ofr.qty}`} — ${fmt(ofr.price)} | Vendedor: @${ofr.seller.split('@')[0]}\n`;
+          }
+          return reply(text, { mentions: (items.map(i=>i.seller)) });
+        }
+        if (sub === 'listar') {
+          // listar item <key> <qtd> <preco> | listar mat <material> <qtd> <preco>
+          const kind = (args[0]||'').toLowerCase();
+          if (!['item','mat','material'].includes(kind)) return reply(`Use: ${prefix}listar item <key> <qtd> <preco> | ${prefix}listar mat <material> <qtd> <preco>`);
+          const qty = parseInt(args[2]); const price = parseInt(args[3]);
+          if (!isFinite(qty)||qty<=0||!isFinite(price)||price<=0) return reply('Quantidade e preço inválidos.');
+          if (kind==='item') {
+            const key = (args[1]||'').toLowerCase();
+            if ((me.inventory?.[key]||0) < qty) return reply('Você não possui itens suficientes.');
+            me.inventory[key] -= qty;
+            const id = econ.marketCounter++;
+            econ.market.push({ id, type:'item', key, qty, price, seller: sender });
+            saveEconomy(econ);
+            return reply(`📢 Anúncio #${id} criado: ${key} x${qty} por ${fmt(price)}.`);
+          } else {
+            const mat = (args[1]||'').toLowerCase();
+            if ((me.materials?.[mat]||0) < qty) return reply('Você não possui materiais suficientes.');
+            me.materials[mat] -= qty;
+            const id = econ.marketCounter++;
+            econ.market.push({ id, type:'mat', mat, qty, price, seller: sender });
+            saveEconomy(econ);
+            return reply(`📢 Anúncio #${id} criado: ${mat} x${qty} por ${fmt(price)}.`);
+          }
+        }
+        if (sub === 'meusanuncios') {
+          const mine = (econ.market||[]).filter(o=>o.seller===sender);
+          if (mine.length===0) return reply('Você não tem anúncios.');
+          let text='📋 Seus anúncios\n\n';
+          for (const ofr of mine) text += `#${ofr.id} • ${ofr.type==='item'?`${ofr.key} x${ofr.qty}`:`${ofr.mat} x${ofr.qty}`} — ${fmt(ofr.price)}\n`;
+          return reply(text);
+        }
+        if (sub === 'cancelar') {
+          const id = parseInt(args[0]); if (!isFinite(id)) return reply('Informe o ID do anúncio.');
+          const idx = (econ.market||[]).findIndex(o=>o.id===id);
+          if (idx<0) return reply('Anúncio não encontrado.');
+          const ofr = econ.market[idx];
+          if (ofr.seller!==sender) return reply('Apenas o vendedor pode cancelar.');
+          // devolve ao vendedor
+          if (ofr.type==='item') me.inventory[ofr.key] = (me.inventory[ofr.key]||0) + ofr.qty; else me.materials[ofr.mat]=(me.materials[ofr.mat]||0)+ofr.qty;
+          econ.market.splice(idx,1); saveEconomy(econ);
+          return reply(`❌ Anúncio #${id} cancelado e itens devolvidos.`);
+        }
+        if (sub === 'comprarmercado') {
+          const id = parseInt(args[0]); if (!isFinite(id)) return reply('Informe o ID do anúncio.');
+          const ofr = (econ.market||[]).find(o=>o.id===id);
+          if (!ofr) return reply('Anúncio não encontrado.');
+          if (ofr.seller===sender) return reply('Você não pode comprar seu próprio anúncio.');
+          const tax = Math.floor(ofr.price * 0.05);
+          if (me.wallet < ofr.price) return reply('Saldo insuficiente.');
+          const seller = getEcoUser(econ, ofr.seller);
+          me.wallet -= ofr.price;
+          seller.wallet += (ofr.price - tax); // taxa de 5%
+          if (ofr.type==='item') me.inventory[ofr.key] = (me.inventory[ofr.key]||0) + ofr.qty; else me.materials[ofr.mat]=(me.materials[ofr.mat]||0)+ofr.qty;
+          econ.market = (econ.market||[]).filter(o=>o.id!==id);
+          saveEconomy(econ);
+          return reply(`🛒 Compra realizada! Taxa de ${fmt(tax)} aplicada. Vendedor recebeu ${fmt(ofr.price - tax)}.`);
+        }
+
+        // ===== Propriedades =====
+        if (sub === 'propriedades') {
+          const keys = Object.keys(econ.propertiesCatalog||{});
+          let text = '🏠 Propriedades disponíveis\n\n';
+          for (const k of keys) {
+            const p = econ.propertiesCatalog[k];
+            const upkeep = p.upkeepPerDay || 0; const incGold = p.incomeGoldPerDay||0; const incMat = p.incomeMaterialsPerDay||{};
+            const mats = Object.entries(incMat).map(([mk,mq])=>`${mk} x${mq}/dia`).join(', ');
+            text += `• ${k} — ${p.name} — Preço: ${fmt(p.price)} — Manutenção: ${fmt(upkeep)}/dia — Renda: ${incGold>0?`${fmt(incGold)} gold/dia`:''}${mats?`${incGold>0?' e ':''}${mats}`:''}\n`;
+          }
+          // minhas propriedades
+          const mine = me.properties||{}; const owned = Object.keys(mine).filter(k=>mine[k]?.owned);
+          if (owned.length>0){
+            text += '\n📦 Suas propriedades:\n';
+            for (const k of owned) {
+              const o = mine[k];
+              const last = o.lastCollect ? new Date(o.lastCollect).toLocaleDateString('pt-BR') : '—';
+              text += `• ${econ.propertiesCatalog[k]?.name||k} — desde ${last}\n`;
+            }
+          }
+          return reply(text);
+        }
+        if (sub === 'comprarpropriedade') {
+          const key = (args[0]||'').toLowerCase(); if (!key) return reply(`Use: ${prefix}comprarpropriedade <tipo>`);
+          const prop = (econ.propertiesCatalog||{})[key]; if (!prop) return reply('Propriedade inexistente.');
+          if (me.properties?.[key]?.owned) return reply('Você já possui essa propriedade.');
+          if (me.wallet < prop.price) return reply('Saldo insuficiente.');
+          me.wallet -= prop.price;
+          me.properties[key] = { owned: true, lastCollect: Date.now() };
+          saveEconomy(econ);
+          return reply(`🏠 Você comprou ${prop.name}!`);
+        }
+        if (sub === 'coletarpropriedades') {
+          const props = me.properties || {}; const keys = Object.keys(props).filter(k=>props[k].owned);
+          if (keys.length===0) return reply('Você não possui propriedades.');
+          let totalGold = 0; const matsGain = {};
+          for (const k of keys) {
+            const meta = (econ.propertiesCatalog||{})[k]; if (!meta) continue;
+            const days = Math.max(1, Math.ceil((Date.now() - (props[k].lastCollect||Date.now())) / (24*60*60*1000)));
+            const upkeep = (meta.upkeepPerDay||0) * days; if (me.wallet < upkeep) return reply(`Saldo insuficiente para pagar manutenção de ${meta.name} (${fmt(upkeep)}).`);
+            me.wallet -= upkeep;
+            if (meta.incomeGoldPerDay) totalGold += meta.incomeGoldPerDay * days;
+            if (meta.incomeMaterialsPerDay){
+              for (const [mk,mq] of Object.entries(meta.incomeMaterialsPerDay)) matsGain[mk]=(matsGain[mk]||0)+(mq*days);
+            }
+            props[k].lastCollect = Date.now();
+          }
+          me.wallet += totalGold;
+          for (const [mk,mq] of Object.entries(matsGain)) giveMaterial(me, mk, mq);
+          saveEconomy(econ);
+          let msg = `🏡 Coleta concluída! +${fmt(totalGold)} gold`;
+          if (Object.keys(matsGain).length>0) msg += ` | Materiais: `+Object.entries(matsGain).map(([k,q])=>`${k} x${q}`).join(', ');
+          return reply(msg);
+        }
+
+        // ===== Habilidades & Desafios Periódicos (visualização) =====
+        if (sub === 'habilidades') {
+          ensureUserSkills(me);
+          let text = '📚 Habilidades\n\n';
+          for (const s of SKILL_LIST){
+            const sk = me.skills[s];
+            text += `• ${s}: Nível ${sk.level} (${sk.xp}/${skillXpForNext(sk.level)})\n`;
+          }
+          return reply(text);
+        }
+        if (sub === 'desafiosemanal' || sub === 'desafiomensal') {
+          ensureUserPeriodChallenges(me);
+          const show = sub==='desafiosemanal' ? me.weeklyChallenge : me.monthlyChallenge;
+          const labels = { mine:'Minerações', work:'Trabalhos', fish:'Pescarias', explore:'Explorações', hunt:'Caçadas', crimeSuccess:'Crimes OK' };
+          let text = `🏅 Desafio ${sub==='desafiosemanal'?'Semanal':'Mensal'}\n\n`;
+          for (const t of (show.tasks||[])) text += `• ${labels[t.type]||t.type}: ${t.progress||0}/${t.target}\n`;
+          text += `\nPrêmio: ${fmt(show.reward)} ${show.claimed?'(coletado)':''}`;
+          if (isPeriodCompleted(show) && !show.claimed) text += `\nUse: ${prefix}${sub} coletar`;
+          if ((args[0]||'').toLowerCase()==='coletar'){
+            if (show.claimed) return reply('Você já coletou este prêmio.');
+            if (!isPeriodCompleted(show)) return reply('Complete todas as tarefas para coletar.');
+            me.wallet += show.reward; show.claimed = true; saveEconomy(econ);
+            return reply(`🎉 Você coletou ${fmt(show.reward)} do ${sub==='desafiosemanal'?'desafio semanal':'desafio mensal'}!`);
+          }
+          return reply(text);
         }
 
         if (sub === 'assaltar' || sub === 'roubar') {
