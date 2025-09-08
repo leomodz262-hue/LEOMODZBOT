@@ -2053,7 +2053,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
         }
         ;
       } catch (error) {
-        console.error("Erro no sistema de jogo da velha:", error);
+
       }
       ;
     }
