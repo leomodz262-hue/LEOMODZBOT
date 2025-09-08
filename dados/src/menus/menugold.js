@@ -18,6 +18,7 @@ ${middleBorder}${menuItemIcon} ${prefix}perfil
 ${middleBorder}${menuItemIcon} ${prefix}carteira
 ${middleBorder}${menuItemIcon} ${prefix}banco
 ${middleBorder}${menuItemIcon} ${prefix}topgold
+${bottomBorder}
 
 ${menuTopBorder}${separatorIcon} ${menuTitleIcon} RENDAS & AVENTURAS ${menuTitleIcon}
 ${middleBorder}
@@ -30,12 +31,14 @@ ${middleBorder}${menuItemIcon} ${prefix}caçar
 ${middleBorder}${menuItemIcon} ${prefix}forjar
 ${middleBorder}${menuItemIcon} ${prefix}crime
 ${middleBorder}${menuItemIcon} ${prefix}assaltar @user
+${bottomBorder}
 
 ${menuTopBorder}${separatorIcon} ${menuTitleIcon} EMPREGOS ${menuTitleIcon}
 ${middleBorder}
 ${middleBorder}${menuItemIcon} ${prefix}vagas
 ${middleBorder}${menuItemIcon} ${prefix}emprego <vaga>
 ${middleBorder}${menuItemIcon} ${prefix}demitir
+${bottomBorder}
 
 ${menuTopBorder}${separatorIcon} ${menuTitleIcon} BANCO & TRANSFERÊNCIAS ${menuTitleIcon}
 ${middleBorder}
@@ -43,11 +46,13 @@ ${middleBorder}${menuItemIcon} ${prefix}depositar <valor|all>
 ${middleBorder}${menuItemIcon} ${prefix}sacar <valor|all>
 ${middleBorder}${menuItemIcon} ${prefix}transferir <@user> <valor>
 ${middleBorder}${menuItemIcon} ${prefix}pix <@user> <valor>
+${bottomBorder}
 
 ${menuTopBorder}${separatorIcon} ${menuTitleIcon} ITENS & LOJA ${menuTitleIcon}
 ${middleBorder}
 ${middleBorder}${menuItemIcon} ${prefix}loja
 ${middleBorder}${menuItemIcon} ${prefix}comprar <item>
 ${middleBorder}${menuItemIcon} ${prefix}inventario
+${bottomBorder}
 `;
 }

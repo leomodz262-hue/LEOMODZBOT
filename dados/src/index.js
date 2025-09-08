@@ -2335,9 +2335,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
     switch (command) {
       // ====== MENUS ======
       case 'menugold': {
-        const design = getMenuDesignWithDefaults(nomebot, pushname);
-        const txt = await menuGold(prefix, nomebot, pushname, design);
-        await reply(txt);
+        await sendMenuWithMedia('menugold', menuGold);
         break;
       }
 
@@ -2665,7 +2663,7 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
 
         return reply('Comando de economia inválido. Use '+prefix+'menugold para ver os comandos.');
       }
-      
+
       case 'speedup':
       case 'boyvoice':
       case 'vozmenino':
