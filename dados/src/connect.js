@@ -154,31 +154,6 @@ async function limparTodosOsCaches() {
     console.log('🧹 Todos os caches foram limpos');
 }
 
-// Adiciona handler de desligamento gracioso
-process.on('SIGINT', async () => {
-    console.log('\n🛑 Recebido SIGINT, desligando gracefulmente...');
-    try {
-        await limparTodosOsCaches();
-        console.log('✅ Limpeza concluída. Saindo...');
-        process.exit(0);
-    } catch (erro) {
-        console.error(`❌ Erro durante a limpeza: ${erro.message}`);
-        process.exit(1);
-    }
-});
-
-process.on('SIGTERM', async () => {
-    console.log('\n🛑 Recebido SIGTERM, desligando gracefulmente...');
-    try {
-        await limparTodosOsCaches();
-        console.log('✅ Limpeza concluída. Saindo...');
-        process.exit(0);
-    } catch (erro) {
-        console.error(`❌ Erro durante a limpeza: ${erro.message}`);
-        process.exit(1);
-    }
-});
-
 // =============================================================================
 // FUNÇÕES UTILITÁRIAS
 // =============================================================================
