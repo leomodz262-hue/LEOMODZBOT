@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://node6.ldc.srv.br:10020/api';
+const API_URL = 'https://htmltoimage.cognima.com.br/api.php';
 
 export const Welcome = async (profilePic, userNumber, groupName, memberCount) => {
   const html = `
