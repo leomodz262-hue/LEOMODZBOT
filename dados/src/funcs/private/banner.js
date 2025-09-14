@@ -145,7 +145,7 @@ export const Play = async (thumbnailImage, songName, artistName, duration) => {
 
   try {
     const { data } = await axios.post(API_URL, payload, { responseType: "arraybuffer"});
-    return data, || null;
+    return data;
   } catch (err) {
     console.error(err);
     return null;
