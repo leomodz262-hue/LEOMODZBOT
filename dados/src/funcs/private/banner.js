@@ -51,7 +51,7 @@ export const Welcome = async (profilePic, userNumber, groupName, memberCount) =>
 
   try {
     const { data } = await axios.post(API_URL, payload, { responseType: "arraybuffer"});
-    return data || null;
+    return data;
   } catch (err) {
     console.error(err);
     return null;
@@ -100,7 +100,7 @@ export const Ping = async (backgroundImage, characterImage, botName, pingSpeed, 
 
   try {
     const { data } = await axios.post(API_URL, payload, { responseType: "arraybuffer"});
-    return data || null;
+    return data;
   } catch (err) {
     console.error(err);
     return null;
@@ -201,7 +201,7 @@ export const Chaveamento = async (
 
   try {
     const { data } = await axios.post(API_URL, payload, { responseType: "arraybuffer"});
-    return data || null;
+    return data;
   } catch (err) {
     console.error(err);
     return null;
