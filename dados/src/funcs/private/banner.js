@@ -1,10 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://htmlcsstoimage.com/demo_run';
-const HEADERS = {
-  cookie: 'session=abc123; path=/; expires=Thu, 01 Jan 2023 00:00:00 GMT',
-  'x-csrf-token': 'ABC123DEF456GHI789JKL012MNO345PQR678STU901VWX234YZA567BCD890EFG'
-};
+const API_URL = 'http://node6.ldc.srv.br:10020/api';
 
 export const Welcome = async (profilePic, userNumber, groupName, memberCount) => {
   const html = `
@@ -54,7 +50,7 @@ export const Welcome = async (profilePic, userNumber, groupName, memberCount) =>
   };
 
   try {
-    const { data } = await axios.post(API_URL, payload, { headers: HEADERS });
+    const { data } = await axios.post(API_URL, payload);
     return data?.url || null;
   } catch (err) {
     console.error(err);
@@ -100,8 +96,11 @@ export const Ping = async (backgroundImage, characterImage, botName, pingSpeed, 
     .speed-box p, .uptime-box p { font-size: 24px; color: #333; font-weight: 600; margin: 0; }
   `;
 
+  const payload = { html, css, viewport_width: '1200', viewport_height: '500', google_fonts: 'Poppins', device_scale: '2' };
+
   try {
-    return `https://image.thum.io/get/fullpage/https://htmltoimage.cognima.com.br/api.php?html=${encodeURIComponent(html)}&css=${encodeURIComponent(css)}`;
+    const { data } = await axios.post(API_URL, payload);
+    return data?.url || null;
   } catch (err) {
     console.error(err);
     return null;
@@ -145,7 +144,7 @@ export const Play = async (thumbnailImage, songName, artistName, duration) => {
   const payload = { html, css, viewport_width: '1200', viewport_height: '500', google_fonts: 'Poppins', device_scale: '2' };
 
   try {
-    const { data } = await axios.post(API_URL, payload, { headers: HEADERS });
+    const { data } = await axios.post(API_URL, payload);
     return data?.url || null;
   } catch (err) {
     console.error(err);
@@ -201,7 +200,7 @@ export const Chaveamento = async (
   const payload = { html, css, viewport_width: '1600', viewport_height: '900', google_fonts: 'Poppins', device_scale: '2' };
 
   try {
-    const { data } = await axios.post(API_URL, payload, { headers: HEADERS });
+    const { data } = await axios.post(API_URL, payload);
     return data?.url || null;
   } catch (err) {
     console.error(err);
