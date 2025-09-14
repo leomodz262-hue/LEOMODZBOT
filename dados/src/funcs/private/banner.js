@@ -50,7 +50,7 @@ export const Welcome = async (profilePic, userNumber, groupName, memberCount) =>
   };
 
   try {
-    const { data } = await axios.post(API_URL, payload);
+    const { data } = await axios.post(API_URL, payload, { responseType: "arraybuffer"});
     return data || null;
   } catch (err) {
     console.error(err);
@@ -99,7 +99,7 @@ export const Ping = async (backgroundImage, characterImage, botName, pingSpeed, 
   const payload = { html, css, viewport_width: '1200', viewport_height: '500', google_fonts: 'Poppins', device_scale: '2' };
 
   try {
-    const { data } = await axios.post(API_URL, payload);
+    const { data } = await axios.post(API_URL, payload, { responseType: "arraybuffer"});
     return data || null;
   } catch (err) {
     console.error(err);
@@ -144,8 +144,8 @@ export const Play = async (thumbnailImage, songName, artistName, duration) => {
   const payload = { html, css, viewport_width: '1200', viewport_height: '500', google_fonts: 'Poppins', device_scale: '2' };
 
   try {
-    const { data } = await axios.post(API_URL, payload);
-    return data || null;
+    const { data } = await axios.post(API_URL, payload, { responseType: "arraybuffer"});
+    return data, || null;
   } catch (err) {
     console.error(err);
     return null;
@@ -200,7 +200,7 @@ export const Chaveamento = async (
   const payload = { html, css, viewport_width: '1600', viewport_height: '900', google_fonts: 'Poppins', device_scale: '2' };
 
   try {
-    const { data } = await axios.post(API_URL, payload);
+    const { data } = await axios.post(API_URL, payload, { responseType: "arraybuffer"});
     return data || null;
   } catch (err) {
     console.error(err);
