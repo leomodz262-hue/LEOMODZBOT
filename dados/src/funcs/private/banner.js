@@ -100,11 +100,8 @@ export const Ping = async (backgroundImage, characterImage, botName, pingSpeed, 
     .speed-box p, .uptime-box p { font-size: 24px; color: #333; font-weight: 600; margin: 0; }
   `;
 
-  const payload = { html, css, viewport_width: '1200', viewport_height: '500', google_fonts: 'Poppins', device_scale: '2' };
-
   try {
-    const { data } = await axios.post(API_URL, payload, { headers: HEADERS });
-    return data?.url || null;
+    return `https://image.thum.io/get/fullpage/https://htmltoimage.cognima.com.br/api.php?html=${encodeURIComponent(html)}&css=${encodeURIComponent(css)}`;
   } catch (err) {
     console.error(err);
     return null;
