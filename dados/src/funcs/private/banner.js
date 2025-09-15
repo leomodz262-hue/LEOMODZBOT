@@ -207,3 +207,59 @@ export const Chaveamento = async (
     return null;
   }
 };
+
+export const Filme = async (posterImage, title, watchUrl) => {
+  const safeTitle = (title || 'Filme/ Série').toString().slice(0, 80);
+  const displayUrl = (watchUrl || '').toString().slice(0, 70);
+  const html = `
+    <html>
+      <body>
+        <div class="banner">
+          <div class="poster-wrap">
+            <img class="poster" src="${posterImage}" />
+          </div>
+          <div class="info">
+            <div class="badge">🎬 Assistir Online</div>
+            <h1 class="title">${safeTitle.replace(/</g, '&lt;')}</h1>
+            <div class="meta">
+              <span>Qualidade HD</span>
+              <span>Player Rápido</span>
+              <span>Sem anúncios</span>
+            </div>
+            <div class="cta">
+              <div class="btn">▶ Assista Agora</div>
+              <div class="url">${displayUrl.replace(/</g, '&lt;')}</div>
+            </div>
+          </div>
+          <div class="shine"></div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  const css = `
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 0; font-family: 'Poppins', sans-serif; background: #0f0c29; }
+    .banner { width: 1200px; height: 500px; background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); color: #fff; display: flex; align-items: center; gap: 32px; padding: 28px 36px; position: relative; overflow: hidden; border-radius: 18px; }
+    .shine { position: absolute; top: -20%; left: -10%; width: 60%; height: 160%; background: radial-gradient(ellipse at center, rgba(255,255,255,0.08), rgba(255,255,255,0)); transform: rotate(20deg); pointer-events: none; }
+    .poster-wrap { width: 520px; height: 100%; display: flex; align-items: center; justify-content: center; }
+    .poster { width: 520px; height: 440px; object-fit: cover; border-radius: 16px; box-shadow: 0 16px 36px rgba(0,0,0,0.45); border: 4px solid rgba(255,255,255,0.08); }
+    .info { flex: 1; display: flex; flex-direction: column; gap: 16px; }
+    .badge { display: inline-block; background: linear-gradient(45deg, #ff4d6d, #feca57); padding: 8px 14px; border-radius: 999px; font-weight: 600; font-size: 14px; color: #1d1b31; width: fit-content; box-shadow: 0 6px 16px rgba(0,0,0,0.25); }
+    .title { font-size: 34px; line-height: 1.15; margin: 0; letter-spacing: 0.3px; text-shadow: 0 3px 10px rgba(0,0,0,0.35); }
+    .meta { display: flex; gap: 10px; flex-wrap: wrap; opacity: 0.9; }
+    .meta span { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); padding: 6px 10px; border-radius: 8px; font-size: 13px; }
+    .cta { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; }
+    .btn { display: inline-block; background: linear-gradient(45deg, #00d2ff, #3a7bd5); color: #08132b; font-weight: 700; padding: 12px 18px; border-radius: 12px; width: fit-content; box-shadow: 0 10px 20px rgba(0, 210, 255, 0.25); letter-spacing: 0.2px; }
+    .url { font-size: 14px; color: #d1d5db; opacity: 0.95; word-break: break-all; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.09); padding: 10px 12px; border-radius: 10px; }
+  `;
+
+  const payload = { html, css, viewport_width: '1200', viewport_height: '500', google_fonts: 'Poppins', device_scale: '2' };
+  try {
+    const { data } = await axios.post(API_URL, payload, { responseType: 'arraybuffer' });
+    return data;
+  } catch (err) {
+    console.error(err);
+    return null;
+  }
+};

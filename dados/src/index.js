@@ -5181,14 +5181,21 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           var datyz;
           datyz = await FilmesDL(q);
           if (!datyz || !datyz.url) return reply('Desculpe, não consegui encontrar nada. Tente com outro nome de filme ou série. 😔');
-          await nazu.sendMessage(from, {
-            image: {
-              url: datyz.img
-            },
-            caption: `Aqui está o que encontrei! 🎬\n\n*Nome*: ${datyz.name}\n\nSe tudo estiver certo, você pode assistir no link abaixo:\n${datyz.url}`
-          }, {
-            quoted: info
-          });
+          let bannerBuf = null;
+          try {
+            bannerBuf = await banner.Filme(datyz.img, datyz.name, datyz.url);
+          } catch (be) { console.error('Erro ao gerar banner Filme:', be); }
+          if (bannerBuf) {
+            await nazu.sendMessage(from, {
+              image: bannerBuf,
+              caption: `Aqui está o que encontrei! 🎬\n\n*Nome*: ${datyz.name}\n🔗 *Assista:* ${datyz.url}`
+            }, { quoted: info });
+          } else {
+            await nazu.sendMessage(from, {
+              image: { url: datyz.img },
+              caption: `Aqui está o que encontrei! 🎬\n\n*Nome*: ${datyz.name}\n🔗 *Assista:* ${datyz.url}`
+            }, { quoted: info });
+          }
         } catch (e) {
           console.error(e);
           await reply("🐝 Oh não! Aconteceu um errinho inesperado aqui. Tente de novo daqui a pouquinho, por favor! 🥺");
