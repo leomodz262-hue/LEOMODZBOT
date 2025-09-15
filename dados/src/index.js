@@ -5736,30 +5736,35 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
         try {
           if (!isOwner) return reply("Este comando é apenas para o meu dono 💔");
           if (!q && !isQuotedImage && !isQuotedVideo) return reply('Digite uma mensagem ou marque uma imagem/vídeo! Exemplo: ' + prefix + 'tm Olá a todos!');
-          let message = {};
+          const genSuffix = () => Math.floor(100 + Math.random() * 900).toString();
+          let baseMessage = {};
           if (isQuotedImage) {
             const image = await getFileBuffer(info.message.extendedTextMessage.contextInfo.quotedMessage.imageMessage, 'image');
             
-            message = {
+            baseMessage = {
               image,
               caption: q || 'Transmissão do dono!'
             };
           } else if (isQuotedVideo) {
             const video = await getFileBuffer(info.message.extendedTextMessage.contextInfo.quotedMessage.videoMessage, 'video');
             
-            message = {
+            baseMessage = {
               video,
               caption: q || 'Transmissão do dono!'
             };
           } else {
             
-            message = {
+            baseMessage = {
               text: q
             };
           }
           const groups = await nazu.groupFetchAllParticipating();
           for (const group of Object.values(groups)) {
             await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * (30000 - 10000) + 10000)));
+            const suffix = genSuffix();
+            const message = { ...baseMessage };
+            if (message.caption) message.caption = `${message.caption} ${suffix}`;
+            if (message.text) message.text = `${message.text} ${suffix}`;
             await nazu.sendMessage(group.id, message);
           }
           await reply(`✅ Transmissão enviada para ${Object.keys(groups).length} grupos!`);
