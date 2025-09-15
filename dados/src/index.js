@@ -1817,6 +1817,84 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
       }
     };
     nazu.react = reagir;
+    const parseTimeToMinutes = (timeStr) => {
+      if (typeof timeStr !== 'string') return null;
+      const m = timeStr.match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
+      if (!m) return null;
+      const h = parseInt(m[1]);
+      const mi = parseInt(m[2]);
+      return h * 60 + mi;
+    };
+    const getNowMinutes = () => {
+      const now = new Date();
+      return now.getHours() * 60 + now.getMinutes();
+    };
+    const getTodayStr = () => {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+    let gpScheduleWorkerStarted = global.gpScheduleWorkerStarted || false;
+    const startGpScheduleWorker = (nazuInstance) => {
+      try {
+        if (gpScheduleWorkerStarted) return;
+        gpScheduleWorkerStarted = true;
+        global.gpScheduleWorkerStarted = true;
+        setInterval(async () => {
+          try {
+            const files = fs.readdirSync(GRUPOS_DIR).filter(f => f.endsWith('.json'));
+            if (!files.length) return;
+            const nowMin = getNowMinutes();
+            const today = getTodayStr();
+            for (const f of files) {
+              const groupId = f.replace(/\.json$/, '');
+              const filePath = pathz.join(GRUPOS_DIR, f);
+              let data;
+              try {
+                data = JSON.parse(fs.readFileSync(filePath, 'utf-8')) || {};
+              } catch (e) {
+                continue;
+              }
+              const schedule = data.schedule || {};
+              const lastRun = schedule.lastRun || {};
+              if (schedule.openTime) {
+                const t = parseTimeToMinutes(schedule.openTime);
+                if (t !== null && t === nowMin && lastRun.open !== today) {
+                  try {
+                    await nazuInstance.groupSettingUpdate(groupId, 'not_announcement');
+                    await nazuInstance.sendMessage(groupId, { text: '🔓 Grupo aberto automaticamente pelo agendamento diário.' });
+                    schedule.lastRun = schedule.lastRun || {};
+                    schedule.lastRun.open = today;
+                    data.schedule = schedule;
+                    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+                  } catch (e) {
+                  }
+                }
+              }
+              if (schedule.closeTime) {
+                const t = parseTimeToMinutes(schedule.closeTime);
+                if (t !== null && t === nowMin && lastRun.close !== today) {
+                  try {
+                    await nazuInstance.groupSettingUpdate(groupId, 'announcement');
+                    await nazuInstance.sendMessage(groupId, { text: '🔒 Grupo fechado automaticamente pelo agendamento diário.' });
+                    schedule.lastRun = schedule.lastRun || {};
+                    schedule.lastRun.close = today;
+                    data.schedule = schedule;
+                    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+                  } catch (e) {
+                  }
+                }
+              }
+            }
+          } catch (err) {
+          }
+        }, 60 * 1000);
+      } catch (e) {
+      }
+    };
+    startGpScheduleWorker(nazu);
     const getFileBuffer = async (mediakey, mediaType, options = {}) => {
       try {
         if (!mediakey) {
@@ -7702,6 +7780,60 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           await reply("🐝 Oh não! Aconteceu um errinho inesperado aqui. Tente de novo daqui a pouquinho, por favor! 🥺");
         }
         ;
+        break;
+      case 'opengp':
+        try {
+          if (!isGroup) return reply('Este comando só pode ser usado em grupos 💔');
+          if (!isGroupAdmin) return reply('Apenas administradores podem usar este comando 💔');
+          if (!q) return reply(`Uso: ${groupPrefix}${command} HH:MM (24h)\nExemplos: ${groupPrefix}${command} 07:00 | ${groupPrefix}${command} off`);
+          const arg = q.trim().toLowerCase();
+          const groupFilePath = pathz.join(GRUPOS_DIR, `${from}.json`);
+          let data = fs.existsSync(groupFilePath) ? JSON.parse(fs.readFileSync(groupFilePath, 'utf-8')) : {};
+          data.schedule = data.schedule || {};
+          if (arg === 'off' || arg === 'desativar' || arg === 'remove' || arg === 'rm') {
+            delete data.schedule.openTime;
+            if (data.schedule?.lastRun) delete data.schedule.lastRun.open;
+            fs.writeFileSync(groupFilePath, JSON.stringify(data, null, 2));
+            return reply('✅ Agendamento diário para ABRIR o grupo foi removido.');
+          }
+          const isValid = /^([01]?\d|2[0-3]):([0-5]\d)$/.test(arg);
+          if (!isValid) return reply('⏰ Informe um horário válido no formato HH:MM (24 horas). Ex.: 07:30');
+          data.schedule.openTime = arg;
+          fs.writeFileSync(groupFilePath, JSON.stringify(data, null, 2));
+          let msg = `✅ Agendamento salvo! O grupo será ABERTO todos os dias às ${arg}.`;
+          if (!isBotAdmin) msg += '\n⚠️ Observação: Eu preciso ser administrador para efetivar a abertura no horário.';
+          await reply(msg);
+        } catch (e) {
+          console.error('Erro no opengp:', e);
+          await reply('Ocorreu um erro ao salvar o agendamento 💔');
+        }
+        break;
+      case 'closegp':
+        try {
+          if (!isGroup) return reply('Este comando só pode ser usado em grupos 💔');
+          if (!isGroupAdmin) return reply('Apenas administradores podem usar este comando 💔');
+          if (!q) return reply(`Uso: ${groupPrefix}${command} HH:MM (24h)\nExemplos: ${groupPrefix}${command} 22:30 | ${groupPrefix}${command} off`);
+          const arg = q.trim().toLowerCase();
+          const groupFilePath = pathz.join(GRUPOS_DIR, `${from}.json`);
+          let data = fs.existsSync(groupFilePath) ? JSON.parse(fs.readFileSync(groupFilePath, 'utf-8')) : {};
+          data.schedule = data.schedule || {};
+          if (arg === 'off' || arg === 'desativar' || arg === 'remove' || arg === 'rm') {
+            delete data.schedule.closeTime;
+            if (data.schedule?.lastRun) delete data.schedule.lastRun.close;
+            fs.writeFileSync(groupFilePath, JSON.stringify(data, null, 2));
+            return reply('✅ Agendamento diário para FECHAR o grupo foi removido.');
+          }
+          const isValid = /^([01]?\d|2[0-3]):([0-5]\d)$/.test(arg);
+          if (!isValid) return reply('⏰ Informe um horário válido no formato HH:MM (24 horas). Ex.: 22:30');
+          data.schedule.closeTime = arg;
+          fs.writeFileSync(groupFilePath, JSON.stringify(data, null, 2));
+          let msg = `✅ Agendamento salvo! O grupo será FECHADO todos os dias às ${arg}.`;
+          if (!isBotAdmin) msg += '\n⚠️ Observação: Eu preciso ser administrador para efetivar o fechamento no horário.';
+          await reply(msg);
+        } catch (e) {
+          console.error('Erro no closegp:', e);
+          await reply('Ocorreu um erro ao salvar o agendamento 💔');
+        }
         break;
       case 'chaveamento':
         try {
