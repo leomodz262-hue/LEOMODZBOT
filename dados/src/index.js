@@ -7178,8 +7178,21 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           const rentStatus = rentGlob ? rentInfo.active ? `✅ Ativo até ${rentInfo.permanent ? 'Permanente' : new Date(rentInfo.expiresAt).toLocaleDateString('pt-BR')}` : "❌ Expirado" : "❌ Desativado";
           const isPremGp = !!premiumListaZinha[from] ? "✅" : "❌";
           const toggles = [["Antiporn", isAntiPorn], ["AntiLink", isAntiLinkGp], ["AntiLinkHard", groupData.antilinkhard], ["AntiDoc", groupData.antidoc], ["AntiLoc", groupData.antiloc], ["AutoDL", groupData.autodl], ["AutoSticker", groupData.autoSticker], ["Modo Brincadeira", isModoBn], ["Só Admins", groupData.soadm], ["Modo Lite", isModoLite]].filter(([_, v]) => typeof v === 'boolean').map(([k, v]) => `┊ ${v ? '✅' : '❌'} ${k}`).join('\n');
+          const schedule = groupData.schedule || {};
+          const openTime = schedule.openTime ? schedule.openTime : '—';
+          const closeTime = schedule.closeTime ? schedule.closeTime : '—';
+          const lastOpen = schedule.lastRun?.open ? schedule.lastRun.open : '—';
+          const lastClose = schedule.lastRun?.close ? schedule.lastRun.close : '—';
           const lines = ["╭───📊 STATUS DO GRUPO ───╮", `┊ 📝 Nome: ${subject}`, `┊ 🆔 ID: ${from.split('@')[0]}`, `┊ 👑 Dono: ${ownerTag}`, `┊ 📅 Criado: ${createdAt}`, `┊ 📄 Desc: ${desc.slice(0, 35)}${desc.length > 35 ? '...' : ''}`, `┊ 👥 Membros: ${totalMembers}`, `┊ 👮 Admins: ${totalAdmins}`, `┊ 💎 Premium: ${isPremGp}`, `┊ 🏠 Aluguel: ${rentStatus}`, "┊", "┊ 📊 *Estatísticas:*", `┊ • 💬 Mensagens: ${totalMsgs}`, `┊ • ⚒️ Comandos: ${totalCmds}`, `┊ • 🎨 Figurinhas: ${totalFigs}`, "┊", "┊ ⚙️ *Configurações:*", toggles, "╰───────────────╯"].join("\n");
-          await reply(lines, {
+          const schedLines = [
+            "\n╭───⏰ AGENDAMENTOS ───╮",
+            `┊ 🔓 Abrir: ${openTime}`,
+            `┊ 🔒 Fechar: ${closeTime}`,
+            `┊ 🗓️ Últ. abrir: ${lastOpen}`,
+            `┊ 🗓️ Últ. fechar: ${lastClose}`,
+            "╰───────────────╯"
+          ].join('\n');
+          await reply(lines + schedLines, {
             mentions: [ownerJid]
           });
         } catch (e) {
