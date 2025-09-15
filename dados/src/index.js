@@ -7177,13 +7177,79 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           const rentInfo = getGroupRentalStatus(from);
           const rentStatus = rentGlob ? rentInfo.active ? `✅ Ativo até ${rentInfo.permanent ? 'Permanente' : new Date(rentInfo.expiresAt).toLocaleDateString('pt-BR')}` : "❌ Expirado" : "❌ Desativado";
           const isPremGp = !!premiumListaZinha[from] ? "✅" : "❌";
-          const toggles = [["Antiporn", isAntiPorn], ["AntiLink", isAntiLinkGp], ["AntiLinkHard", groupData.antilinkhard], ["AntiDoc", groupData.antidoc], ["AntiLoc", groupData.antiloc], ["AutoDL", groupData.autodl], ["AutoSticker", groupData.autoSticker], ["Modo Brincadeira", isModoBn], ["Só Admins", groupData.soadm], ["Modo Lite", isModoLite]].filter(([_, v]) => typeof v === 'boolean').map(([k, v]) => `┊ ${v ? '✅' : '❌'} ${k}`).join('\n');
+          const secFlags = [
+            ["Antiporn", !!isAntiPorn],
+            ["AntiLink", !!isAntiLinkGp],
+            ["AntiLinkHard", !!groupData.antilinkhard],
+            ["AntiDoc", !!groupData.antidoc],
+            ["AntiLoc", !!groupData.antiloc],
+            ["AntiBtn", !!groupData.antibtn],
+            ["AntiStatus", !!groupData.antistatus],
+            ["AntiDelete", !!groupData.antidel],
+            ["AntiSticker", !!(groupData.antifig && groupData.antifig.enabled)],
+            ["AntiFake", !!groupData.antifake],
+            ["AntiPT", !!groupData.antipt]
+          ];
+          const resFlags = [
+            ["AutoDL", !!groupData.autodl],
+            ["AutoSticker", !!groupData.autoSticker],
+            ["Assistente", !!groupData.assistente],
+            ["AutoRepo", !!groupData.autorepo],
+            ["Leveling", !!groupData.levelingEnabled],
+            ["Bem-vindo", !!groupData.bemvindo],
+            ["X9 (promo/rebaix)", !!groupData.x9],
+            ["Modo Lite", !!isModoLite],
+            ["Modo Brincadeira", !!isModoBn],
+            ["Modo Gold", !!groupData.modogold]
+          ];
+          const admFlags = [["Só Admins", !!groupData.soadm]];
+          const toLines = (pairs) => pairs.filter(([_, v]) => typeof v === 'boolean').map(([k, v]) => `┊   ${v ? '✅' : '❌'} ${k}`);
+          const configsSection = [
+            "┊",
+            "┊ ⚙️ *Configurações:*",
+            "┊ 🔒 Segurança:",
+            ...toLines(secFlags),
+            "┊ 🧰 Recursos:",
+            ...toLines(resFlags),
+            "┊ 🛠️ Administração:",
+            ...toLines(admFlags)
+          ].join('\n');
           const schedule = groupData.schedule || {};
           const openTime = schedule.openTime ? schedule.openTime : '—';
           const closeTime = schedule.closeTime ? schedule.closeTime : '—';
           const lastOpen = schedule.lastRun?.open ? schedule.lastRun.open : '—';
           const lastClose = schedule.lastRun?.close ? schedule.lastRun.close : '—';
-          const lines = ["╭───📊 STATUS DO GRUPO ───╮", `┊ 📝 Nome: ${subject}`, `┊ 🆔 ID: ${from.split('@')[0]}`, `┊ 👑 Dono: ${ownerTag}`, `┊ 📅 Criado: ${createdAt}`, `┊ 📄 Desc: ${desc.slice(0, 35)}${desc.length > 35 ? '...' : ''}`, `┊ 👥 Membros: ${totalMembers}`, `┊ 👮 Admins: ${totalAdmins}`, `┊ 💎 Premium: ${isPremGp}`, `┊ 🏠 Aluguel: ${rentStatus}`, "┊", "┊ 📊 *Estatísticas:*", `┊ • 💬 Mensagens: ${totalMsgs}`, `┊ • ⚒️ Comandos: ${totalCmds}`, `┊ • 🎨 Figurinhas: ${totalFigs}`, "┊", "┊ ⚙️ *Configurações:*", toggles, "╰───────────────╯"].join("\n");
+          const linesHeader = [
+            "╭───📊 STATUS DO GRUPO ───╮",
+            `┊ 📝 Nome: ${subject}`,
+            `┊ 🆔 ID: ${from.split('@')[0]}`,
+            `┊ 👑 Dono: ${ownerTag}`,
+            `┊ 📅 Criado: ${createdAt}`,
+            `┊ 📄 Desc: ${desc.slice(0, 35)}${desc.length > 35 ? '...' : ''}`,
+            `┊ 👥 Membros: ${totalMembers}`,
+            `┊ 👮 Admins: ${totalAdmins}`,
+            `┊ 💎 Premium: ${isPremGp}`,
+            `┊ 🏠 Aluguel: ${rentStatus}`,
+            "┊",
+            "┊ 📊 *Estatísticas:*",
+            `┊ • 💬 Mensagens: ${totalMsgs}`,
+            `┊ • ⚒️ Comandos: ${totalCmds}`,
+            `┊ • 🎨 Figurinhas: ${totalFigs}`,
+            "╰───────────────╯"
+          ].join('\n');
+          const extrasLines = [
+            "\n╭───📌 REGRAS E OUTROS ───╮",
+            `┊ 🧩 Prefixo: ${groupPrefix}`,
+            `┊ 🧱 Min Legenda: ${groupData.minMessage ? `✅ ON (min ${groupData.minMessage.minDigits}, ação: ${groupData.minMessage.action})` : '❌ OFF'}`,
+            `┊ 📉 Limite Msg: ${groupData.messageLimit?.enabled ? `✅ ON (${groupData.messageLimit.limit}/${groupData.messageLimit.interval}s, ação: ${groupData.messageLimit.action})` : '❌ OFF'}`,
+            `┊ 🤝 Parcerias: ${parceriasData?.active ? `✅ ON (${Object.keys(parceriasData.partners||{}).length} parceiros)` : '❌ OFF'}`,
+            `┊ ⛔ Cmds bloqueados: ${groupData.blockedCommands ? Object.values(groupData.blockedCommands).filter(Boolean).length : 0}`,
+            `┊ 🚫 Usuários bloqueados: ${groupData.blockedUsers ? Object.keys(groupData.blockedUsers).length : 0}`,
+            `┊ 😴 AFKs ativos: ${groupData.afkUsers ? Object.keys(groupData.afkUsers).length : 0}`,
+            `┊ 🧑‍⚖️ Moderadores: ${Array.isArray(groupData.moderators) ? groupData.moderators.length : 0}`,
+            "╰───────────────╯"
+          ].join('\n');
+          const lines = [linesHeader, configsSection].join('\n');
           const schedLines = [
             "\n╭───⏰ AGENDAMENTOS ───╮",
             `┊ 🔓 Abrir: ${openTime}`,
@@ -7192,7 +7258,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
             `┊ 🗓️ Últ. fechar: ${lastClose}`,
             "╰───────────────╯"
           ].join('\n');
-          await reply(lines + schedLines, {
+          await reply(lines + schedLines + '\n' + extrasLines, {
             mentions: [ownerJid]
           });
         } catch (e) {
