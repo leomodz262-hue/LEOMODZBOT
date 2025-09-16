@@ -2,7 +2,8 @@ import {
     makeWASocket,
     useMultiFileAuthState,
     DisconnectReason,
-    fetchLatestBaileysVersion
+    fetchLatestBaileysVersion,
+    makeCacheableSignalKeyStore
 } from '@cognima/walib';
 import {
     Boom
@@ -262,8 +263,9 @@ async function createBotSocket(authDir) {
         });
         const {
             state,
-            saveCreds
-        } = await useMultiFileAuthState(authDir);
+            saveCreds,
+            signalRepository
+        } = await useMultiFileAuthState(authDir, makeCacheableSignalKeyStore);
         const {
             version,
             isLatest
@@ -283,6 +285,7 @@ async function createBotSocket(authDir) {
             msgRetryCounterCache,
             cachedGroupMetadata: async (jid) => groupCache.get(jid),
             auth: state,
+            signalRepository,
             browser: ['Ubuntu', 'Edge', '110.0.1587.56'],
             logger,
         });
