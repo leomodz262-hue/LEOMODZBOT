@@ -318,6 +318,9 @@ async function createBotSocket(authDir) {
                     for (const info of m.messages) {
                         if (!info.message || !info.key.remoteJid)
                             continue;
+                        if (info?.WebMessageInfo) {
+                            continue;
+                        }
                         messagesCache.set(info.key.id, info.message);
                         await indexModule(NazunaSock, info, null, groupCache, messagesCache);
                     }
