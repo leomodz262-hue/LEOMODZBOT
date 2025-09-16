@@ -341,3 +341,99 @@ export const Perfil = async (
     return null;
   }
 };
+
+export const StatusGrupo = async (
+  backgroundImage,
+  groupProfilePic,
+  {
+    subject = '—',
+    groupId = '-',
+    ownerTag = '@dono',
+    createdAt = '—',
+    desc = 'Sem descrição',
+    totalMembers = 0,
+    totalAdmins = 0,
+    isPremium = false,
+    rentStatus = '❌ Desativado',
+    totalMsgs = 0,
+    totalCmds = 0,
+    totalFigs = 0
+  } = {}
+)=>{
+  const safe = (s='') => s.toString().replace(/</g,'&lt;');
+  const html = `
+    <html>
+      <body>
+        <div class="banner">
+          <div class="overlay"></div>
+          <div class="left">
+            <img class="gp-pic" src="${groupProfilePic}" />
+            <div class="title-block">
+              <h1 class="gname">${safe(subject)}</h1>
+              <div class="meta">🆔 ${safe(groupId)} • 👑 ${safe(ownerTag)}</div>
+              <div class="meta">📅 ${safe(createdAt)}</div>
+              <div class="desc">${safe(desc).slice(0, 140)}</div>
+            </div>
+          </div>
+          <div class="right">
+            <div class="cards">
+              <div class="card">
+                <div class="label">👥 Membros</div>
+                <div class="val">${totalMembers}</div>
+              </div>
+              <div class="card">
+                <div class="label">👮 Admins</div>
+                <div class="val">${totalAdmins}</div>
+              </div>
+              <div class="card">
+                <div class="label">💎 Premium</div>
+                <div class="val">${isPremium ? '✅' : '❌'}</div>
+              </div>
+              <div class="card">
+                <div class="label">🏠 Aluguel</div>
+                <div class="val">${safe(rentStatus)}</div>
+              </div>
+            </div>
+            <div class="stats">
+              <div class="stat"><span>💬 Mensagens</span><b>${totalMsgs}</b></div>
+              <div class="stat"><span>⚒️ Comandos</span><b>${totalCmds}</b></div>
+              <div class="stat"><span>🎨 Figurinhas</span><b>${totalFigs}</b></div>
+            </div>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  const bg = backgroundImage ? `url('${backgroundImage}') center/cover no-repeat` : `linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)`;
+  const css = `
+    *{box-sizing:border-box}
+    body{margin:0;padding:0;background:#0b1220;font-family:'Poppins',sans-serif}
+    .banner{position:relative;width:1200px;height:500px;background:${bg};color:#fff;display:flex;gap:20px;padding:26px 30px;border-radius:18px;overflow:hidden}
+    .overlay{position:absolute;inset:0;background:rgba(0,0,0,.25)}
+    .left{position:relative;display:flex;gap:18px;z-index:1;flex:1}
+    .gp-pic{width:180px;height:180px;border-radius:20px;object-fit:cover;border:5px solid rgba(255,255,255,.12);box-shadow:0 12px 28px rgba(0,0,0,.45);align-self:flex-start}
+    .title-block{display:flex;flex-direction:column;gap:8px;max-width:520px}
+    .gname{margin:0;font-size:30px;line-height:1.15}
+    .meta{opacity:.95;font-size:14px}
+    .desc{margin-top:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);padding:10px 12px;border-radius:10px;font-size:13px}
+    .right{position:relative;z-index:1;width:420px;display:flex;flex-direction:column;gap:16px}
+    .cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px 14px}
+    .label{font-size:12px;opacity:.95;margin-bottom:4px}
+    .val{font-weight:700;font-size:20px}
+    .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+    .stat{background:rgba(0,210,255,.12);border:1px solid rgba(0,210,255,.2);border-radius:14px;padding:12px;text-align:center}
+    .stat span{display:block;font-size:12px;margin-bottom:6px;opacity:.95}
+    .stat b{font-size:18px}
+  `;
+
+  const payload = { html, css, viewport_width:'1200', viewport_height:'500', google_fonts:'Poppins', device_scale:'2' };
+  try{
+    const { data } = await axios.post(API_URL, payload, { responseType:'arraybuffer' });
+    return data;
+  }catch(err){
+    console.error(err);
+    return null;
+  }
+};

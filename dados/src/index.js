@@ -7514,9 +7514,47 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
             `┊ 🗓️ Últ. fechar: ${lastClose}`,
             "╰───────────────╯"
           ].join('\n');
-          await reply(lines + schedLines + '\n' + extrasLines, {
-            mentions: [ownerJid]
-          });
+          const fullCaption = (lines + schedLines + '\n' + extrasLines).trim();
+
+          let groupPic = '';
+          try {
+            groupPic = await nazu.profilePictureUrl(from, 'image');
+          } catch {
+            groupPic = 'https://raw.githubusercontent.com/nazuninha/uploads/main/outros/1753966446765_oordgn.bin';
+          }
+          let bgImg = '';
+          try {
+            bgImg = '';
+          } catch {}
+          let statusBanner = null;
+          try {
+            statusBanner = await banner.StatusGrupo(
+              bgImg,
+              groupPic,
+              {
+                subject,
+                groupId: from.split('@')[0],
+                ownerTag,
+                createdAt,
+                desc,
+                totalMembers,
+                totalAdmins,
+                isPremium: !!premiumListaZinha[from],
+                rentStatus,
+                totalMsgs,
+                totalCmds,
+                totalFigs
+              }
+            );
+          } catch (e) {
+            console.error('Erro ao gerar banner StatusGrupo:', e);
+          }
+
+          if (statusBanner) {
+            await nazu.sendMessage(from, { image: statusBanner, caption: fullCaption, mentions: [ownerJid] }, { quoted: info });
+          } else {
+            await reply(fullCaption, { mentions: [ownerJid] });
+          }
         } catch (e) {
           console.error("Erro em statusgp:", e);
           await reply("🐝 Oh não! Aconteceu um errinho inesperado aqui. Tente de novo daqui a pouquinho, por favor! 🥺");
