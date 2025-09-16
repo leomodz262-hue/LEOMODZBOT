@@ -263,3 +263,81 @@ export const Filme = async (posterImage, title, watchUrl) => {
     return null;
   }
 };
+
+export const Perfil = async (
+  avatarUrl,
+  displayName = 'Usuário',
+  number = '-',
+  bio = 'Sem bio disponível',
+  humor = '😎 Tranquilão',
+  pacote = 'R$ 0,00',
+  levels = { puta:0, gado:0, corno:0, sortudo:0, carisma:0, rico:0, gostosa:0, feio:0 },
+  role = 'Membro'
+) => {
+  const safe = (s) => (s || '').toString().replace(/</g, '&lt;');
+  const keys = ['puta','gado','corno','sortudo','carisma','rico','gostosa','feio'];
+  const levelItems = keys.map(k => ({ key: k, val: Math.max(0, Math.min(100, parseInt(levels[k]||0))) }));
+  const titleCase = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+  const html = `
+    <html>
+      <body>
+        <div class="banner">
+          <div class="left">
+            <img class="avatar" src="${avatarUrl}" />
+          </div>
+          <div class="right">
+            <div class="top">
+              <h1 class="name">${safe(displayName)}</h1>
+              <div class="chips">
+                <span class="chip">${safe(role)}</span>
+                <span class="chip">${safe(humor)}</span>
+              </div>
+              <div class="meta">📱 ${safe(number)} • 💰 ${safe(pacote)}</div>
+              <div class="bio">${safe(bio).slice(0, 150)}</div>
+            </div>
+            <div class="levels">
+              ${levelItems.map(it => `
+                <div class="level">
+                  <div class="label">${titleCase(it.key)}</div>
+                  <div class="bar"><div class="fill" style="width:${it.val}%"></div></div>
+                  <div class="percent">${it.val}%</div>
+                </div>`).join('')}
+            </div>
+          </div>
+          <div class="glow"></div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  const css = `
+    *{box-sizing:border-box}
+    body{margin:0;padding:0;background:#0b1220;font-family:'Poppins',sans-serif}
+    .banner{width:1200px;height:500px;background:linear-gradient(135deg,#141a31,#0b1220 55%,#0e1830);color:#fff;display:flex;gap:24px;padding:26px 30px;border-radius:18px;position:relative;overflow:hidden}
+    .glow{position:absolute;inset:-20%;background:radial-gradient(600px 300px at 15% 20%,rgba(58,123,213,.25),transparent 60%),radial-gradient(600px 300px at 85% 80%,rgba(0,210,255,.2),transparent 60%);pointer-events:none}
+    .left{display:flex;align-items:center;justify-content:center}
+    .avatar{width:260px;height:260px;border-radius:50%;object-fit:cover;border:6px solid rgba(255,255,255,.1);box-shadow:0 15px 40px rgba(0,0,0,.45)}
+    .right{display:flex;flex-direction:column;flex:1}
+    .top{margin-bottom:8px}
+    .name{margin:0 0 6px;font-size:34px;line-height:1.15;letter-spacing:.3px}
+    .chips{display:flex;gap:10px;margin-bottom:6px}
+    .chip{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);padding:6px 10px;border-radius:999px;font-size:12px}
+    .meta{opacity:.9;margin-bottom:8px;font-size:14px}
+    .bio{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);padding:10px 12px;border-radius:10px;font-size:14px;max-width:750px}
+    .levels{margin-top:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 18px}
+    .level{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px}
+    .label{font-size:14px;opacity:.95}
+    .bar{height:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:999px;overflow:hidden}
+    .fill{height:100%;background:linear-gradient(90deg,#00d2ff,#3a7bd5)}
+    .percent{font-weight:700;font-size:13px}
+  `;
+
+  const payload = { html, css, viewport_width:'1200', viewport_height:'500', google_fonts:'Poppins', device_scale:'2' };
+  try{
+    const { data } = await axios.post(API_URL, payload, { responseType:'arraybuffer' });
+    return data;
+  }catch(err){
+    console.error(err);
+    return null;
+  }
+};

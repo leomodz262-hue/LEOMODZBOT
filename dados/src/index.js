@@ -2644,8 +2644,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
         break;
       }
 
-      // ====== ECONOMIA (requer modogold ativo no grupo) ======
-  case 'perfil':
+      case 'perfilrpg':
       case 'carteira':
       case 'banco':
       case 'depositar':
@@ -2734,8 +2733,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
           return reply(`✅ Gold resetado para @${target.split('@')[0]}.`, { mentions:[target] });
         }
 
-        // Visualizações
-        if (sub === 'perfil' || sub === 'carteira') {
+        if (sub === 'perfilrpg' || sub === 'carteira') {
           const total = (me.wallet||0) + (me.bank||0);
           return reply(`👤 Perfil Financeiro
 💼 Carteira: ${fmt(me.wallet)}
@@ -9548,15 +9546,24 @@ case 'divulgar':
           const perfilText = `📋 Perfil de ${targetName} 📋\n\n👤 *Nome*: ${pushname || 'Desconhecido'}\n📱 *Número*: ${targetId}\n📜 *Bio*: ${bio}${bioSetAt ? `\n🕒 *Bio atualizada em*: ${bioSetAt}` : ''}\n💰 *Valor do Pacote*: ${pacoteValue} 🫦\n😸 *Humor*: ${randomHumor}\n\n🎭 *Níveis*:\n  • Puta: ${levels.puta}%\n  • Gado: ${levels.gado}%\n  • Corno: ${levels.corno}%\n  • Sortudo: ${levels.sortudo}%\n  • Carisma: ${levels.carisma}%\n  • Rico: ${levels.rico}%\n  • Gostosa: ${levels.gostosa}%\n  • Feio: ${levels.feio}%`.trim();
           const userStatus = isOwner ? 'Meu dono' : isPremium ? 'Usuario premium' : isGroupAdmin ? 'Admin do grupo' : 'Membro comum';
           const PosAtivo = groupData.contador.sort((a, b) => (a.figu == undefined ? a.figu = 0 : a.figu + a.msg + a.cmd) < (b.figu == undefined ? b.figu = 0 : b.figu + b.cmd + b.msg) ? 0 : -1).findIndex(item => item.id === sender) + 1;
-          await nazu.sendMessage(from, {
-            image: {
-              url: profilePic
-            },
-            caption: perfilText,
-            mentions: [target]
-          }, {
-            quoted: info
-          });
+          let perfilBanner = null;
+          try {
+            perfilBanner = await banner.Perfil(
+              profilePic,
+              pushname || targetName,
+              targetId,
+              bio,
+              randomHumor,
+              pacoteValue,
+              levels,
+              userStatus
+            );
+          } catch (be) { console.error('Erro ao gerar banner Perfil:', be); }
+          if (perfilBanner) {
+            await nazu.sendMessage(from, { image: perfilBanner, caption: perfilText, mentions: [target] }, { quoted: info });
+          } else {
+            await nazu.sendMessage(from, { image: { url: profilePic }, caption: perfilText, mentions: [target] }, { quoted: info });
+          }
         } catch (error) {
           console.error('Erro ao processar comando perfil:', error);
           await reply('Ocorreu um erro ao gerar o perfil 💔');
