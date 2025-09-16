@@ -36,6 +36,7 @@ const MENU_DESIGN_FILE = pathz.join(DONO_DIR, 'menuDesign.json');
 const ECONOMY_FILE = pathz.join(DATABASE_DIR, 'economy.json');
 const MSGPREFIX_FILE = pathz.join(DONO_DIR, 'msgprefix.json');
 const CUSTOM_REACTS_FILE = pathz.join(DATABASE_DIR, 'customReacts.json');
+const REMINDERS_FILE = pathz.join(DATABASE_DIR, 'reminders.json');
 
 function formatUptime(seconds, longFormat = false, showZero = false) {
   const d = Math.floor(seconds / (24 * 3600));
@@ -254,6 +255,7 @@ ensureJsonFileExists(LEVELING_FILE, {
 });
 ensureJsonFileExists(MSGPREFIX_FILE, { message: false });
 ensureJsonFileExists(CUSTOM_REACTS_FILE, { reacts: [] });
+ensureJsonFileExists(REMINDERS_FILE, { reminders: [] });
 const loadMsgPrefix = () => {
   return loadJsonFile(MSGPREFIX_FILE, { message: false }).message;
 };
@@ -279,6 +281,21 @@ const saveCustomReacts = (reacts) => {
     return true;
   } catch (error) {
     console.error('❌ Erro ao salvar custom reacts:', error);
+    return false;
+  }
+};
+
+const loadReminders = () => {
+  return loadJsonFile(REMINDERS_FILE, { reminders: [] }).reminders || [];
+};
+
+const saveReminders = (reminders) => {
+  try {
+    ensureDirectoryExists(DATABASE_DIR);
+    fs.writeFileSync(REMINDERS_FILE, JSON.stringify({ reminders }, null, 2));
+    return true;
+  } catch (error) {
+    console.error('❌ Erro ao salvar lembretes:', error);
     return false;
   }
 };
@@ -1836,6 +1853,123 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
       const day = String(d.getDate()).padStart(2, '0');
       return `${y}-${m}-${day}`;
     };
+
+    const tzFormat = (date) => new Date(date).toLocaleString('pt-BR');
+    const parseAbsoluteDateTime = (str) => {
+      if (!str) return null;
+      const cleaned = str.toLowerCase().replace(/\s+às\s+/g, ' ').replace(/\s+as\s+/g, ' ').trim();
+      let m = cleaned.match(/\b(\d{1,2})[\/](\d{1,2})(?:[\/](\d{2,4}))?\s+(\d{1,2}):(\d{2})\b/);
+      if (m) {
+        let [ , d, mo, y, h, mi ] = m;
+        d = parseInt(d); mo = parseInt(mo); h = parseInt(h); mi = parseInt(mi);
+        y = y ? parseInt(y) : new Date().getFullYear();
+        if (y < 100) y += 2000;
+        const dt = new Date(y, mo - 1, d, h, mi, 0, 0);
+        if (!isNaN(dt.getTime())) return dt.getTime();
+      }
+      m = cleaned.match(/\b(\d{1,2}):(\d{2})\s+(\d{1,2})[\/](\d{1,2})(?:[\/](\d{2,4}))?\b/);
+      if (m) {
+        let [ , h, mi, d, mo, y ] = m;
+        d = parseInt(d); mo = parseInt(mo); h = parseInt(h); mi = parseInt(mi);
+        y = y ? parseInt(y) : new Date().getFullYear();
+        if (y < 100) y += 2000;
+        const dt = new Date(y, mo - 1, d, h, mi, 0, 0);
+        if (!isNaN(dt.getTime())) return dt.getTime();
+      }
+      m = cleaned.match(/\bhoje\b\s*(\d{1,2}):(\d{2})/);
+      if (m) {
+        const now = new Date();
+        const h = parseInt(m[1]); const mi = parseInt(m[2]);
+        const dt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, mi, 0, 0);
+        return dt.getTime();
+      }
+      m = cleaned.match(/\bamanh[ãa]\b\s*(\d{1,2}):(\d{2})/);
+      if (m) {
+        const now = new Date();
+        const h = parseInt(m[1]); const mi = parseInt(m[2]);
+        const dt = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, h, mi, 0, 0);
+        return dt.getTime();
+      }
+      return null;
+    };
+    const parseRelative = (str) => {
+      if (!str) return null;
+      const m = str.toLowerCase().match(/\bem\s+(\d{1,5})\s*(m|min|mins|minutos?|h|hora?s?|d|dias?)\b/);
+      if (!m) return null;
+      const n = parseInt(m[1]);
+      const unit = m[2];
+      let ms = 0;
+      if (/^m(in|ins|inutos?)?$/.test(unit)) ms = n * 60 * 1000;
+      else if (/^h|hora/.test(unit)) ms = n * 60 * 60 * 1000;
+      else if (/^d|dia/.test(unit)) ms = n * 24 * 60 * 60 * 1000;
+      else return null;
+      return Date.now() + ms;
+    };
+    const parseReminderInput = (text) => {
+      if (!text) return null;
+      const relTs = parseRelative(text);
+      if (relTs) {
+        const after = text.toLowerCase().replace(/\bem\s+\d{1,5}\s*(m|min|mins|minutos?|h|hora?s?|d|dias?)\b\s*/,'');
+        const msg = after.trim();
+        return { at: relTs, message: msg || 'Seu lembrete!' };
+      }
+      let m = text.toLowerCase().replace(/\s+às\s+/g, ' ').match(/(\d{1,2}[\/]\d{1,2}(?:[\/]\d{2,4})?\s+\d{1,2}:\d{2})/);
+      if (!m) m = text.toLowerCase().match(/(\d{1,2}:\d{2}\s+\d{1,2}[\/]\d{1,2}(?:[\/]\d{2,4})?)/);
+      if (!m) {
+        let hm = text.toLowerCase().match(/(hoje\s*\d{1,2}:\d{2}|amanh[ãa]\s*\d{1,2}:\d{2})/);
+        if (hm) {
+          const ts = parseAbsoluteDateTime(hm[1]);
+          const msg = text.toLowerCase().replace(hm[1], '').replace(/\s+às\s+/g, ' ').trim();
+          if (ts) return { at: ts, message: msg || 'Seu lembrete!' };
+        }
+        return null;
+      }
+      const whenStr = m[1];
+      const ts = parseAbsoluteDateTime(whenStr);
+      if (!ts) return null;
+      const msg = text.toLowerCase().replace(whenStr, '').replace(/\s+às\s+/g, ' ').trim();
+      return { at: ts, message: msg || 'Seu lembrete!' };
+    };
+
+    let remindersWorkerStarted = global.remindersWorkerStarted || false;
+    const startRemindersWorker = (nazuInstance) => {
+      try {
+        if (remindersWorkerStarted) return;
+        remindersWorkerStarted = true;
+        global.remindersWorkerStarted = true;
+        setInterval(async () => {
+          try {
+            const list = loadReminders();
+            if (!Array.isArray(list) || list.length === 0) return;
+            const now = Date.now();
+            let changed = false;
+            for (const r of list) {
+              if (!r || r.status === 'sent') continue;
+              if (typeof r.at !== 'number') continue;
+              if (r.at <= now) {
+                const textMsg = `⏰ Lembrete${r.createdByName ? ` de ${r.createdByName}` : ''}: ${r.message}`;
+                try {
+                  if (r.chatId && String(r.chatId).endsWith('@g.us')) {
+                    await nazuInstance.sendMessage(r.chatId, { text: textMsg, mentions: r.userId ? [r.userId] : [] });
+                  } else {
+                    const dest = r.chatId || r.userId;
+                    if (dest) await nazuInstance.sendMessage(dest, { text: textMsg });
+                  }
+                  r.status = 'sent';
+                  r.sentAt = new Date().toISOString();
+                  changed = true;
+                } catch (e) {
+                }
+              }
+            }
+            if (changed) saveReminders(list);
+          } catch (err) {
+          }
+        }, 30 * 1000);
+      } catch (e) {
+      }
+    };
+    startRemindersWorker(nazu);
     let gpScheduleWorkerStarted = global.gpScheduleWorkerStarted || false;
     const startGpScheduleWorker = (nazuInstance) => {
       try {
@@ -2628,13 +2762,80 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
     }
     ;
     switch (command) {
-      // ====== MENUS ======
       case 'menugold': {
         await sendMenuWithMedia('menugold', menuGold);
         break;
       }
 
-      // ====== ADMIN: ATIVAR/DESATIVAR MODO GOLD (POR GRUPO) ======
+      case 'lembrete':
+      case 'lembrar': {
+        try {
+          if (!q) return reply(`Como usar:\n${prefix}lembrete em 30m beber água\n${prefix}lembrete 15/09 18:30 reunião\n${prefix}lembrete amanhã 08:00 acordar`);
+          const parsed = parseReminderInput(q);
+          if (!parsed) return reply('❌ Não consegui entender a data/hora. Exemplos:\n- em 10m tomar remédio\n- 25/12 09:00 ligar para a família\n- hoje 21:15 estudar');
+          const { at, message } = parsed;
+          const minDelay = 10 * 1000;
+          if (at - Date.now() < minDelay) return reply('⏳ Escolha um horário pelo menos 10 segundos à frente.');
+          const newReminder = {
+            id: crypto.randomBytes(6).toString('hex'),
+            userId: sender,
+            chatId: from,
+            createdByName: pushname || '',
+            createdAt: new Date().toISOString(),
+            at,
+            message: message,
+            status: 'pending'
+          };
+          const list = loadReminders();
+          list.push(newReminder);
+          saveReminders(list);
+          await reply(`✅ Lembrete agendado para ${tzFormat(at)}.\n📝 Mensagem: ${message}`);
+        } catch (e) {
+          console.error('Erro ao agendar lembrete:', e);
+          await reply('❌ Ocorreu um erro ao agendar seu lembrete.');
+        }
+        break;
+      }
+      case 'meuslembretes':
+      case 'listalembretes': {
+        try {
+          const list = loadReminders().filter(r => r.userId === sender && r.status !== 'sent');
+          if (!list.length) return reply('📭 Você não tem lembretes pendentes.');
+          const lines = list
+            .sort((a,b)=>a.at-b.at)
+            .map((r,i)=>`${i+1}. [${r.id.slice(0,6)}] ${tzFormat(r.at)} — ${r.message}`);
+          await reply(`🗓️ Seus lembretes pendentes:\n\n${lines.join('\n')}`);
+        } catch (e) {
+          console.error('Erro ao listar lembretes:', e);
+          await reply('❌ Ocorreu um erro ao listar seus lembretes.');
+        }
+        break;
+      }
+      case 'apagalembrete':
+      case 'removerlembrete': {
+        try {
+          const idArg = (q||'').trim();
+          if (!idArg) return reply(`Use: ${prefix}apagalembrete <id|tudo>`);
+          let list = loadReminders();
+          if (['tudo','todos','all'].includes(idArg.toLowerCase())) {
+            const before = list.length;
+            list = list.filter(r => !(r.userId === sender && r.status !== 'sent'));
+            const removed = before - list.length;
+            saveReminders(list);
+            return reply(`🗑️ Removidos ${removed} lembrete(s) pendente(s).`);
+          }
+          const idx = list.findIndex(r => r.id.startsWith(idArg) && r.userId === sender && r.status !== 'sent');
+          if (idx === -1) return reply('❌ Lembrete não encontrado ou já enviado. Dica: use o ID mostrado em "meuslembretes".');
+          const removed = list.splice(idx,1)[0];
+          saveReminders(list);
+          await reply(`🗑️ Lembrete removido: ${removed.message}`);
+        } catch (e) {
+          console.error('Erro ao apagar lembrete:', e);
+          await reply('❌ Ocorreu um erro ao remover seu lembrete.');
+        }
+        break;
+      }
+
       case 'modogold': {
         if (!isGroup) return reply('Este comando só funciona em grupos.');
         if (!isGroupAdmin) return reply('Apenas administradores podem usar este comando.');
