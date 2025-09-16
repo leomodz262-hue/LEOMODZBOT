@@ -130,28 +130,10 @@ async function createGroupMessage(NazunaSock, groupMetadata, participants, setti
         }
         
         const loadedModulesPromise = await import(new URL('./funcs/exports.js', import.meta.url));
-  const modules = await loadedModulesPromise.default;
-  const {
-    youtube,
-    banner,
-    tiktok,
-    pinterest,
-    igdl,
-    sendSticker,
-    FilmesDL,
-    styleText,
-    emojiMix,
-    upload,
-    mcPlugin,
-    tictactoe,
-    toolsJson,
-    vabJson,
-    google,
-    Lyrics,
-    commandStats,
-    ia,
-    VerifyUpdate
-  } = modules;
+        const modules = await loadedModulesPromise.default;
+        const {
+        banner,
+        } = modules;
        
         const image = settings.image !== 'banner' ? {
             url: settings.image
