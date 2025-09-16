@@ -113,6 +113,14 @@ ensureDirectoryExists(DONO_DIR);
 ensureDirectoryExists(PARCERIAS_DIR);
 ensureJsonFileExists(DATABASE_DIR + '/antiflood.json');
 ensureJsonFileExists(DATABASE_DIR + '/cmdlimit.json');
+ensureJsonFileExists(DATABASE_DIR + '/antispam.json', {
+  enabled: false,
+  limit: 5,
+  interval: 10,
+  blockTime: 600,
+  users: {},
+  blocks: {}
+});
 ensureJsonFileExists(DATABASE_DIR + '/antipv.json', {
   mode: 'off',
   message: '🚫 Este comando só funciona em grupos!'
@@ -1384,6 +1392,14 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
   const banGpIds = loadJsonFile(DONO_DIR + '/bangp.json');
   const antifloodData = loadJsonFile(DATABASE_DIR + '/antiflood.json');
   const cmdLimitData = loadJsonFile(DATABASE_DIR + '/cmdlimit.json');
+  const antiSpamGlobal = loadJsonFile(DATABASE_DIR + '/antispam.json', {
+    enabled: false,
+    limit: 5,
+    interval: 10,
+    blockTime: 600,
+    users: {},
+    blocks: {}
+  });
   const globalBlocks = loadJsonFile(DATABASE_DIR + '/globalBlocks.json', {
     commands: {},
     users: {}
@@ -1611,6 +1627,40 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
     if (isGroup && isCmd && !isGroupAdmin && groupData.blockedCommands && groupData.blockedCommands[command]) {
       await reply('⛔ Este comando foi bloqueado pelos administradores do grupo.');
       return;
+    };
+
+    if (isCmd && antiSpamGlobal?.enabled && !isOwnerOrSub) {
+      try {
+        const cfg = antiSpamGlobal;
+        cfg.users = cfg.users || {};
+        cfg.blocks = cfg.blocks || {};
+        const now = Date.now();
+        const blockInfo = cfg.blocks[sender];
+        if (blockInfo && blockInfo.until && now < blockInfo.until) {
+          const msLeft = blockInfo.until - now;
+          const secs = Math.ceil(msLeft / 1000);
+          const m = Math.floor(secs / 60), s = secs % 60;
+          return reply(`🚫 Você está temporariamente bloqueado de usar comandos por anti-spam.
+⏳ Aguarde ${m > 0 ? `${m}m ${s}s` : `${secs}s`}.`);
+        } else if (blockInfo && blockInfo.until && now >= blockInfo.until) {
+          delete cfg.blocks[sender];
+        }
+        const intervalMs = (cfg.interval || 10) * 1000;
+        const limit = Math.max(1, parseInt(cfg.limit || 5));
+        const arr = (cfg.users[sender]?.times || []).filter(ts => now - ts <= intervalMs);
+        arr.push(now);
+        cfg.users[sender] = { times: arr };
+        if (arr.length > limit) {
+          const blockMs = Math.max(1, parseInt(cfg.blockTime || 600)) * 1000;
+          cfg.blocks[sender] = { until: now + blockMs, at: new Date().toISOString(), count: arr.length };
+          fs.writeFileSync(DATABASE_DIR + '/antispam.json', JSON.stringify(cfg, null, 2));
+          return reply(`🚫 Anti-spam: você excedeu o limite de ${limit} comandos em ${cfg.interval}s.
+🔒 Bloqueado por ${Math.floor(blockMs/60000)} min.`);
+        }
+        fs.writeFileSync(DATABASE_DIR + '/antispam.json', JSON.stringify(cfg, null, 2));
+      } catch (e) {
+        console.error('Erro no AntiSpam Global:', e);
+      }
     }
     ;
     if (isGroup && groupData.afkUsers && groupData.afkUsers[sender]) {
@@ -8699,6 +8749,60 @@ case 'divulgar':
         } catch (e) {
           console.error(e);
           await reply("Ocorreu um erro 💔");
+        }
+        break;
+      case 'antispamcmd':
+        try {
+          if (!isOwner) return reply('Somente o dono pode usar este comando.');
+          const filePath = DATABASE_DIR + '/antispam.json';
+          const cfg = antiSpamGlobal || {};
+          const usage = `Uso:
+${prefix}antispamcmd on <limite> <intervalo_s> <bloqueio_s>
+${prefix}antispamcmd off
+${prefix}antispamcmd status
+Exemplos:
+• ${prefix}antispamcmd on 5 10 600
+• ${prefix}antispamcmd off`;
+          if (!q) return reply(usage);
+          const parts = q.trim().split(/\s+/);
+          const sub = parts[0].toLowerCase();
+          if (sub === 'status') {
+            const enabled = cfg.enabled ? '✅ ON' : '❌ OFF';
+            const limit = cfg.limit || 5; const interval = cfg.interval || 10; const block = cfg.blockTime || 600;
+            const blockedNow = Object.values(cfg.blocks||{}).filter(b=>Date.now() < (b.until||0)).length;
+            return reply(`🛡️ AntiSpam Global: ${enabled}
+• Limite: ${limit} cmds
+• Janela: ${interval}s
+• Bloqueio: ${Math.floor(block/60)}m
+• Bloqueados agora: ${blockedNow}`);
+          }
+          if (sub === 'off') {
+            cfg.enabled = false;
+            fs.writeFileSync(filePath, JSON.stringify(cfg, null, 2));
+            return reply('✅ AntiSpam Global desativado.');
+          }
+          if (sub === 'on') {
+            const limit = parseInt(parts[1]);
+            const interval = parseInt(parts[2]);
+            const block = parseInt(parts[3]);
+            if ([limit, interval, block].some(v => isNaN(v) || v <= 0)) {
+              return reply('Valores inválidos. ' + usage);
+            }
+            cfg.enabled = true;
+            cfg.limit = limit;
+            cfg.interval = interval;
+            cfg.blockTime = block;
+            cfg.users = cfg.users || {};
+            cfg.blocks = cfg.blocks || {};
+            fs.writeFileSync(filePath, JSON.stringify(cfg, null, 2));
+            return reply(`✅ AntiSpam Global ativado!
+• Limite: ${limit} cmds em ${interval}s
+• Bloqueio: ${Math.floor(block/60)} min`);
+          }
+          return reply('Opção inválida.\n' + usage);
+        } catch (e) {
+          console.error('Erro em antispamcmd:', e);
+          await reply('Ocorreu um erro ao configurar o AntiSpam.');
         }
         break;
       case 'antiloc':
