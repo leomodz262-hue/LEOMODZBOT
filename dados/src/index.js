@@ -7785,6 +7785,16 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           await reply("🐝 Oh não! Aconteceu um errinho inesperado aqui. Tente de novo daqui a pouquinho, por favor! 🥺");
         }
         break;
+
+      case 'criador':
+        try {
+          const TextinCriadorInfo = `╭⊰ 🌸 『 *INFORMAÇÕES DO CRIADOR* 』\n┊\n┊👨‍💻 *Criador*: Hiudy\n┊📱 *Número*: wa.me/553399285117\n┊🌐 *GitHub*: github.com/hiudyy\n┊📸 *Instagram*: instagram.com/hiudyyy_\n┊\n╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯`;
+          await reply(TextinCriadorInfo);
+        } catch (e) {
+          console.error(e);
+          await reply("🐝 Oh não! Aconteceu um errinho inesperado aqui. Tente de novo daqui a pouquinho, por favor! 🥺");
+        }
+        break;
       case 'ping':
         try {
           const timestamp = Date.now();
