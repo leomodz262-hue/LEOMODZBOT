@@ -5703,7 +5703,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
             try {
               await nazu.sendMessage(from, {
                 audio: dlRes.buffer,
-                mimetype: 'audio/mpeg'
+                mimetype: 'audio/mp3'
               }, {
                 quoted: info
               });
