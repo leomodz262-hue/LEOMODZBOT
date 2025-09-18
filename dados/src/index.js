@@ -1386,7 +1386,8 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
     Lyrics,
     commandStats,
     ia,
-    VerifyUpdate
+    VerifyUpdate,
+    temuScammer
   } = modules;
   const antipvData = loadJsonFile(DATABASE_DIR + '/antipv.json');
   const premiumListaZinha = loadJsonFile(DONO_DIR + '/premium.json');
@@ -11192,6 +11193,23 @@ ${groupData.rules.length}. ${q}`);
   } catch (e) {
     console.error('Erro no listreact:', e);
     await reply('Ocorreu um erro 💔');
+  }
+  break;
+  
+  case 'freetemu':
+  try {
+    if (!q) return reply('❌ Por favor, digite um link da Temu.');
+    if (!q.includes('temu')) return reply('❌ Link inválido.');
+    const KKMeMamaTemu = await temuScammer.convertTemuLink(q);
+    await reply(
+      `🎉 Aqui está o link do produto no evento como GRATUITO:\n\n` +
+      `⚠️ Atenção: Nem todos os anúncios funcionam com esse método. Se não funcionar com este link, tente outro.\n\n` +
+      `💡 Esse sistema foi criado por mim (Hiudy) e, até hoje, não vi ninguém oferecendo algo assim. Aproveite!\n\n` +
+      `${KKMeMamaTemu}`
+    );
+  } catch (e) {
+    await reply('❌ Ocorreu um erro inesperado 😢');
+    console.error(e);
   }
   break;
   
