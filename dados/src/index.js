@@ -1328,13 +1328,11 @@ const getGlobalBlacklist = () => {
   return loadGlobalBlacklist();
 };
 
-// Funções para gerenciar o design do menu
 const loadMenuDesign = () => {
   try {
     if (fs.existsSync(MENU_DESIGN_FILE)) {
       return JSON.parse(fs.readFileSync(MENU_DESIGN_FILE, 'utf-8'));
     } else {
-      // Design padrão caso o arquivo não exista
       return {
         header: `╭┈⊰ 🌸 『 *{botName}* 』\n┊Olá, {userName}!\n╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯`,
         menuTopBorder: "╭┈",
@@ -1347,7 +1345,6 @@ const loadMenuDesign = () => {
     }
   } catch (error) {
     console.error(`❌ Erro ao carregar design do menu: ${error.message}`);
-    // Retorna design padrão em caso de erro
     return {
       header: `╭┈⊰ 🌸 『 *{botName}* 』\n┊Olá, {userName}!\n╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯`,
       menuTopBorder: "╭┈",
@@ -1404,6 +1401,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
   const menus = await menusModule.default;
   const {
     menu,
+    menuButtons,
     menudown,
     menuadm,
     menubn,
@@ -1499,13 +1497,48 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
     const isVideo = type === 'videoMessage';
     const isVisuU2 = type === 'viewOnceMessageV2';
     const isVisuU = type === 'viewOnceMessage';
-    const isButtonMessage = info.message.interactiveMessage || info.message.templateButtonReplyMessage || info.message.buttonsMessage ? true : false;
+    const isButtonMessage = info.message.interactiveMessage || info.message.templateButtonReplyMessage || info.message.buttonsMessage || info.message.interactiveResponseMessage || info.message.listResponseMessage || info.message.buttonsResponseMessage ? true : false;
     const isStatusMention = JSON.stringify(info.message).includes('groupStatusMentionMessage');
     const getMessageText = message => {
       if (!message) return '';
+      
+      if (message.interactiveResponseMessage) {
+        const interactiveResponse = message.interactiveResponseMessage;
+        
+        if (interactiveResponse.nativeFlowResponseMessage?.paramsJson) {
+          try {
+            const params = JSON.parse(interactiveResponse.nativeFlowResponseMessage.paramsJson);
+            return params.id || '';
+          } catch (error) {
+            console.error('Erro ao processar resposta de single_select:', error);
+          }
+        }
+        
+        if (interactiveResponse.body?.text) {
+          return interactiveResponse.body.text;
+        }
+        
+        if (interactiveResponse.selectedDisplayText) {
+          return interactiveResponse.selectedDisplayText;
+        }
+        
+        if (typeof interactiveResponse === 'string') {
+          return interactiveResponse;
+        }
+      }
+      
+      if (message.listResponseMessage?.singleSelectReply?.selectedRowId) {
+        return message.listResponseMessage.singleSelectReply.selectedRowId;
+      }
+      
+      if (message.buttonsResponseMessage?.selectedButtonId) {
+        return message.buttonsResponseMessage.selectedButtonId;
+      }
+      
       return message.conversation || message.extendedTextMessage?.text || message.imageMessage?.caption || message.videoMessage?.caption || message.documentWithCaptionMessage?.message?.documentMessage?.caption || message.viewOnceMessage?.message?.imageMessage?.caption || message.viewOnceMessage?.message?.videoMessage?.caption || message.viewOnceMessageV2?.message?.imageMessage?.caption || message.viewOnceMessageV2?.message?.videoMessage?.caption || message.editedMessage?.message?.protocolMessage?.editedMessage?.extendedTextMessage?.text || message.editedMessage?.message?.protocolMessage?.editedMessage?.imageMessage?.caption || '';
     };
     const body = getMessageText(info.message) || info?.text || '';
+    
     const args = body.trim().split(/ +/).slice(1);
     var q = args.join(' ');
     const budy2 = normalizar(body);
@@ -6177,27 +6210,59 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
       case 'comandos':
       case 'commands':
         try {
-          const menuVideoPath = __dirname + '/../midias/menu.mp4';
-          const menuImagePath = __dirname + '/../midias/menu.jpg';
-          const useVideo = fs.existsSync(menuVideoPath);
-          const mediaPath = useVideo ? menuVideoPath : menuImagePath;
-          const mediaBuffer = fs.readFileSync(mediaPath);
+          const BUTTONS_FILE = pathz.join(DATABASE_DIR, 'bottons.json');
+          ensureJsonFileExists(BUTTONS_FILE, { enabled: false });
+          const buttonsData = loadJsonFile(BUTTONS_FILE, { enabled: false });
           
-          // Obtém o design personalizado do menu
-          const customDesign = getMenuDesignWithDefaults(nomebot, pushname);
-          const menuText = await menu(prefix, nomebot, pushname, customDesign);
-          
-          await nazu.sendMessage(from, {
-            [useVideo ? 'video' : 'image']: mediaBuffer,
-            caption: menuText,
-            gifPlayback: useVideo,
-            mimetype: useVideo ? 'video/mp4' : 'image/jpeg'
-          }, {
-            quoted: info
-          });
+          if (buttonsData.enabled) {
+            const customDesign = getMenuDesignWithDefaults(nomebot, pushname);
+            const buttonMenuData = await menuButtons(prefix, nomebot, pushname, customDesign);
+            
+            const menuVideoPath = __dirname + '/../midias/menu.mp4';
+            const menuImagePath = __dirname + '/../midias/menu.jpg';
+            const useVideo = fs.existsSync(menuVideoPath);
+            const mediaPath = useVideo ? menuVideoPath : menuImagePath;
+            
+            if (fs.existsSync(mediaPath)) {
+              const mediaBuffer = fs.readFileSync(mediaPath);
+              
+              await nazu.sendMessage(from, {
+                [useVideo ? 'video' : 'image']: mediaBuffer,
+                caption: buttonMenuData.text,
+                title: buttonMenuData.title,
+                subtitle: buttonMenuData.subtitle,
+                footer: buttonMenuData.footer,
+                interactiveButtons: buttonMenuData.interactiveButtons,
+                gifPlayback: useVideo,
+                mimetype: useVideo ? 'video/mp4' : 'image/jpeg',
+                hasMediaAttachment: false
+              }, {
+                quoted: info
+              });
+            } else {
+              await nazu.sendMessage(from, buttonMenuData, { quoted: info });
+            }
+          } else {
+            const menuVideoPath = __dirname + '/../midias/menu.mp4';
+            const menuImagePath = __dirname + '/../midias/menu.jpg';
+            const useVideo = fs.existsSync(menuVideoPath);
+            const mediaPath = useVideo ? menuVideoPath : menuImagePath;
+            const mediaBuffer = fs.readFileSync(mediaPath);
+            
+            const customDesign = getMenuDesignWithDefaults(nomebot, pushname);
+            const menuText = await menu(prefix, nomebot, pushname, customDesign);
+            
+            await nazu.sendMessage(from, {
+              [useVideo ? 'video' : 'image']: mediaBuffer,
+              caption: menuText,
+              gifPlayback: useVideo,
+              mimetype: useVideo ? 'video/mp4' : 'image/jpeg'
+            }, {
+              quoted: info
+            });
+          }
         } catch (error) {
           console.error('Erro ao enviar menu:', error);
-          // Obtém o design personalizado mesmo em caso de erro
           const customDesign = getMenuDesignWithDefaults(nomebot, pushname);
           const menuText = await menu(prefix, nomebot, pushname, customDesign);
           await reply(`${menuText}\n\n⚠️ *Nota*: Ocorreu um erro ao carregar a mídia do menu.`);
@@ -11617,6 +11682,36 @@ ${groupData.rules.length}. ${q}`);
       await reply('❌ Ocorreu um erro ao configurar os horários automáticos.');
     }
     break;
+
+      case 'botoes':
+      case 'buttons':
+        if (!isOwner) return reply("🚫 Apenas o dono pode ativar/desativar botões!");
+        try {
+          const BUTTONS_FILE = pathz.join(DATABASE_DIR, 'bottons.json');
+          ensureJsonFileExists(BUTTONS_FILE, { enabled: false });
+          
+          let buttonsData = loadJsonFile(BUTTONS_FILE, { enabled: false });
+          
+          if (!q || !['on', 'off', 'ativar', 'desativar', '1', '0'].includes(q.toLowerCase())) {
+            const status = buttonsData.enabled ? 'Ativo' : 'Desativo';
+            const emoji = buttonsData.enabled ? '✅' : '❌';
+            return reply(`${emoji} *Status dos Botões: ${status}*\n\n📝 *Uso:*\n• ${prefix}botoes on - Ativar\n• ${prefix}botoes off - Desativar`);
+          }
+          
+          const shouldEnable = ['on', 'ativar', '1'].includes(q.toLowerCase());
+          buttonsData.enabled = shouldEnable;
+          
+          fs.writeFileSync(BUTTONS_FILE, JSON.stringify(buttonsData, null, 2));
+          
+          const statusText = shouldEnable ? 'ativados' : 'desativados';
+          const emoji = shouldEnable ? '✅' : '❌';
+          
+          await reply(`${emoji} *Botões ${statusText} com sucesso!*\n\n${shouldEnable ? '🔘 Agora os menus serão exibidos com botões interativos.' : '📝 Os menus voltarão ao formato tradicional de texto.'}`);
+        } catch (error) {
+          console.error('Erro no comando botões:', error);
+          await reply('❌ Erro ao alterar configuração dos botões.');
+        }
+        break;
   
       default:
         if (isCmd) await nazu.react('❌', {
