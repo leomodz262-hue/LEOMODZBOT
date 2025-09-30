@@ -10738,7 +10738,7 @@ Exemplos:
       case 'abracar':
       case 'mata':
       case 'matar':
-      case 'tapar':
+      case 'tapao':
       case 'goza':
       case 'gozar':
       case 'mamar':
@@ -10751,7 +10751,7 @@ Exemplos:
       case 'explodir':
       case 'sexo':
         try {
-          const comandosImpróprios = ['sexo', 'surubao', 'goza', 'gozar', 'mamar', 'mamada', 'beijob', 'beijarb', 'tapar'];
+          const comandosImpróprios = ['sexo', 'surubao', 'goza', 'gozar', 'mamar', 'mamada', 'beijob', 'beijarb', 'tapao'];
           if (isModoLite && comandosImpróprios.includes(command)) return nazu.react('❌', {
             key: info.key
           });
