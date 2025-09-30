@@ -8431,11 +8431,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
             stickers.push({
               sticker: { 
                 url: `https://raw.githubusercontent.com/badDevelopper/Testfigu/main/fig (${randomNum}).webp` 
-              },
-              emojis: ['🎨', '✨'],
-              accessibilityLabel: `Figurinha ${i + 1}`,
-              isLottie: false,
-              isAnimated: false
+              }
             });
           }
           
@@ -8463,7 +8459,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           await reply("🐝 Oh não! Aconteceu um errinho ao criar o pack de figurinhas. Tente de novo daqui a pouquinho, por favor! 🥺");
         }
         break;
-        
+
       case 'mention':
         try {
           if (!isGroup) return reply("isso so pode ser usado em grupo 💔");
