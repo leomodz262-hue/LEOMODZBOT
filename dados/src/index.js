@@ -75,6 +75,17 @@ const isUserId = (id) => id && typeof id === 'string' && (id.includes('@lid') ||
 const isValidLid = (str) => /^[a-zA-Z0-9_]+@lid$/.test(str);
 const isValidJid = (str) => /^\d+@s\.whatsapp\.net$/.test(str);
 
+// Função para extrair nome de usuário de LID/JID de forma compatível
+const getUserName = (userId) => {
+  if (!userId || typeof userId !== 'string') return 'unknown';
+  if (userId.includes('@lid')) {
+    return userId.split('@')[0];
+  } else if (userId.includes('@s.whatsapp.net')) {
+    return userId.split('@')[0];
+  }
+  return userId.split('@')[0] || userId;
+};
+
 // Função para obter LID a partir de JID (quando necessário para compatibilidade)
 const getLidFromJid = async (nazu, jid) => {
   if (!isValidJid(jid)) return jid; // Já é LID ou outro formato
@@ -668,7 +679,7 @@ const validateActivationCode = code => {
   if (codeInfo.used) {
     return {
       valid: false,
-      message: `😕 Este código já foi usado em ${new Date(codeInfo.usedAt).toLocaleDateString('pt-BR')} por ${codeInfo.usedBy?.split('@')[0] || 'alguém'}!`
+      message: `😕 Este código já foi usado em ${new Date(codeInfo.usedAt).toLocaleDateString('pt-BR')} por ${getUserName(codeInfo.usedBy) || 'alguém'}!`
     };
   }
   return {
@@ -1015,7 +1026,7 @@ function checkLevelUp(userId, userData, levelingData, nazu, from) {
     userData.patent = getPatent(userData.level, levelingData.patents);
     fs.writeFileSync(LEVELING_FILE, JSON.stringify(levelingData, null, 2));
     nazu.sendMessage(from, {
-      text: `🎉 @${userId.split('@')[0]} subiu para o nível ${userData.level}!\n🔹 XP atual: ${userData.xp}\n🎖️ Nova patente: ${userData.patent}`,
+      text: `🎉 @${getUserName(userId)} subiu para o nível ${userData.level}!\n🔹 XP atual: ${userData.xp}\n🎖️ Nova patente: ${userData.patent}`,
       mentions: [userId]
     });
   }
@@ -1273,7 +1284,7 @@ const addGlobalBlacklist = (userId, reason, addedBy) => {
   if (blacklistData.users[userId]) {
     return {
       success: false,
-      message: `✨ Usuário @${userId.split('@')[0]} já está na blacklist global!`
+      message: `✨ Usuário @${getUserName(userId)} já está na blacklist global!`
     };
   }
   blacklistData.users[userId] = {
@@ -1284,7 +1295,7 @@ const addGlobalBlacklist = (userId, reason, addedBy) => {
   if (saveGlobalBlacklist(blacklistData)) {
     return {
       success: true,
-      message: `🎉 Usuário @${userId.split('@')[0]} adicionado à blacklist global com sucesso! Motivo: ${reason || 'Não especificado'}`
+      message: `🎉 Usuário @${getUserName(userId)} adicionado à blacklist global com sucesso! Motivo: ${reason || 'Não especificado'}`
     };
   } else {
     return {
@@ -1304,14 +1315,14 @@ const removeGlobalBlacklist = userId => {
   if (!blacklistData.users[userId]) {
     return {
       success: false,
-      message: `🤔 Usuário @${userId.split('@')[0]} não está na blacklist global.`
+      message: `🤔 Usuário @${getUserName(userId)} não está na blacklist global.`
     };
   }
   delete blacklistData.users[userId];
   if (saveGlobalBlacklist(blacklistData)) {
     return {
       success: true,
-      message: `👋 Usuário @${userId.split('@')[0]} removido da blacklist global com sucesso!`
+      message: `👋 Usuário @${getUserName(userId)} removido da blacklist global com sucesso!`
     };
   } else {
     return {
@@ -2217,7 +2228,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
             const afkSince = new Date(afkData.since).toLocaleString('pt-BR', {
               timeZone: 'America/Sao_Paulo'
             });
-            let afkMsg = `😴 @${jid.split('@')[0]} está AFK desde ${afkSince}.`;
+            let afkMsg = `😴 @${getUserName(jid)} está AFK desde ${afkSince}.`;
             if (afkData.reason) {
               afkMsg += `\nMotivo: ${afkData.reason}`;
             }
@@ -2269,18 +2280,18 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
                     delete: info.key
                   });
                   await nazu.groupParticipantsUpdate(from, [sender], 'remove');
-                  await reply(`🔞 Oops! @${sender.split('@')[0]}, conteúdo impróprio não é permitido e você foi removido(a).`, {
+                  await reply(`🔞 Oops! @${getUserName(sender)}, conteúdo impróprio não é permitido e você foi removido(a).`, {
                     mentions: [sender]
                   });
                 } catch (adminError) {
                   console.error(`Erro ao remover usuário por anti-porn: ${adminError}`);
-                  await reply(`⚠️ Não consegui remover @${sender.split('@')[0]} automaticamente após detectar conteúdo impróprio. Admins, por favor, verifiquem!`, {
+                  await reply(`⚠️ Não consegui remover @${getUserName(sender)} automaticamente após detectar conteúdo impróprio. Admins, por favor, verifiquem!`, {
                     mentions: [sender]
                   });
                 }
                 ;
               } else {
-                await reply(`@${sender.split('@')[0]} enviou conteúdo impróprio (${reason}), mas não posso removê-lo sem ser admin.`, {
+                await reply(`@${getUserName(sender)} enviou conteúdo impróprio (${reason}), mas não posso removê-lo sem ser admin.`, {
                   mentions: [sender]
                 });
               }
@@ -2306,7 +2317,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
         }
       });
       await nazu.groupParticipantsUpdate(from, [sender], 'remove');
-      await reply(`🗺️ Ops! @${sender.split('@')[0]}, parece que localizações não são permitidas aqui e você foi removido(a).`, {
+      await reply(`🗺️ Ops! @${getUserName(sender)}, parece que localizações não são permitidas aqui e você foi removido(a).`, {
         mentions: [sender]
       });
     }
@@ -2336,7 +2347,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
         }
       });
       await nazu.groupParticipantsUpdate(from, [sender], 'remove');
-      await reply(`📄 Oops! @${sender.split('@')[0]}, parece que documentos não são permitidos aqui e você foi removido(a).`, {
+      await reply(`📄 Oops! @${getUserName(sender)}, parece que documentos não são permitidos aqui e você foi removido(a).`, {
         mentions: [sender]
       });
     }
@@ -2445,11 +2456,11 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
         });
         if (isBotAdmin) {
           await nazu.groupParticipantsUpdate(from, [sender], 'remove');
-          await reply(`🔗 Ops! @${sender.split('@')[0]}, links não são permitidos aqui e você foi removido(a).`, {
+          await reply(`🔗 Ops! @${getUserName(sender)}, links não são permitidos aqui e você foi removido(a).`, {
             mentions: [sender]
           });
         } else {
-          await reply(`🔗 Atenção, @${sender.split('@')[0]}! Links não são permitidos aqui. Não consigo remover você, mas por favor, evite enviar links. 😉`, {
+          await reply(`🔗 Atenção, @${getUserName(sender)}! Links não são permitidos aqui. Não consigo remover você, mas por favor, evite enviar links. 😉`, {
             mentions: [sender]
           });
         }
@@ -2572,11 +2583,11 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
           if (!AllgroupMembers.includes(sender)) return;
           if (isBotAdmin) {
             await nazu.groupParticipantsUpdate(from, [sender], 'remove');
-            await reply(`🔗 Ops! @${sender.split('@')[0]}, links de outros grupos não são permitidos aqui e você foi removido(a).`, {
+            await reply(`🔗 Ops! @${getUserName(sender)}, links de outros grupos não são permitidos aqui e você foi removido(a).`, {
               mentions: [sender]
             });
           } else {
-            await reply(`🔗 Atenção, @${sender.split('@')[0]}! Links de outros grupos não são permitidos. Não consigo remover você, mas por favor, evite compartilhar esses links. 😉`, {
+            await reply(`🔗 Atenção, @${getUserName(sender)}! Links de outros grupos não são permitidos. Não consigo remover você, mas por favor, evite compartilhar esses links. 😉`, {
               mentions: [sender]
             });
           }
@@ -2607,7 +2618,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
           console.log(`┃ 👤 Usuário: ${(pushname || 'Sem Nome').padEnd(28)}`);
         } else {
           console.log(`┃ 👤 Usuário: ${(pushname || 'Sem Nome').padEnd(28)}`);
-          console.log(`┃ 📱 Número: ${sender.split('@')[0].padEnd(28)}`);
+          console.log(`┃ 📱 Número: ${getUserName(sender).padEnd(28)}`);
         }
         console.log('┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫');
         console.log(`┃ 🕒 Data/Hora: ${timestamp.padEnd(27)}`);
@@ -2671,18 +2682,18 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
     };
 
     const globalBlacklist = loadGlobalBlacklist();
-    if (isCmd && sender && globalBlacklist.users && (globalBlacklist.users[sender] || globalBlacklist.users[sender.split('@')[0]])) {
-      const blacklistEntry = globalBlacklist.users[sender] || globalBlacklist.users[sender.split('@')[0]];
+    if (isCmd && sender && globalBlacklist.users && (globalBlacklist.users[sender] || globalBlacklist.users[getUserName(sender)])) {
+      const blacklistEntry = globalBlacklist.users[sender] || globalBlacklist.users[getUserName(sender)];
       return reply(`🚫 Você está na blacklist global e não pode usar comandos.\nMotivo: ${blacklistEntry.reason}\nAdicionado por: ${blacklistEntry.addedBy}\nData: ${new Date(blacklistEntry.addedAt).toLocaleString('pt-BR')}`);
     };
     
-    if (isGroup && isCmd && groupData.blacklist && (groupData.blacklist[sender] || groupData.blacklist[sender.split('@')[0]])) {
-      const blacklistEntry = groupData.blacklist[sender] || groupData.blacklist[sender.split('@')[0]];
+    if (isGroup && isCmd && groupData.blacklist && (groupData.blacklist[sender] || groupData.blacklist[getUserName(sender)])) {
+      const blacklistEntry = groupData.blacklist[sender] || groupData.blacklist[getUserName(sender)];
       return reply(`🚫 Você está na blacklist deste grupo e não pode usar comandos.\nMotivo: ${blacklistEntry.reason}\nData: ${new Date(blacklistEntry.timestamp).toLocaleString('pt-BR')}`);
     }
     ;
-    if (sender && sender.includes('@') && globalBlocks.users && (globalBlocks.users[sender.split('@')[0]] || globalBlocks.users[sender]) && isCmd) {
-      return reply(`🚫 Parece que você está bloqueado de usar meus comandos globalmente.\nMotivo: ${globalBlocks.users[sender] ? globalBlocks.users[sender].reason : globalBlocks.users[sender.split('@')[0]].reason}`);
+    if (sender && sender.includes('@') && globalBlocks.users && (globalBlocks.users[getUserName(sender)] || globalBlocks.users[sender]) && isCmd) {
+      return reply(`🚫 Parece que você está bloqueado de usar meus comandos globalmente.\nMotivo: ${globalBlocks.users[sender] ? globalBlocks.users[sender].reason : globalBlocks.users[getUserName(sender)].reason}`);
     }
     ;
     if (isCmd && globalBlocks.commands && globalBlocks.commands[command]) {
@@ -2793,7 +2804,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
         if (userData.count > groupData.messageLimit.limit) {
           if (groupData.messageLimit.action === 'ban' && isBotAdmin) {
             await nazu.groupParticipantsUpdate(from, [sender], 'remove');
-            await reply(`🚨 @${sender.split('@')[0]} foi banido por exceder o limite de ${groupData.messageLimit.limit} mensagens em ${groupData.messageLimit.interval}s!`, {
+            await reply(`🚨 @${getUserName(sender)} foi banido por exceder o limite de ${groupData.messageLimit.limit} mensagens em ${groupData.messageLimit.interval}s!`, {
               mentions: [sender]
             });
             delete groupData.messageLimit.users[sender];
@@ -2802,13 +2813,13 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
             const warnings = groupData.messageLimit.warnings[sender];
             if (warnings >= 3 && isBotAdmin) {
               await nazu.groupParticipantsUpdate(from, [sender], 'remove');
-              await reply(`🚨 @${sender.split('@')[0]} foi banido por exceder o limite de mensagens (${groupData.messageLimit.limit} em ${groupData.messageLimit.interval}s) 3 vezes!`, {
+              await reply(`🚨 @${getUserName(sender)} foi banido por exceder o limite de mensagens (${groupData.messageLimit.limit} em ${groupData.messageLimit.interval}s) 3 vezes!`, {
                 mentions: [sender]
               });
               delete groupData.messageLimit.warnings[sender];
               delete groupData.messageLimit.users[sender];
             } else {
-              await reply(`⚠️ @${sender.split('@')[0]}, você excedeu o limite de ${groupData.messageLimit.limit} mensagens em ${groupData.messageLimit.interval}s! Advertência ${warnings}/3.`, {
+              await reply(`⚠️ @${getUserName(sender)}, você excedeu o limite de ${groupData.messageLimit.limit} mensagens em ${groupData.messageLimit.interval}s! Advertência ${warnings}/3.`, {
                 mentions: [sender]
               });
             }
@@ -2830,7 +2841,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
           await nazu.sendMessage(from, {
             delete: info.key
           });
-          await reply(`@${sender.split('@')[0]}, você atingiu o limite de ${partnerData.limit} links de grupos.`, {
+          await reply(`@${getUserName(sender)}, você atingiu o limite de ${partnerData.limit} links de grupos.`, {
             mentions: [sender]
           });
         }
@@ -2838,7 +2849,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
         await nazu.sendMessage(from, {
           delete: info.key
         });
-        await reply(`@${sender.split('@')[0]}, você não é um parceiro e não pode enviar links de grupos.`, {
+        await reply(`@${getUserName(sender)}, você não é um parceiro e não pode enviar links de grupos.`, {
           mentions: [sender]
         });
       }
@@ -2865,7 +2876,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
         groupData.warnings[sender].lastWarned = new Date().toISOString();
         const warnCount = groupData.warnings[sender].count;
         const warnLimit = groupData.antifig.warnLimit || 3;
-        let warnMessage = `🚫 @${sender.split('@')[0]}, figurinhas não são permitidas neste grupo! Advertência ${warnCount}/${warnLimit}.`;
+        let warnMessage = `🚫 @${getUserName(sender)}, figurinhas não são permitidas neste grupo! Advertência ${warnCount}/${warnLimit}.`;
         if (warnCount >= warnLimit && isBotAdmin) {
           warnMessage += `\n⚠️ Você atingiu o limite de advertências e será removido.`;
           await nazu.groupParticipantsUpdate(from, [sender], 'remove');
@@ -2878,7 +2889,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
         fs.writeFileSync(groupFile, JSON.stringify(groupData, null, 2));
       } catch (error) {
         console.error("Erro no sistema antifig:", error);
-        await reply(`⚠️ Erro ao processar antifig para @${sender.split('@')[0]}. Admins, por favor, verifiquem!`, {
+        await reply(`⚠️ Erro ao processar antifig para @${getUserName(sender)}. Admins, por favor, verifiquem!`, {
           mentions: [sender]
         });
       }
@@ -3063,7 +3074,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
           if (!target) return reply('Marque um usuário para resetar ou use "all".');
           delete econ.users[target];
           saveEconomy(econ);
-          return reply(`✅ Gold resetado para @${target.split('@')[0]}.`, { mentions:[target] });
+          return reply(`✅ Gold resetado para @${getUserName(target)}.`, { mentions:[target] });
         }
 
         if (sub === 'perfilrpg' || sub === 'carteira') {
@@ -3113,7 +3124,7 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
           if (mentioned === sender) return reply('Você não pode transferir para si mesmo.');
           me.wallet -= amount; other.wallet += amount;
           saveEconomy(econ);
-          return reply(`💸 Transferido ${fmt(amount)} para @${mentioned.split('@')[0]}.`, { mentions:[mentioned] });
+          return reply(`💸 Transferido ${fmt(amount)} para @${getUserName(mentioned)}.`, { mentions:[mentioned] });
         }
 
         if (sub === 'loja' || sub === 'lojagold') {
@@ -3589,14 +3600,14 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
             target.wallet -= amt; me.wallet += amt;
             me.cooldowns.rob = Date.now() + 10*60*1000;
             saveEconomy(econ);
-            return reply(`🦹 Sucesso! Você roubou ${fmt(amt)} de @${mentioned.split('@')[0]}.`, { mentions:[mentioned] });
+            return reply(`🦹 Sucesso! Você roubou ${fmt(amt)} de @${getUserName(mentioned)}.`, { mentions:[mentioned] });
           } else {
             const multa = 80 + Math.floor(Math.random()*121); // 80-200
             const pay = Math.min(me.wallet, multa);
             me.wallet -= pay; target.wallet += pay;
             me.cooldowns.rob = Date.now() + 10*60*1000;
             saveEconomy(econ);
-            return reply(`🚨 Você foi pego! Pagou ${fmt(pay)} de multa para @${mentioned.split('@')[0]}.`, { mentions:[mentioned] });
+            return reply(`🚨 Você foi pego! Pagou ${fmt(pay)} de multa para @${getUserName(mentioned)}.`, { mentions:[mentioned] });
           }
         }
 
@@ -4640,7 +4651,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           if (!targetUserJid) {
             return reply("🤔 Você precisa marcar o usuário ou fornecer o número completo (ex: 5511999998888) para adicionar como subdono.");
           }
-          const normalizedJid = (isUserId(targetUserJid) || isValidJid(targetUserJid)) ? targetUserJid : (targetUserJid.replace(/\D/g, '') + '@s.whatsapp.net');
+          const normalizedJid = (isUserId(targetUserJid) || isValidJid(targetUserJid)) ? targetUserJid : buildUserId(targetUserJid);
           const result = addSubdono(normalizedJid, numerodono);
           await reply(result.message);
         } catch (e) {
@@ -4652,11 +4663,11 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
       case 'rmsubdono':
         if (!isOwner || isOwner && isSubOwner) return reply("🚫 Apenas o Dono principal pode remover subdonos!");
         try {
-          const targetUserJid = menc_jid2 && menc_jid2.length > 0 ? menc_jid2[0] : q.includes('@') ? q.split(' ')[0].replace('@', '') + '@s.whatsapp.net' : null;
+          const targetUserJid = menc_jid2 && menc_jid2.length > 0 ? menc_jid2[0] : q.includes('@') ? buildUserId(q.split(' ')[0].replace('@', '')) : null;
           if (!targetUserJid) {
             return reply("🤔 Você precisa marcar o usuário ou fornecer o número completo (ex: 5511999998888) para remover como subdono.");
           }
-          const normalizedJid = targetUserJid.includes('@') ? targetUserJid : targetUserJid.replace(/\D/g, '') + '@s.whatsapp.net';
+          const normalizedJid = isUserId(targetUserJid) ? targetUserJid : buildUserId(targetUserJid);
           const result = removeSubdono(normalizedJid);
           await reply(result.message);
         } catch (e) {
@@ -4836,7 +4847,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
         userDataAdd.xp += xpToAdd;
         checkLevelUp(menc_os2, userDataAdd, levelingDataAdd, nazu, from);
         fs.writeFileSync(LEVELING_FILE, JSON.stringify(levelingDataAdd, null, 2));
-        await reply(`✅ Adicionado ${xpToAdd} XP para @${menc_os2.split('@')[0]}`, {
+        await reply(`✅ Adicionado ${xpToAdd} XP para @${getUserName(menc_os2)}`, {
           mentions: [menc_os2]
         });
         break;
@@ -6984,7 +6995,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
         try {
           if (!isOwner) return reply('⛔ Desculpe, este comando é exclusivo para o meu dono!');
           const premiumList = premiumListaZinha || {};
-          const usersPremium = Object.keys(premiumList).filter(id => id.includes('@s.whatsapp.net'));
+          const usersPremium = Object.keys(premiumList).filter(id => isUserId(id));
           const groupsPremium = Object.keys(premiumList).filter(id => id.includes('@g.us'));
           let teks = `✨ *Lista de Membros Premium* ✨\n\n`;
           
@@ -7121,7 +7132,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           });
           fs.writeFileSync(groupFile, JSON.stringify(groupData, null, 2));
           await reply(`🧹 Limpeza do rank de atividade concluída!\n\nRemovidos ${removedCount} usuários ausentes:\n${removedUsers.map(name => `• @${name}`).join('\n') || 'Nenhum usuário ausente encontrado.'}`, {
-            mentions: removedUsers.map(name => `${name}@s.whatsapp.net`)
+            mentions: removedUsers.map(name => buildUserId(name))
           });
         } catch (e) {
           console.error('Erro no comando limparrank:', e);
@@ -7565,7 +7576,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           } catch (e) {
             totalCommands = 'N/A';
           }
-          const premiumUsers = Object.keys(premiumListaZinha).filter(key => key.includes('@s.whatsapp.net')).length;
+          const premiumUsers = Object.keys(premiumListaZinha).filter(key => isUserId(key)).length;
           const premiumGroups = Object.keys(premiumListaZinha).filter(key => key.includes('@g.us')).length;
           const blockedUsers = Object.keys(globalBlocks.users || {}).length;
           const blockedCommands = Object.keys(globalBlocks.commands || {}).length;
@@ -7705,7 +7716,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           const subject = meta.subject || "—";
           const desc = meta.desc?.toString() || "Sem descrição";
           const createdAt = meta.creation ? new Date(meta.creation * 1000).toLocaleString('pt-BR') : "Desconhecida";
-          const ownerJid = meta.owner || meta.participants.find(p => p.admin && p.isCreator)?.lid || meta.participants.find(p => p.admin && p.isCreator)?.id || "unknown@s.whatsapp.net";
+          const ownerJid = meta.owner || meta.participants.find(p => p.admin && p.isCreator)?.lid || meta.participants.find(p => p.admin && p.isCreator)?.id || buildUserId("unknown");
           const ownerTag = `@${ownerJid.split('@')[0]}`;
           const totalMembers = meta.participants.length;
           const totalAdmins = groupAdmins.length;
