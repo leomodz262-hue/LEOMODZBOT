@@ -8430,13 +8430,13 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
             
             stickers.push({
               sticker: { 
-                url: `https://raw.githubusercontent.com/badDevelopper/Testfigu/main/fig (${randomNum}).webp` 
+                url: `https://raw.githubusercontent.com/badDevelopper/Testfigu/main/fig (${Math.floor(Math.random() * 8051)}).webp` 
               }
             });
           }
           
           const coverStickerNum = Math.floor(Math.random() * 8051);
-          const coverResponse = await axios.get(`https://raw.githubusercontent.com/badDevelopper/Testfigu/main/fig (${coverStickerNum}).webp`, {
+          const coverResponse = await axios.get(`https://raw.githubusercontent.com/badDevelopper/Testfigu/main/fig (${Math.floor(Math.random() * 8051)}).webp`, {
             responseType: 'arraybuffer'
           });
 
