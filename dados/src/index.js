@@ -2143,6 +2143,130 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
       }
     };
     startGpScheduleWorker(nazu);
+
+    let autoHorariosWorkerStarted = global.autoHorariosWorkerStarted || false;
+    const startAutoHorariosWorker = (nazuInstance) => {
+      try {
+        if (autoHorariosWorkerStarted) return;
+        autoHorariosWorkerStarted = true;
+        global.autoHorariosWorkerStarted = true;
+        
+        setInterval(async () => {
+          try {
+            const now = new Date();
+            const minutes = now.getMinutes();
+            const seconds = now.getSeconds();
+            
+            if (minutes !== 0 || seconds > 30) return;
+            
+            const autoSchedulesPath = './dados/database/autohorarios.json';
+            if (!fs.existsSync(autoSchedulesPath)) return;
+            
+            let autoSchedules = {};
+            try {
+              autoSchedules = JSON.parse(fs.readFileSync(autoSchedulesPath, 'utf8'));
+            } catch (e) {
+              return;
+            }
+            
+            const currentHour = now.getHours();
+            
+            for (const [chatId, config] of Object.entries(autoSchedules)) {
+              if (!config.enabled) continue;
+              if (!chatId.endsWith('@g.us')) continue;
+              
+              try {
+                const currentTime = new Date();
+                const currentBrazilTime = new Date(currentTime.getTime() - (3 * 60 * 60 * 1000));
+                
+                const games = [
+                  { name: "🎯 FORTUNE TIGER", hours: [9, 11, 14, 16, 18, 20, 22] },
+                  { name: "🐂 FORTUNE OX", hours: [8, 10, 13, 15, 17, 19, 21] },
+                  { name: "🐭 FORTUNE MOUSE", hours: [7, 12, 14, 16, 19, 21, 23] },
+                  { name: "🐰 FORTUNE RABBIT", hours: [6, 9, 11, 15, 18, 20, 22] },
+                  { name: "🐉 FORTUNE DRAGON", hours: [8, 10, 12, 16, 18, 21, 23] },
+                  { name: "💎 GATES OF OLYMPUS", hours: [7, 9, 13, 17, 19, 22, 0] },
+                  { name: "⚡ GATES OF AZTEC", hours: [6, 11, 14, 16, 20, 22, 1] },
+                  { name: "🍭 SWEET BONANZA", hours: [8, 12, 15, 17, 19, 21, 23] },
+                  { name: "🏺 HAND OF MIDAS", hours: [7, 10, 13, 16, 18, 20, 0] },
+                  { name: "🌟 STARLIGHT PRINCESS", hours: [6, 9, 12, 15, 19, 22, 1] },
+                  { name: "🔥 FIRE PORTALS", hours: [8, 11, 14, 17, 20, 23, 2] },
+                  { name: "⭐ STAR CLUSTERS", hours: [7, 10, 12, 16, 18, 21, 0] },
+                  { name: "🌊 AQUA MILLIONS", hours: [6, 9, 13, 15, 19, 22, 1] },
+                  { name: "🎪 CIRCUS LAUNCH", hours: [8, 11, 14, 16, 20, 23, 2] },
+                  { name: "🏖️ CASH PATROL", hours: [7, 10, 13, 17, 19, 21, 0] },
+                  { name: "🎊 PARTY FEVER", hours: [6, 12, 15, 18, 20, 22, 1] },
+                  { name: "🎭 MYSTERY JOKER", hours: [8, 10, 14, 16, 19, 23, 2] },
+                  { name: "🎰 SPIN PARTY", hours: [7, 9, 13, 15, 18, 21, 0] },
+                  { name: "💰 MONEY MAKER", hours: [6, 11, 12, 17, 20, 22, 1] }
+                ];
+                
+                let responseText = `┏━━━━━━━━━━━━━━━━━━━━━━━━┓\n`;
+                responseText += `┃    🎰 *HORÁRIOS PAGANTES*   ┃\n`;
+                responseText += `┗━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n`;
+                responseText += `🕐 *Atualizado automaticamente:*\n`;
+                responseText += `📅 ${currentBrazilTime.toLocaleDateString('pt-BR')}\n`;
+                responseText += `⏰ ${currentBrazilTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}\n\n`;
+                
+                games.forEach(game => {
+                  const todayHours = game.hours.map(baseHour => {
+                    const variation = Math.floor(Math.random() * 21) - 10;
+                    const finalHour = baseHour + Math.floor(variation / 60);
+                    const finalMinutes = Math.abs(variation % 60);
+                    
+                    const displayHour = finalHour < 0 ? 24 + finalHour : finalHour > 23 ? finalHour - 24 : finalHour;
+                    return `${displayHour.toString().padStart(2, '0')}:${finalMinutes.toString().padStart(2, '0')}`;
+                  });
+                  
+                  responseText += `${game.name}\n`;
+                  responseText += `🕐 ${todayHours.join(' • ')}\n\n`;
+                });
+                
+                if (config.link) {
+                  responseText += `┏━━━━━━━━━━━━━━━━━━━━━━━━┓\n`;
+                  responseText += `┃      🔗 *LINK DE APOSTAS*     ┃\n`;
+                  responseText += `┗━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n`;
+                  responseText += `${config.link}\n\n`;
+                }
+                
+                responseText += `⚠️ *AVISOS IMPORTANTES:*\n`;
+                responseText += `🔞 *Conteúdo para maiores de 18 anos*\n`;
+                responseText += `📊 Estes são horários estimados\n`;
+                responseText += `🎯 Jogue com responsabilidade\n`;
+                responseText += `💰 Nunca aposte mais do que pode perder\n`;
+                responseText += `🆘 Procure ajuda se tiver vício em jogos\n`;
+                responseText += `⚖️ Apostas podem causar dependência\n\n`;
+                responseText += `┏━━━━━━━━━━━━━━━━━━━━━━━━┓\n`;
+                responseText += `┃  🍀 *BOA SORTE E JOGUE*    ┃\n`;
+                responseText += `┃     *CONSCIENTEMENTE!* 🍀  ┃\n`;
+                responseText += `┗━━━━━━━━━━━━━━━━━━━━━━━━┛`;
+                
+                await nazuInstance.sendMessage(chatId, { text: responseText });
+                
+                config.lastSent = Date.now();
+                
+              } catch (e) {
+                console.error(`Erro ao enviar auto horários para ${chatId}:`, e);
+              }
+            }
+            
+            try {
+              fs.writeFileSync(autoSchedulesPath, JSON.stringify(autoSchedules, null, 2));
+            } catch (e) {
+              console.error('Erro ao salvar auto schedules:', e);
+            }
+            
+          } catch (err) {
+            console.error('Erro no auto horários worker:', err);
+          }
+        }, 60 * 1000);
+        
+      } catch (e) {
+        console.error('Erro ao iniciar auto horários worker:', e);
+      }
+    };
+    startAutoHorariosWorker(nazu);
+
     const getFileBuffer = async (mediakey, mediaType, options = {}) => {
       try {
         if (!mediakey) {
@@ -11392,6 +11516,105 @@ ${groupData.rules.length}. ${q}`);
     } catch (e) {
       console.error('Erro no comando horarios:', e);
       await reply('❌ Ocorreu um erro ao gerar os horários pagantes.');
+    }
+    break;
+
+  case 'autohorarios':
+    if (!isOwner && !isAdmins && !isGroupAdmins) return reply('⚠️ Este comando é apenas para administradores!');
+    
+    try {
+      const args = text.trim().split(' ');
+      const action = args[0]?.toLowerCase();
+      
+      if (!action || (action !== 'on' && action !== 'off' && action !== 'status' && action !== 'link')) {
+        const helpText = `┏━━━━━━━━━━━━━━━━━━━━━━━━┓\n` +
+                        `┃   🤖 *AUTO HORÁRIOS*     ┃\n` +
+                        `┗━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n` +
+                        `📋 *Comandos disponíveis:*\n\n` +
+                        `🟢 \`${prefix}autohorarios on\`\n` +
+                        `   ▸ Liga o envio automático\n\n` +
+                        `🔴 \`${prefix}autohorarios off\`\n` +
+                        `   ▸ Desliga o envio automático\n\n` +
+                        `📊 \`${prefix}autohorarios status\`\n` +
+                        `   ▸ Verifica status atual\n\n` +
+                        `🔗 \`${prefix}autohorarios link [URL]\`\n` +
+                        `   ▸ Define link de apostas\n` +
+                        `   ▸ Sem URL remove o link\n\n` +
+                        `⏰ *Funcionamento:*\n` +
+                        `• Envia horários a cada hora\n` +
+                        `• Apenas em grupos\n` +
+                        `• Inclui link se configurado\n\n` +
+                        `🔒 *Restrito a administradores*`;
+        
+        await reply(helpText);
+        break;
+      }
+      
+      let autoSchedules = {};
+      const autoSchedulesPath = './dados/database/autohorarios.json';
+      try {
+        if (fs.existsSync(autoSchedulesPath)) {
+          autoSchedules = JSON.parse(fs.readFileSync(autoSchedulesPath, 'utf8'));
+        }
+      } catch (e) {
+        autoSchedules = {};
+      }
+      
+      if (!autoSchedules[from]) {
+        autoSchedules[from] = {
+          enabled: false,
+          link: null,
+          lastSent: 0
+        };
+      }
+      
+      switch (action) {
+        case 'on':
+          autoSchedules[from].enabled = true;
+          fs.writeFileSync(autoSchedulesPath, JSON.stringify(autoSchedules, null, 2));
+          await reply('✅ *Auto horários ativado!*\n\n📤 Os horários pagantes serão enviados automaticamente a cada hora.\n\n⚡ O primeiro envio será na próxima hora cheia.');
+          break;
+          
+        case 'off':
+          autoSchedules[from].enabled = false;
+          fs.writeFileSync(autoSchedulesPath, JSON.stringify(autoSchedules, null, 2));
+          await reply('🔴 *Auto horários desativado!*\n\n📴 Os envios automáticos foram interrompidos.');
+          break;
+          
+        case 'status':
+          const config = autoSchedules[from];
+          const statusEmoji = config.enabled ? '🟢' : '🔴';
+          const statusText = config.enabled ? 'ATIVO' : 'INATIVO';
+          const linkStatus = config.link ? `🔗 ${config.link}` : '🚫 Nenhum link configurado';
+          
+          const statusResponse = `┏━━━━━━━━━━━━━━━━━━━━━━━━┓\n` +
+                               `┃   📊 *STATUS AUTO HORÁRIOS*  ┃\n` +
+                               `┗━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n` +
+                               `${statusEmoji} *Status:* ${statusText}\n\n` +
+                               `🔗 *Link:*\n${linkStatus}\n\n` +
+                               `⏰ *Próximo envio:*\n${config.enabled ? 'Na próxima hora cheia' : 'Desativado'}`;
+          
+          await reply(statusResponse);
+          break;
+          
+        case 'link':
+          const linkUrl = args.slice(1).join(' ').trim();
+          
+          if (!linkUrl) {
+            autoSchedules[from].link = null;
+            fs.writeFileSync(autoSchedulesPath, JSON.stringify(autoSchedules, null, 2));
+            await reply('🗑️ *Link removido!*\n\n📝 Os horários automáticos não incluirão mais link de apostas.');
+          } else {
+            autoSchedules[from].link = linkUrl;
+            fs.writeFileSync(autoSchedulesPath, JSON.stringify(autoSchedules, null, 2));
+            await reply(`✅ *Link configurado!*\n\n🔗 *URL:* ${linkUrl}\n\n📝 Este link será incluído nos horários automáticos.`);
+          }
+          break;
+      }
+      
+    } catch (e) {
+      console.error('Erro no comando autohorarios:', e);
+      await reply('❌ Ocorreu um erro ao configurar os horários automáticos.');
     }
     break;
   
