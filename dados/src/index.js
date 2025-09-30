@@ -1,10 +1,3 @@
-/*
-═════════════════════════════
-  Nazuna - Index principal
-  Autor: Hiudy
-  Revisão: 31/08/2025
-═════════════════════════════
-*/
 import { downloadContentFromMessage, generateWAMessageFromContent, generateWAMessage, isJidNewsletter, getContentType } from '@cognima/walib';
 import { exec, execSync } from 'child_process';
 import { parseHTML } from 'linkedom';
