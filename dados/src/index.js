@@ -1508,8 +1508,8 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
     const menc_prt = info.message?.extendedTextMessage?.contextInfo?.participant;
     const menc_jid = q.replace("@", "").split(' ')[0] + "@lid";
     const menc_jid2 = info.message?.extendedTextMessage?.contextInfo?.mentionedJid;
-    const menc_os2 = q.includes("@") ? menc_jid2[0] : menc_prt;
-    const sender_ou_n = q.includes("@") ? menc_jid2[0] : menc_prt || sender;
+    const menc_os2 = (menc_jid2 && menc_jid2.length > 0) ? menc_jid2[0] : menc_prt;
+    const sender_ou_n = (menc_jid2 && menc_jid2.length > 0) ? menc_jid2[0] : menc_prt || sender;
     const groupFile = pathz.join(__dirname, '..', 'database', 'grupos', `${from}.json`);
     let groupData = {};
     const groupMetadata = !isGroup ? {} : await nazu.groupMetadata(from).catch(() => ({}));
@@ -2668,6 +2668,17 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
     ;
     if (isGroup && groupData.blockedUsers && (groupData.blockedUsers[sender] || groupData.blockedUsers[sender.split('@')[0]]) && isCmd) {
       return reply(`🚫 Oops! Parece que você não pode usar comandos neste grupo.\nMotivo: ${groupData.blockedUsers[sender] ? groupData.blockedUsers[sender].reason : groupData.blockedUsers[sender.split('@')[0]].reason}`);
+    };
+
+    const globalBlacklist = loadGlobalBlacklist();
+    if (isCmd && sender && globalBlacklist.users && (globalBlacklist.users[sender] || globalBlacklist.users[sender.split('@')[0]])) {
+      const blacklistEntry = globalBlacklist.users[sender] || globalBlacklist.users[sender.split('@')[0]];
+      return reply(`🚫 Você está na blacklist global e não pode usar comandos.\nMotivo: ${blacklistEntry.reason}\nAdicionado por: ${blacklistEntry.addedBy}\nData: ${new Date(blacklistEntry.addedAt).toLocaleString('pt-BR')}`);
+    };
+    
+    if (isGroup && isCmd && groupData.blacklist && (groupData.blacklist[sender] || groupData.blacklist[sender.split('@')[0]])) {
+      const blacklistEntry = groupData.blacklist[sender] || groupData.blacklist[sender.split('@')[0]];
+      return reply(`🚫 Você está na blacklist deste grupo e não pode usar comandos.\nMotivo: ${blacklistEntry.reason}\nData: ${new Date(blacklistEntry.timestamp).toLocaleString('pt-BR')}`);
     }
     ;
     if (sender && sender.includes('@') && globalBlocks.users && (globalBlocks.users[sender.split('@')[0]] || globalBlocks.users[sender]) && isCmd) {
@@ -5506,7 +5517,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           if (!isOwner) return reply("Apenas o dono pode adicionar usuários à blacklist global.");
           if (!menc_os2 && !q) return reply(`Marque o usuário ou forneça o número (ex: ${prefix}addblackglobal @usuario motivo).`);
           const reason = args.length > 1 ? args.slice(1).join(' ') : 'Não especificado';
-          const targetUser = menc_os2 || q.split(' ')[0].replace(/\D/g, '') + '@s.whatsapp.net';
+          const targetUser = menc_os2 || (q.split(' ')[0].includes('@') ? q.split(' ')[0] : (isValidJid(q.split(' ')[0]) || isValidLid(q.split(' ')[0])) ? q.split(' ')[0] : q.split(' ')[0].replace(/\D/g, '') + '@s.whatsapp.net');
           const result = addGlobalBlacklist(targetUser, reason, pushname);
           await reply(result.message, {
             mentions: [targetUser]
@@ -5520,7 +5531,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
         try {
           if (!isOwner) return reply("Apenas o dono pode remover usuários da blacklist global.");
           if (!menc_os2 && !q) return reply(`Marque o usuário ou forneça o número (ex: ${prefix}remblackglobal @usuario).`);
-          const targetUser = menc_os2 || q.split(' ')[0].replace(/\D/g, '') + '@s.whatsapp.net';
+          const targetUser = menc_os2 || (q.split(' ')[0].includes('@') ? q.split(' ')[0] : (isValidJid(q.split(' ')[0]) || isValidLid(q.split(' ')[0])) ? q.split(' ')[0] : q.split(' ')[0].replace(/\D/g, '') + '@s.whatsapp.net');
           const result = removeGlobalBlacklist(targetUser);
           await reply(result.message, {
             mentions: [targetUser]
@@ -6457,11 +6468,12 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
       case 'blockuserg':
         if (!isOwner) return reply("Este comando é apenas para o meu dono");
         try {
+          if (!menc_os2) return reply("Marque alguém 🙄");
           var reason;
           reason = q ? q.includes('@') ? q.includes(' ') ? q.split(' ').slice(1).join(' ') : "Não informado" : q : 'Não informado';
           var menc_os3;
-          menc_os3 = menc_os2.includes(' ') ? menc_os2.split(' ')[0] : menc_os2;
-          if (!menc_os3) return reply("Marque alguém 🙄");
+          menc_os3 = (menc_os2 && menc_os2.includes(' ')) ? menc_os2.split(' ')[0] : menc_os2;
+          if (!menc_os3) return reply("Erro ao processar usuário mencionado");
           const blockFile = __dirname + '/../database/globalBlocks.json';
           globalBlocks.users = globalBlocks.users || {};
           globalBlocks.users[menc_os3] = {
@@ -6482,16 +6494,17 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
         try {
           if (!menc_os2) return reply("Marque alguém 🙄");
           const blockFile = __dirname + '/../database/globalBlocks.json';
-          if (!globalBlocks.users || !globalBlocks.users[menc_os2] && !globalBlocks.users[menc_os2.split('@')[0]]) {
-            return reply(`❌ O usuário @${menc_os2.split('@')[0]} não está bloqueado!`, {
+          if (!globalBlocks.users) {
+            return reply(`ℹ️ Não há usuários bloqueados globalmente.`);
+          }
+          const userToUnblock = globalBlocks.users[menc_os2] ? menc_os2 : 
+                               globalBlocks.users[menc_os2.split('@')[0]] ? menc_os2.split('@')[0] : null;
+          if (!userToUnblock) {
+            return reply(`❌ O usuário @${menc_os2.split('@')[0]} não está bloqueado globalmente!`, {
               mentions: [menc_os2]
             });
           }
-          if (globalBlocks.users[menc_os2]) {
-            delete globalBlocks.users[menc_os2];
-          } else if (globalBlocks.users[menc_os2.split('@')[0]]) {
-            delete globalBlocks.users[menc_os2.split('@')[0]];
-          }
+          delete globalBlocks.users[userToUnblock];
           fs.writeFileSync(blockFile, JSON.stringify(globalBlocks, null, 2));
           await reply(`✅ Usuário @${menc_os2.split('@')[0]} desbloqueado globalmente!`, {
             mentions: [menc_os2]
@@ -8257,7 +8270,8 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           var reason;
           reason = q ? q.includes('@') ? q.includes(' ') ? q.split(' ').slice(1).join(' ') : "Não informado" : q : 'Não informado';
           var menc_os3;
-          menc_os3 = menc_os2.includes(' ') ? menc_os2.split(' ')[0] : menc_os2;
+          menc_os3 = (menc_os2 && menc_os2.includes(' ')) ? menc_os2.split(' ')[0] : menc_os2;
+          if (!menc_os3) return reply("Erro ao processar usuário mencionado");
           groupData.blockedUsers = groupData.blockedUsers || {};
           groupData.blockedUsers[menc_os3] = {
             reason,
@@ -8278,12 +8292,17 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
         if (!isGroupAdmin) return reply("você precisa ser adm 💔");
         try {
           if (!menc_os2) return reply("Marque alguém 🙄");
-          if (!groupData.blockedUsers || !groupData.blockedUsers[menc_os2] && !groupData.blockedUsers[menc_os2.split('@')[0]]) return reply(`❌ O usuário @${menc_os2.split('@')[0]} não está bloqueado no grupo!`, {
-            mentions: [menc_os2]
-          });
-          if (!delete groupData.blockedUsers[menc_os2]) {
-            delete groupData.blockedUsers[menc_os2.split('@')[0]];
+          if (!groupData.blockedUsers) {
+            return reply(`ℹ️ Não há usuários bloqueados neste grupo.`);
           }
+          const userToUnblock = groupData.blockedUsers[menc_os2] ? menc_os2 : 
+                               groupData.blockedUsers[menc_os2.split('@')[0]] ? menc_os2.split('@')[0] : null;
+          if (!userToUnblock) {
+            return reply(`❌ O usuário @${menc_os2.split('@')[0]} não está bloqueado no grupo!`, {
+              mentions: [menc_os2]
+            });
+          }
+          delete groupData.blockedUsers[userToUnblock];
           fs.writeFileSync(groupFile, JSON.stringify(groupData, null, 2));
           await reply(`✅ Usuário @${menc_os2.split('@')[0]} desbloqueado no grupo!`, {
             mentions: [menc_os2]
