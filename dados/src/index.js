@@ -8402,6 +8402,68 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
         }
         ;
         break;
+
+      case 'figurinhas':
+      case 'stickerpack':
+      case 'packfig':
+        try {
+          if (!q) return reply(`🎨 *Pack de Figurinhas*\n\n📝 Use: ${prefix}figurinhas [1-30]\n\n💡 *Exemplo:* ${prefix}figurinhas 10\n\n🔢 Escolha quantas figurinhas você quer no pack (mínimo 1, máximo 30)`);
+          
+          const quantidade = parseInt(q);
+          
+          if (isNaN(quantidade) || quantidade < 1 || quantidade > 30) {
+            return reply('❌ Número inválido! Escolha entre 1 e 30 figurinhas.');
+          }
+          
+          await reply(`🎨 Criando pack com ${quantidade} figurinha${quantidade > 1 ? 's' : ''}...\n⏳ Aguarde um momento...`);
+          
+          const stickers = [];
+          const usedNumbers = new Set();
+          
+          for (let i = 0; i < quantidade; i++) {
+            let randomNum;
+            do {
+              randomNum = Math.floor(Math.random() * 8051);
+            } while (usedNumbers.has(randomNum));
+            
+            usedNumbers.add(randomNum);
+            
+            stickers.push({
+              sticker: { 
+                url: `https://raw.githubusercontent.com/badDevelopper/Testfigu/main/fig (${randomNum}).webp` 
+              },
+              emojis: ['🎨', '✨'],
+              accessibilityLabel: `Figurinha ${i + 1}`,
+              isLottie: false,
+              isAnimated: false
+            });
+          }
+          
+          const coverStickerNum = Math.floor(Math.random() * 8051);
+          const coverResponse = await axios.get(`https://raw.githubusercontent.com/badDevelopper/Testfigu/main/fig (${coverStickerNum}).webp`, {
+            responseType: 'arraybuffer'
+          });
+
+          const coverBuffer = Buffer.from(coverResponse.data);
+          
+          await nazu.sendMessage(from, {
+            stickerPack: {
+              name: `Pack Aleatório (${quantidade})`,
+              publisher: `By ${nomebot}`,
+              description: `Pack com ${quantidade} figurinhas aleatórias criado especialmente para você!`,
+              cover: coverBuffer,
+              stickers: stickers
+            }
+          }, {
+            quoted: info
+          });
+          
+        } catch (e) {
+          console.error('Erro no comando figurinhas:', e);
+          await reply("🐝 Oh não! Aconteceu um errinho ao criar o pack de figurinhas. Tente de novo daqui a pouquinho, por favor! 🥺");
+        }
+        break;
+        
       case 'mention':
         try {
           if (!isGroup) return reply("isso so pode ser usado em grupo 💔");
