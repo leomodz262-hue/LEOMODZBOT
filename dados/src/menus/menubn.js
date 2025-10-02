@@ -25,6 +25,7 @@ ${middleBorder}${menuItemIcon}${prefix}eununca
 ${middleBorder}${menuItemIcon}${prefix}vab
 ${middleBorder}${menuItemIcon}${prefix}chance
 ${middleBorder}${menuItemIcon}${prefix}quando
+${middleBorder}${menuItemIcon}${prefix}sorte
 ${middleBorder}${menuItemIcon}${prefix}casal
 ${middleBorder}${menuItemIcon}${prefix}shipo
 ${middleBorder}${menuItemIcon}${prefix}sn

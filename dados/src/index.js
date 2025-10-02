@@ -10460,6 +10460,53 @@ ${isPositive ? '🎉 O destino sorri para você!' : '😅 Mas não desista dos s
           await reply("🎱 A bola 8 travou! Tenta de novo! �");
         }
         break;
+      case 'sorte':
+        try {
+          if (!isGroup) return reply("🍀 Esse comando só funciona em grupos! Chama a galera pra testar a sorte! ✨👥");
+          if (!isModoBn) return reply('❌ O modo brincadeira está desativado nesse grupo! Hora de liberar a diversão! 🎉🎲');
+          
+          const usuario = menc_os2 || sender;
+          const nome = menc_os2 ? menc_os2.split('@')[0] : pushname;
+          const nivelSorte = Math.floor(Math.random() * 101);
+          
+          const comentarios = [
+            'Os astros foram consultados...', 'A fortuna foi analisada...', 'O destino revelou...',
+            'As energias cósmicas mostram...', 'O universo sussurrou...', 'A roda da fortuna girou...'
+          ];
+          const comentario = comentarios[Math.floor(Math.random() * comentarios.length)];
+          
+          const statusSorte = nivelSorte >= 90 ? '🌟 SORTE LENDÁRIA!' : 
+                            nivelSorte >= 75 ? '🍀 Super sortudo!' : 
+                            nivelSorte >= 60 ? '✨ Boa sorte!' : 
+                            nivelSorte >= 40 ? '🤞 Sorte média!' : 
+                            nivelSorte >= 20 ? '😅 Sorte baixa...' : '💀 Azar total!';
+          
+          const dicas = [
+            'Aposte na loteria hoje!', 'Evite gatos pretos!', 'Use algo verde!', 'Faça um pedido!',
+            'Procure trevos de 4 folhas!', 'Cuidado com espelhos quebrados!', 'Jogue sal por cima do ombro!',
+            'Vista algo amarelo!', 'Evite passar debaixo de escadas!', 'Faça uma simpatia!'
+          ];
+          const dica = dicas[Math.floor(Math.random() * dicas.length)];
+          
+          await reply(`🔮 *${comentario}*
+
+🍀 **MEDIDOR DE SORTE** 🍀
+👤 *Pessoa:* ${nome}
+
+🎯 **Nível de sorte:** *${nivelSorte}%*
+
+${statusSorte}
+
+💡 *Dica do dia:* ${dica}
+
+${nivelSorte >= 70 ? '🎉 Hoje é seu dia de sorte!' : nivelSorte >= 40 ? '🤔 Cuidado com as decisões!' : '😬 Melhor ficar em casa hoje!'}`, {
+            mentions: menc_os2 ? [menc_os2] : []
+          });
+        } catch (e) {
+          console.error(e);
+          await reply("🍀 O trevo de 4 folhas fugiu! Tenta de novo! 🏃‍♂️💨");
+        }
+        break;
       case 'admins':
       case 'admin':
       case 'adm':
