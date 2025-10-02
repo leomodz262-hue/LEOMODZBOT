@@ -10287,27 +10287,63 @@ Exemplos:
         ;
       case 'chance':
         try {
-          if (!isGroup) return reply("Isso só pode ser usado em grupo 💔");
-          if (!isModoBn) return reply('❌ O modo brincadeira não está ativo nesse grupo.');
-          if (!q) return reply(`Digite algo para eu calcular a chance! Exemplo: ${prefix}chance chover hoje`);
+          if (!isGroup) return reply("🎮 Ops! Esse comando só funciona em grupos! Chama a galera! 👥�");
+          if (!isModoBn) return reply('❌ O modo brincadeira está off nesse grupo! Pede pro admin ativar a diversão! 🎉');
+          if (!q) return reply(`🎲 Me conta algo para eu calcular as chances! 📊
+
+📝 *Exemplo:* ${prefix}chance chover pizza hoje
+🚀 *Exemplo:* ${prefix}chance eu virar milionário
+💖 *Exemplo:* ${prefix}chance encontrar o amor`);
           const chance = Math.floor(Math.random() * 101);
-          await reply(`📊 A chance de "${q}" acontecer é: *${chance}%*!`);
+          const emojis = ['🎯', '📊', '🎲', '✨', '🔮', '🍀', '🎆'];
+          const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+          const comentarios = [
+            'As estrelas sussurraram...', 'Minha bola de cristal revelou...', 'Calculei usando matemática quântica...', 
+            'Consultei os oráculos...', 'Analisei todas as possibilidades...', 'O universo me contou...'
+          ];
+          const comentario = comentarios[Math.floor(Math.random() * comentarios.length)];
+          await reply(`${emoji} *${comentario}*
+
+🎯 A chance de "${q}" acontecer é: *${chance}%*!
+
+${chance >= 80 ? '🚀 Uau! Apostaria minhas fichas nisso!' : chance >= 60 ? '😎 Chances promissoras!' : chance >= 40 ? '🤔 Meio termo, pode rolar!' : chance >= 20 ? '😅 Hmm... complicado!' : '😂 Melhor sonhar com outra coisa!'}`);
         } catch (e) {
           console.error(e);
-          await reply("Ocorreu um erro 💔");
+          await reply("😵 Minha bola de cristal bugou! Tenta de novo! 🔮�");
         }
         break;
       case 'quando':
         try {
-          if (!isGroup) return reply("Isso só pode ser usado em grupo 💔");
-          if (!isModoBn) return reply('❌ O modo brincadeira não está ativo nesse grupo.');
-          if (!q) return reply('Digite algo para eu prever quando vai acontecer! Exemplo: ' + prefix + 'quando vou ficar rico');
-          const tempos = ['hoje', 'amanhã', 'na próxima semana', 'no próximo mês', 'no próximo ano', 'nunca'];
+          if (!isGroup) return reply("🕰️ Esse comando só funciona em grupos! Vem com a galera! �✨");
+          if (!isModoBn) return reply('❌ O modo brincadeira está dormindo nesse grupo! Acorda ele! 😴🎉');
+          if (!q) return reply(`🔮 Me conta o que você quer que eu preveja! 🌠
+
+📝 *Exemplos:*
+• ${prefix}quando vou ficar rico
+• ${prefix}quando vou encontrar o amor
+• ${prefix}quando vou viajar
+• ${prefix}quando vou ser famoso`);
+          const tempos = [
+            'hoje à noite 🌙', 'amanhã de manhã 🌅', 'na próxima semana 📅', 
+            'no próximo mês 🌕', 'no próximo ano 🎆', 'em 2025 🚀',
+            'quando você menos esperar ✨', 'em uma terça-feira chuvosa 🌧️',
+            'depois do carnaval 🎡', 'nunca 😅', 'já aconteceu e você não viu 🤯',
+            'numa sexta-feira 13 😈', 'quando os santos ajudarem 😇'
+          ];
           const tempo = tempos[Math.floor(Math.random() * tempos.length)];
-          await reply(`🕒 "${q}" vai acontecer: *${tempo}*!`);
+          const prefixos = [
+            '🔮 Minha visão revela que', '✨ As energias indicam que', '🌠 Consultei as estrelas e',
+            '💫 O universo sussurra que', '🧙‍♂️ Pelos poderes que me foram concedidos'
+          ];
+          const prefixo = prefixos[Math.floor(Math.random() * prefixos.length)];
+          await reply(`${prefixo}...
+
+�️ "${q}" vai acontecer: *${tempo}*!
+
+${tempo.includes('nunca') ? '😂 Brincadeira! Nunca desista dos seus sonhos!' : '🍀 Boa sorte na espera!'}`);
         } catch (e) {
           console.error(e);
-          await reply("Ocorreu um erro 💔");
+          await reply("🔮 Minha máquina do tempo pifou! Tenta de novo! ⏰�");
         }
         break;
       case 'casal':
@@ -10328,7 +10364,16 @@ Exemplos:
           ;
           const shipLevel = Math.floor(Math.random() * 101);
           const chance = Math.floor(Math.random() * 101);
-          await reply(`💕 *Casal do momento* 💕\n@${membro1.split('@')[0]} + @${membro2.split('@')[0]}\n\n🌟 Nível de ship: *${shipLevel}%*\n🎯 Chance de dar certo: *${chance}%*`, {
+          const comentarios = [
+            'Cupido acabou de atirar!', 'O amor está no ar!', 'Combinação perfeita detectada!',
+            'Ship aprovado pela comunidade!', 'Quimica confirmada!', 'Casal goals incoming!'
+          ];
+          const comentario = comentarios[Math.floor(Math.random() * comentarios.length)];
+          const statusShip = shipLevel >= 80 ? '🔥 SHIP INCENDIÁRIO!' : 
+                           shipLevel >= 60 ? '😍 Ship promissor!' : 
+                           shipLevel >= 40 ? '😊 Rolou uma química!' : 
+                           shipLevel >= 20 ? '🤔 Meio forçado...' : '😅 Só na amizade!';
+          await reply(`💘 *${comentario}* 💘\n\n👑 **CASAL DO MOMENTO** �\n@${membro1.split('@')[0]} ❤️ @${membro2.split('@')[0]}\n\n� **Nível de ship:** *${shipLevel}%*\n🎯 **Chance de dar certo:** *${chance}%*\n\n${statusShip}\n\n${chance >= 70 ? '🎉 Já podem marcar o casamento!' : chance >= 50 ? '👀 Vale a pena investir!' : '😂 Melhor ficar só na amizade!'}`, {
             mentions: [membro1, membro2]
           });
         } catch (e) {
@@ -10354,7 +10399,19 @@ Exemplos:
           ;
           const shipLevel = Math.floor(Math.random() * 101);
           const chance = Math.floor(Math.random() * 101);
-          await reply(`💞 *Ship perfeito* 💞\n@${menc_os2.split('@')[0]} + @${par.split('@')[0]}\n\n🌟 Nível de ship: *${shipLevel}%*\n🎯 Chance de dar certo: *${chance}%*`, {
+          const nomeShip = `${menc_os2.split('@')[0].slice(0,3)}${par.split('@')[0].slice(-3)}`;
+          const comentarios = [
+            'Encontrei o par perfeito!', 'Match feito no céu!', 'Combinação aprovada!',
+            'Ship name já tá pronto!', 'Quero ver essa dupla!', 'Shippando forte!'
+          ];
+          const comentario = comentarios[Math.floor(Math.random() * comentarios.length)];
+          const emojisShip = ['💘', '💖', '💝', '💞', '💕', '❤️', '💓'];
+          const emoji = emojisShip[Math.floor(Math.random() * emojisShip.length)];
+          const statusShip = shipLevel >= 85 ? '🔥 SHIP LENDÁRIO!' : 
+                           shipLevel >= 70 ? '🎆 Ship de qualidade!' : 
+                           shipLevel >= 50 ? '😊 Tem potencial!' : 
+                           shipLevel >= 30 ? '🤔 Pode rolar...' : '😅 Força demais!';
+          await reply(`${emoji} *${comentario}* ${emoji}\n\n👑 **SHIP SELECIONADO** �\n@${menc_os2.split('@')[0]} ✨ @${par.split('@')[0]}\n\n💫 **Ship name:** *${nomeShip}*\n� **Nível de ship:** *${shipLevel}%*\n🎯 **Compatibilidade:** *${chance}%*\n\n${statusShip}\n\n${chance >= 75 ? '🎉 Relacionamento dos sonhos!' : chance >= 50 ? '👀 Merece uma chance!' : '😂 Melhor só shippar mesmo!'}`, {
             mentions: [menc_os2, par]
           });
         } catch (e) {
@@ -10364,14 +10421,43 @@ Exemplos:
         break;
       case 'sn':
         try {
-          if (!isGroup) return reply("Isso só pode ser usado em grupo 💔");
-          if (!isModoBn) return reply('❌ O modo brincadeira não está ativo nesse grupo.');
-          if (!q) return reply('Faça uma pergunta! Exemplo: ' + prefix + 'sn Vou ganhar na loteria?');
-          const resposta = Math.random() > 0.5 ? 'Sim' : 'Não';
-          await reply(`🎯 ${resposta}!`);
+          if (!isGroup) return reply("🎱 Esse comando só funciona em grupos! Chama todo mundo! �✨");
+          if (!isModoBn) return reply('❌ O modo brincadeira está pausado nesse grupo! Hora de ativar a diversão! 🎉');
+          if (!q) return reply(`🎱 Faça uma pergunta para o oráculo! 🔮
+
+📝 *Exemplos:*
+• ${prefix}sn Vou ganhar na loteria?
+• ${prefix}sn Devo confesar meus sentimentos?
+• ${prefix}sn Vale a pena investir em Bitcoin?
+• ${prefix}sn Vou passar na prova?`);
+          const respostasPositivas = [
+            'Sim! 🎉', 'Claro que sim! 😎', 'Com certeza! ✨', 'Pode apostar! 🎯',
+            'Sem dúvida! 👍', 'Obviamente! 😌', 'É isso aí! 🚀', 'Vai dar certo! 🍀'
+          ];
+          const respostasNegativas = [
+            'Não! 😅', 'Nem pensar! 😂', 'Esquece! 🤭', 'Nada a ver! 🙄',
+            'De jeito nenhum! 😑', 'Que nada! 😒', 'Não rola! 😶', 'Melhor não! 😬'
+          ];
+          const isPositive = Math.random() > 0.5;
+          const resposta = isPositive ? 
+            respostasPositivas[Math.floor(Math.random() * respostasPositivas.length)] :
+            respostasNegativas[Math.floor(Math.random() * respostasNegativas.length)];
+          
+          const confianca = Math.floor(Math.random() * 30) + 70; // 70-100%
+          const emoji = isPositive ? '🎆' : '💔';
+          
+          await reply(`� **ORÁCULO RESPONDE** 🎱
+
+🤔 *Pergunta:* "${q}"
+
+${emoji} **Resposta:** *${resposta}*
+
+📊 *Confiança:* ${confianca}%
+
+${isPositive ? '🎉 O destino sorri para você!' : '😅 Mas não desista dos seus sonhos!'}`);
         } catch (e) {
           console.error(e);
-          await reply("Ocorreu um erro 💔");
+          await reply("🎱 A bola 8 travou! Tenta de novo! �");
         }
         break;
       case 'admins':
