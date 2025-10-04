@@ -165,7 +165,7 @@ async function search(query, apiKey) {
     return {
       ok: true,
       criador: 'Hiudy',
-      data: response.data.data
+      data: response.data.data.data
     };
 
   } catch (error) {
