@@ -8180,13 +8180,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           const timestamp = Date.now();
           const speedConverted = (timestamp - info.messageTimestamp * 1000) / 1000;
           const uptimeBot = formatUptime(process.uptime());
-          const ramBotProcessoMb = (process.memoryUsage().rss / 1024 / 1024).toFixed(2);
-          const getGroups = await nazu.groupFetchAllParticipating();
-          const totalGrupos = Object.keys(getGroups).length;
-          let totalUsers = 0;
-          Object.values(getGroups).forEach(group => {
-            totalUsers += group.participants.length;
-          });
+          
           let statusEmoji = '🟢';
           let statusTexto = 'Excelente';
           if (speedConverted > 2) {
@@ -8201,42 +8195,19 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
             statusEmoji = '🔴';
             statusTexto = 'Ruim';
           }
-          let mensagem = `
-╭━━「 ${statusEmoji} *STATUS DO BOT* ${statusEmoji} 」
-┊
-┊ 🤖 *Informações do Bot*
-┊ ├ 📛 Nome: *${nomebot}*
-┊ ├ 🔰 Versão: *${botVersion}*
-┊ ├ 🔑 Prefixo: *${prefixo}*
-┊ ├ 👑 Dono: *${nomedono}*
-┊ ├ 📊 Grupos: *${totalGrupos}*
-┊ ├ 👤 Usuarios: *${totalUsers}*
-┊ ╰ ⏱️ Online há: *${uptimeBot}*
-┊
-┊ 📡 *Conexão* ${statusEmoji}
-┊ ├ 📶 Latência: *${speedConverted.toFixed(3)}s*
-┊ ╰ 📊 Status: *${statusTexto}*
-┊
-┊ 📊 *Recursos*
-┊ ╰ 💾 RAM Usada: *${ramBotProcessoMb} MB*
-┊
-╰━━「 ${nomebot} 」`;
           
-          mensagem = mensagem.trim();
-          let ppimg = "";
-          try {
-            ppimg = await nazu.profilePictureUrl(botNumber, 'image');
-          } catch {
-            ppimg = 'https://raw.githubusercontent.com/nazuninha/uploads/main/outros/1753966446765_oordgn.bin';
-          }
-          ;
-          const pingImageUrl = await banner.Ping("", ppimg, nomebot, speedConverted.toFixed(3), uptimeBot, totalGrupos, totalUsers);
-          await nazu.sendMessage(from, {
-            image: pingImageUrl,
-            caption: mensagem
-          }, {
-            quoted: info
-          });
+          const mensagem = `╭─「 ⚡ *STATUS* ⚡ 」
+┊
+┊ 📡 *Conexão*
+┊ ├─ ${statusEmoji} Latência: *${speedConverted.toFixed(3)}s*
+┊ └─ 📊 Status: *${statusTexto}*
+┊
+┊ ⏱️ *Tempo Online*
+┊ └─ 🟢 Uptime: *${uptimeBot}*
+┊
+╰─「 ${nomebot} 」`;
+          
+          await reply(mensagem);
         } catch (e) {
           console.error("Erro no comando ping:", e);
           await reply("❌ Ocorreu um erro ao processar o comando ping");
@@ -10681,26 +10652,8 @@ ${nivelSorte >= 70 ? '🎉 Hoje é seu dia de sorte!' : nivelSorte >= 40 ? '🤔
           }
           ;
           const perfilText = `📋 Perfil de ${targetName} 📋\n\n👤 *Nome*: ${pushname || 'Desconhecido'}\n📱 *Número*: ${targetId}\n📜 *Bio*: ${bio}${bioSetAt ? `\n🕒 *Bio atualizada em*: ${bioSetAt}` : ''}\n💰 *Valor do Pacote*: ${pacoteValue} 🫦\n😸 *Humor*: ${randomHumor}\n\n🎭 *Níveis*:\n  • Puta: ${levels.puta}%\n  • Gado: ${levels.gado}%\n  • Corno: ${levels.corno}%\n  • Sortudo: ${levels.sortudo}%\n  • Carisma: ${levels.carisma}%\n  • Rico: ${levels.rico}%\n  • Gostosa: ${levels.gostosa}%\n  • Feio: ${levels.feio}%`.trim();
-          const userStatus = isOwner ? 'Meu dono' : isPremium ? 'Usuario premium' : isGroupAdmin ? 'Admin do grupo' : 'Membro comum';
-          const PosAtivo = groupData.contador.sort((a, b) => (a.figu == undefined ? a.figu = 0 : a.figu + a.msg + a.cmd) < (b.figu == undefined ? b.figu = 0 : b.figu + b.cmd + b.msg) ? 0 : -1).findIndex(item => item.id === sender) + 1;
-          let perfilBanner = null;
-          try {
-            perfilBanner = await banner.Perfil(
-              profilePic,
-              pushname || targetName,
-              targetId,
-              bio,
-              randomHumor,
-              pacoteValue,
-              levels,
-              userStatus
-            );
-          } catch (be) { console.error('Erro ao gerar banner Perfil:', be); }
-          if (perfilBanner) {
-            await nazu.sendMessage(from, { image: perfilBanner, caption: perfilText, mentions: [target] }, { quoted: info });
-          } else {
-            await nazu.sendMessage(from, { image: { url: profilePic }, caption: perfilText, mentions: [target] }, { quoted: info });
-          }
+          
+          await nazu.sendMessage(from, { image: { url: profilePic }, caption: perfilText, mentions: [target] }, { quoted: info });
         } catch (error) {
           console.error('Erro ao processar comando perfil:', error);
           await reply('Ocorreu um erro ao gerar o perfil 💔');
