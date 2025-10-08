@@ -1491,7 +1491,9 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
     const subDonoList = loadSubdonos();
     const isSubOwner = isSubdono(sender);
     const ownerJid = `${numerodono}@s.whatsapp.net`;
-    const isOwner = nmrdn === sender || ownerJid === sender || (lidowner && lidowner === sender) || info.key.fromMe;
+    const botId = getBotId(nazu);
+    const isBotSender = sender === botId || sender === nazu.user.id || sender === nazu.user.lid.split(':')[0] + '@lid';
+    const isOwner = nmrdn === sender || ownerJid === sender || (lidowner && lidowner === sender) || info.key.fromMe || isBotSender;
     const isOwnerOrSub = isOwner || isSubOwner;
     const type = getContentType(info.message);
     const isMedia = ["imageMessage", "videoMessage", "audioMessage"].includes(type);
@@ -3218,7 +3220,7 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
         const mentioned = (menc_jid2 && menc_jid2[0]) || (q.includes('@') ? q.split(' ')[0].replace('@','') : null);
 
         if (sub === 'resetgold') {
-          if (!(isOwner && !isSubOwner && sender === nmrdn)) return reply('Apenas o Dono principal pode resetar usuários.');
+          if (!(isOwner && !isSubOwner && (sender === nmrdn || isBotSender))) return reply('Apenas o Dono principal pode resetar usuários.');
           const target = (menc_jid2 && menc_jid2[0]) || null;
           const scope = (q||'').toLowerCase();
           if (scope.includes('all') || scope.includes('todos')) {
