@@ -112,7 +112,6 @@ async function mp3(url, quality = 128, apiKey) {
         'X-API-Key': apiKey
       },
       timeout: 120000,
-      responseType: 'arraybuffer',
       maxContentLength: Infinity,
       maxBodyLength: Infinity
     });
@@ -151,8 +150,7 @@ async function mp4(url, quality = 360, apiKey) {
         'Content-Type': 'application/json',
         'X-API-Key': apiKey
       },
-      timeout: 120000, // ⏱️ 2min
-      responseType: 'arraybuffer',
+      timeout: 120000,
       maxContentLength: Infinity,
       maxBodyLength: Infinity
     });
