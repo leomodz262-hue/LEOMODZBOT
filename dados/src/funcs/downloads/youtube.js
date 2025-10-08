@@ -119,7 +119,7 @@ async function mp3(url, quality = 128, apiKey) {
 
     return {
       ok: true,
-      buffer: Buffer.from(response.data),
+      buffer: Buffer.from(response.data.data.buffer),
       filename: `audio_${Date.now()}_${quality}kbps.mp3`,
       quality: `${quality}kbps`
     };
@@ -159,7 +159,7 @@ async function mp4(url, quality = 360, apiKey) {
 
     return {
       ok: true,
-      buffer: Buffer.from(response.data),
+      buffer: Buffer.from(response.data.data.buffer),
       filename: `video_${Date.now()}_${quality}p.mp4`,
       quality: `${quality}p`
     };
