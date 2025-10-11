@@ -2913,7 +2913,6 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
             jSoNzIn.marcou_sua_mensagem = jsonO.participant == getBotId(nazu);
           }
           ;
-          try {
             if (!KeyCog) {
               await nazu.sendMessage(nmrdn, {
                 text: '🤖 *Sistema de IA desativado*\n\n😅 O sistema de IA está desativado porque a API key não foi configurada.\n\n⚙️ Para configurar, use o comando: `!apikey SUA_API_KEY`\n📞 Suporte: wa.me/553399285117'
@@ -2932,12 +2931,6 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
             }
             
             console.log('✅ Assistente processado com sucesso');
-          } catch (assistError) {
-            console.error('❌ Erro no processamento do assistente:', assistError.message);
-            await nazu.sendMessage(nmrdn, {
-              text: '🤖 *Erro no sistema de IA*\n\n😅 Desculpe, ocorreu um erro ao processar sua solicitação. Tente novamente mais tarde.\n\n🔧 Se o problema persistir, verifique sua API key ou entre em contato com o suporte.'
-            });
-          }
           
           if (respAssist.apiKeyInvalid) {
             await reply(respAssist.message || '🤖 Sistema de IA temporariamente indisponível. Tente novamente mais tarde.');
