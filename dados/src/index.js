@@ -1397,7 +1397,16 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
     debug,
     lidowner
   } = config;
-  var KeyCog = config.apikey || false;
+  var KeyCog = config.apikey || '';
+  
+  if (!KeyCog || KeyCog.trim() === '') {
+    console.warn('⚠️ API key não configurada. Sistema de IA estará desativado.');
+    KeyCog = false;
+  } else if (KeyCog.length < 10) {
+    console.warn('⚠️ API key parece inválida (muito curta). Sistema de IA pode não funcionar.');
+  } else {
+    console.log('✅ API key carregada com sucesso');
+  }
   const menusModule = await import(new URL('./menus/index.js', import.meta.url));
   const menus = await menusModule.default;
   const {
@@ -2904,9 +2913,31 @@ async function NazuninhaBotExec(nazu, info, store, groupCache, messagesCache) {
             jSoNzIn.marcou_sua_mensagem = jsonO.participant == getBotId(nazu);
           }
           ;
-          const respAssist = await ia.makeAssistentRequest({
-            mensagens: [jSoNzIn]
-          }, pathz.join(__dirname, 'index.js'), KeyCog || null, nazu, nmrdn);
+          try {
+            if (!KeyCog) {
+              await nazu.sendMessage(nmrdn, {
+                text: '🤖 *Sistema de IA desativado*\n\n😅 O sistema de IA está desativado porque a API key não foi configurada.\n\n⚙️ Para configurar, use o comando: `!apikey SUA_API_KEY`\n📞 Suporte: wa.me/553399285117'
+              });
+              return;
+            }
+            
+            console.log('🤖 Processando mensagem de assistente...');
+            const respAssist = await ia.makeAssistentRequest({
+              mensagens: [jSoNzIn]
+            }, pathz.join(__dirname, 'index.js'), KeyCog, nazu, nmrdn);
+            
+            if (respAssist.erro === 'Sistema de IA temporariamente desativado') {
+              console.log('🚨 Sistema de IA temporariamente desativado devido a problemas de API key.');
+              return;
+            }
+            
+            console.log('✅ Assistente processado com sucesso');
+          } catch (assistError) {
+            console.error('❌ Erro no processamento do assistente:', assistError.message);
+            await nazu.sendMessage(nmrdn, {
+              text: '🤖 *Erro no sistema de IA*\n\n😅 Desculpe, ocorreu um erro ao processar sua solicitação. Tente novamente mais tarde.\n\n🔧 Se o problema persistir, verifique sua API key ou entre em contato com o suporte.'
+            });
+          }
           
           if (respAssist.apiKeyInvalid) {
             await reply(respAssist.message || '🤖 Sistema de IA temporariamente indisponível. Tente novamente mais tarde.');
