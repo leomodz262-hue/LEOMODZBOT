@@ -216,16 +216,6 @@ async function handleGroupParticipantsUpdate(NazunaSock, inf) {
                         removalReasons.push(`@${participant.split('@')[0]} (lista negra do grupo: ${groupSettings.blacklist[participant].reason})`);
                         continue;
                     }
-                    if (groupSettings.antifake && !['55', '35'].includes(participant.substring(0, 2))) {
-                        membersToRemove.push(participant);
-                        removalReasons.push(`@${participant.split('@')[0]} (número não permitido)`);
-                        continue;
-                    }
-                    if (groupSettings.antipt && participant.substring(0, 3) === '351') {
-                        membersToRemove.push(participant);
-                        removalReasons.push(`@${participant.split('@')[0]} (número de Portugal)`);
-                        continue;
-                    }
                     if (groupSettings.bemvindo) {
                         membersToWelcome.push(participant);
                     }

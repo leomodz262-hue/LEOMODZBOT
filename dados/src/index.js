@@ -8039,8 +8039,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
             ["AntiStatus", !!groupData.antistatus],
             ["AntiDelete", !!groupData.antidel],
             ["AntiSticker", !!(groupData.antifig && groupData.antifig.enabled)],
-            ["AntiFake", !!groupData.antifake],
-            ["AntiPT", !!groupData.antipt]
           ];
           const resFlags = [
             ["AutoDL", !!groupData.autodl],
@@ -9260,34 +9258,6 @@ case 'divulgar':
           }
           fs.writeFileSync(__dirname + '/../database/cmdlimit.json', JSON.stringify(cmdLimitData, null, 2));
           await reply(`✅ Limite de comandos ${cmdLimitData[from].enabled ? `definido para ${cmdLimitData[from].limit} por dia` : 'desativado'}!`);
-        } catch (e) {
-          console.error(e);
-          await reply("Ocorreu um erro 💔");
-        }
-        break;
-      case 'antipt':
-        try {
-          if (!isGroup) return reply("Isso só pode ser usado em grupo 💔");
-          if (!isGroupAdmin) return reply("Você precisa ser adm 💔");
-          if (!isBotAdmin) return reply("Eu preciso ser adm para isso 💔");
-          
-          groupData.antipt = !groupData.antipt;
-          fs.writeFileSync(groupFile, JSON.stringify(groupData, null, 2));
-          await reply(`✅ AntiPT ${groupData.antipt ? 'ativado' : 'desativado'}! Membros de Portugal serão banidos.`);
-        } catch (e) {
-          console.error(e);
-          await reply("Ocorreu um erro 💔");
-        }
-        break;
-      case 'antifake':
-        try {
-          if (!isGroup) return reply("Isso só pode ser usado em grupo 💔");
-          if (!isGroupAdmin) return reply("Você precisa ser adm 💔");
-          if (!isBotAdmin) return reply("Eu preciso ser adm para isso 💔");
-          
-          groupData.antifake = !groupData.antifake;
-          fs.writeFileSync(groupFile, JSON.stringify(groupData, null, 2));
-          await reply(`✅ Antifake ${groupData.antifake ? 'ativado' : 'desativado'}! Membros de fora do Brasil/Portugal serão banidos.`);
         } catch (e) {
           console.error(e);
           await reply("Ocorreu um erro 💔");
