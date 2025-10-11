@@ -304,7 +304,6 @@ async function cleanOldFiles() {
       { path: path.join(process.cwd(), '.github'), type: 'dir', name: '.github' },
       { path: path.join(process.cwd(), '.npm'), type: 'dir', name: '.npm' },
       { path: path.join(process.cwd(), 'node_modules'), type: 'dir', name: 'node_modules' },
-      { path: path.join(process.cwd(), 'package.json'), type: 'file', name: 'package.json' },
       { path: path.join(process.cwd(), 'package-lock.json'), type: 'file', name: 'package-lock.json' },
       { path: path.join(process.cwd(), 'README.md'), type: 'file', name: 'README.md' },
     ];
