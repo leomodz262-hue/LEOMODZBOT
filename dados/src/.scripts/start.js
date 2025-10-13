@@ -175,39 +175,12 @@ function setupGracefulShutdown() {
   }
 }
 
-
-async function validateConfig() {
-  try {
-    if (!fsSync.existsSync(CONFIG_PATH)) {
-      throw new Error('Arquivo de configuração não encontrado');
-    }
-    
-    const configContent = await fs.readFile(CONFIG_PATH, 'utf8');
-    const config = JSON.parse(configContent);
-    
-    // Validate required fields
-    const requiredFields = ['owner', 'prefix', 'sessionName'];
-    for (const field of requiredFields) {
-      if (!config[field]) {
-        throw new Error(`Campo obrigatório '${field}' não encontrado na configuração`);
-      }
-    }
-    
-    logger.debug('✅ Configuração válida');
-    return true;
-  } catch (error) {
-    logger.error(`❌ Erro ao validar configuração: ${error.message}`);
-    return false;
-  }
-}
-
 async function checkPrerequisites() {
   const startTime = performance.now();
   logger.info('🔍 Verificando pré-requisitos...');
   
   let allChecksPassed = true;
   
-  // Check configuration
   if (!fsSync.existsSync(CONFIG_PATH)) {
     aviso('⚠️ Arquivo de configuração (config.json) não encontrado! Iniciando configuração automática...');
     try {
@@ -222,11 +195,8 @@ async function checkPrerequisites() {
       mensagem('📝 Tente executar manualmente: npm run config');
       allChecksPassed = false;
     }
-  } else if (!(await validateConfig())) {
-    allChecksPassed = false;
   }
 
-  // Check Node.js modules
   if (!fsSync.existsSync(NODE_MODULES_PATH)) {
     aviso('⚠️ Módulos do Node.js não encontrados! Iniciando instalação automática...');
     try {
