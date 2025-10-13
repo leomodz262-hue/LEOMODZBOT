@@ -299,22 +299,128 @@ async function cleanOldFiles() {
   printMessage('🧹 Limpando arquivos antigos...');
 
   try {
+    // Validate paths before proceeding
+    const validPaths = [
+      process.cwd(),
+      TEMP_DIR,
+      BACKUP_DIR
+    ];
+    
+    for (const pathToCheck of validPaths) {
+      if (!pathToCheck || pathToCheck.includes('..')) {
+        throw new Error(`Caminho inválido detectado: ${pathToCheck}`);
+      }
+    }
+
+    // First check if deletion is necessary for critical files
+    const packageJsonPath = path.join(process.cwd(), 'package.json');
+    const nodeModulesPath = path.join(process.cwd(), 'node_modules');
+    const packageLockPath = path.join(process.cwd(), 'package-lock.json');
+    
+    // Check if package.json exists
+    if (!fsSync.existsSync(packageJsonPath)) {
+      printWarning('⚠️ package.json não encontrado. Verificando se é necessário reinstalar dependências...');
+      
+      // If package.json doesn't exist, we'll need to delete node_modules as well
+      const itemsToDelete = [
+        { path: path.join(process.cwd(), '.git'), type: 'dir', name: '.git' },
+        { path: path.join(process.cwd(), '.github'), type: 'dir', name: '.github' },
+        { path: path.join(process.cwd(), '.npm'), type: 'dir', name: '.npm' },
+        { path: nodeModulesPath, type: 'dir', name: 'node_modules' },
+        { path: packageLockPath, type: 'file', name: 'package-lock.json' },
+        { path: path.join(process.cwd(), 'README.md'), type: 'file', name: 'README.md' },
+      ];
+
+      for (const item of itemsToDelete) {
+        if (fsSync.existsSync(item.path)) {
+          printDetail(`📂 Removendo ${item.name} (necessário devido à ausência de package.json)...`);
+          try {
+            if (item.type === 'dir') {
+              await fs.rm(item.path, { recursive: true, force: true });
+            } else {
+              await fs.unlink(item.path);
+            }
+            printDetail(`✅ ${item.name} removido com sucesso.`);
+          } catch (deleteError) {
+            printWarning(`⚠️ Erro ao remover ${item.name}: ${deleteError.message}`);
+          }
+        }
+      }
+      return;
+    }
+    
+    // If package.json exists, check if dependencies need updating
+    try {
+      // Verify we can read the package.json file
+      await fs.access(packageJsonPath, fsSync.constants.R_OK);
+      const currentPackage = JSON.parse(await fs.readFile(packageJsonPath, 'utf8'));
+      
+      const newPackageJsonPath = path.join(TEMP_DIR, 'package.json');
+      
+      if (fsSync.existsSync(newPackageJsonPath)) {
+        // Verify we can read the new package.json file
+        await fs.access(newPackageJsonPath, fsSync.constants.R_OK);
+        const newPackage = JSON.parse(await fs.readFile(newPackageJsonPath, 'utf8'));
+        
+        // Check if dependencies have changed
+        const currentDeps = JSON.stringify(currentPackage.dependencies || {});
+        const newDeps = JSON.stringify(newPackage.dependencies || {});
+        const currentDevDeps = JSON.stringify(currentPackage.devDependencies || {});
+        const newDevDeps = JSON.stringify(newPackage.devDependencies || {});
+        
+        // Only delete node_modules and package-lock.json if dependencies have changed
+        if (currentDeps !== newDeps || currentDevDeps !== newDevDeps) {
+          printDetail('📦 Dependências alteradas, removendo node_modules e package-lock.json...');
+          
+          if (fsSync.existsSync(nodeModulesPath)) {
+            printDetail(`📂 Removendo node_modules...`);
+            try {
+              await fs.rm(nodeModulesPath, { recursive: true, force: true });
+              printDetail(`✅ node_modules removido com sucesso.`);
+            } catch (deleteError) {
+              printWarning(`⚠️ Erro ao remover node_modules: ${deleteError.message}`);
+            }
+          }
+          
+          if (fsSync.existsSync(packageLockPath)) {
+            printDetail(`📂 Removendo package-lock.json...`);
+            try {
+              await fs.unlink(packageLockPath);
+              printDetail(`✅ package-lock.json removido com sucesso.`);
+            } catch (deleteError) {
+              printWarning(`⚠️ Erro ao remover package-lock.json: ${deleteError.message}`);
+            }
+          }
+        } else {
+          printDetail('✅ Dependências inalteradas, mantendo node_modules e package-lock.json...');
+        }
+      } else {
+        printWarning('⚠️ package.json da versão atual não encontrado no diretório temporário.');
+      }
+    } catch (error) {
+      printWarning(`⚠️ Erro ao verificar dependências: ${error.message}. Mantendo arquivos existentes...`);
+    }
+    
+    // Always delete these files regardless of dependency changes
     const itemsToDelete = [
       { path: path.join(process.cwd(), '.git'), type: 'dir', name: '.git' },
       { path: path.join(process.cwd(), '.github'), type: 'dir', name: '.github' },
       { path: path.join(process.cwd(), '.npm'), type: 'dir', name: '.npm' },
-      { path: path.join(process.cwd(), 'node_modules'), type: 'dir', name: 'node_modules' },
-      { path: path.join(process.cwd(), 'package-lock.json'), type: 'file', name: 'package-lock.json' },
       { path: path.join(process.cwd(), 'README.md'), type: 'file', name: 'README.md' },
     ];
 
     for (const item of itemsToDelete) {
       if (fsSync.existsSync(item.path)) {
         printDetail(`📂 Removendo ${item.name}...`);
-        if (item.type === 'dir') {
-          await fs.rm(item.path, { recursive: true, force: true });
-        } else {
-          await fs.unlink(item.path);
+        try {
+          if (item.type === 'dir') {
+            await fs.rm(item.path, { recursive: true, force: true });
+          } else {
+            await fs.unlink(item.path);
+          }
+          printDetail(`✅ ${item.name} removido com sucesso.`);
+        } catch (deleteError) {
+          printWarning(`⚠️ Erro ao remover ${item.name}: ${deleteError.message}`);
         }
       }
     }
@@ -333,10 +439,15 @@ async function cleanOldFiles() {
         const filePath = path.join(dadosDir, fileToClean);
         if (fsSync.existsSync(filePath)) {
           printDetail(`📂 Removendo arquivo antigo: ${fileToClean}...`);
-          if (fsSync.statSync(filePath).isDirectory()) {
-            await fs.rm(filePath, { recursive: true, force: true });
-          } else {
-            await fs.unlink(filePath);
+          try {
+            if (fsSync.statSync(filePath).isDirectory()) {
+              await fs.rm(filePath, { recursive: true, force: true });
+            } else {
+              await fs.unlink(filePath);
+            }
+            printDetail(`✅ ${fileToClean} removido com sucesso.`);
+          } catch (deleteError) {
+            printWarning(`⚠️ Erro ao remover ${fileToClean}: ${deleteError.message}`);
           }
         }
       }
@@ -637,6 +748,31 @@ async function main() {
         // Verify download was successful before proceeding
         if (!fsSync.existsSync(TEMP_DIR)) {
           throw new Error('Falha ao baixar atualização');
+        }
+      } },
+      { name: 'Verificando necessidade de limpeza de dependências', func: async () => {
+        // Check if we need to clean dependencies before the actual cleaning
+        const packageJsonPath = path.join(process.cwd(), 'package.json');
+        const newPackageJsonPath = path.join(TEMP_DIR, 'package.json');
+        
+        if (fsSync.existsSync(packageJsonPath) && fsSync.existsSync(newPackageJsonPath)) {
+          try {
+            const currentPackage = JSON.parse(await fs.readFile(packageJsonPath, 'utf8'));
+            const newPackage = JSON.parse(await fs.readFile(newPackageJsonPath, 'utf8'));
+            
+            const currentDeps = JSON.stringify(currentPackage.dependencies || {});
+            const newDeps = JSON.stringify(newPackage.dependencies || {});
+            const currentDevDeps = JSON.stringify(currentPackage.devDependencies || {});
+            const newDevDeps = JSON.stringify(newPackage.devDependencies || {});
+            
+            if (currentDeps !== newDeps || currentDevDeps !== newDevDeps) {
+              printDetail('📦 Dependências alteradas detectadas - preparando para reinstalação');
+            } else {
+              printDetail('✅ Dependências inalteradas - mantendo instalação existente');
+            }
+          } catch (error) {
+            printWarning(`⚠️ Erro ao verificar dependências: ${error.message}`);
+          }
         }
       } },
       { name: 'Limpando arquivos antigos', func: cleanOldFiles },
