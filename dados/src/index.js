@@ -368,7 +368,6 @@ const saveCmdNotFoundConfig = (config, action = 'update') => {
       `• Status: ${validatedConfig.enabled ? 'ATIVADO' : 'DESATIVADO'}\n` +
       `• Estilo: ${validatedConfig.style}\n` +
       `• Mensagem: ${validatedConfig.message.substring(0, 50)}${validatedConfig.message.length > 50 ? '...' : ''}\n` +
-      `• Por: ${pushname || 'Unknown'} (${sender})\n` +
       `• Em: ${new Date().toLocaleString('pt-BR')}`;
     
     console.log(logMessage);
@@ -12739,13 +12738,11 @@ ${groupData.rules.length}. ${q}`);
 
       default:
         if (isCmd) {
-          // Check if command not found messages are enabled
           const cmdNotFoundConfig = loadCmdNotFoundConfig();
           if (cmdNotFoundConfig.enabled) {
             const userName = pushname || getUserName(sender);
             const commandName = command || body.trim().slice(groupPrefix.length).split(/ +/).shift().trim();
             
-            // Use safe message formatting with fallback
             const notFoundMessage = formatMessageWithFallback(
               cmdNotFoundConfig.message,
               {
@@ -12761,11 +12758,9 @@ ${groupData.rules.length}. ${q}`);
             try {
               await reply(notFoundMessage);
               
-              // Log the command not found event
               console.log(`🔍 Comando não encontrado: "${commandName}" por ${userName} (${sender}) no grupo ${isGroup ? groupMetadata.subject : 'privado'}`);
             } catch (error) {
               console.error('❌ Erro ao enviar mensagem de comando não encontrado:', error);
-              // Fallback to just react if message sending fails
               await nazu.react('❌', {
                 key: info.key
               });
