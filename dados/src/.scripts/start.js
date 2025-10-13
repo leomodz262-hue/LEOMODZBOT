@@ -306,22 +306,6 @@ async function checkAutoConnect() {
     const files = await fs.readdir(QR_CODE_DIR);
     const hasSession = files.length > 2;
     
-    logger.debug(`📁 Encontrados ${files.length} arquivos no diretório de QR Code. Sessão existente: ${hasSession}`);
-    
-    // Clean up old QR code files if too many exist
-    if (files.length > 10) {
-      logger.warning('🧹 Limpeza de arquivos de QR Code antigos...');
-      try {
-        const oldFiles = files.slice(0, files.length - 5);
-        for (const file of oldFiles) {
-          await fs.unlink(path.join(QR_CODE_DIR, file));
-        }
-        logger.info(`🧹 Removidos ${oldFiles.length} arquivos de QR Code antigos`);
-      } catch (cleanupError) {
-        logger.warning(`⚠️ Erro ao limpar arquivos antigos: ${cleanupError.message}`);
-      }
-    }
-    
     return hasSession;
   } catch (error) {
     logger.error(`❌ Erro ao verificar diretório de QR Code: ${error.message}`);
