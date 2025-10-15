@@ -6844,7 +6844,6 @@ Deseja continuar com a limpeza manual? Isso pode interferir com o sistema autom�
         if (!isOwner) return reply('🚫 Este comando é apenas para o dono do bot!');
         
         const cmdNotFoundConfig = loadCmdNotFoundConfig();
-        const args = body.trim().split(/ +/).slice(1);
         const subcommand = args[0]?.toLowerCase();
         
         if (!subcommand) {
@@ -9817,7 +9816,6 @@ case 'divulgar':
 
         const delay = 500;
         const maxCount = 50;
-        const args = q.trim().split(' ');
         const markAll = args[args.length - 1]?.toLowerCase() === 'all';
         if (markAll) args.pop();
         const count = parseInt(args.pop());
@@ -9973,7 +9971,6 @@ case 'divulgar':
           if (!q) {
             return reply(`📝 Configure o limite de mensagens! Exemplo: ${prefix}limitmessage 5 1m ban\n` + `Formato: ${prefix}limitmessage <quantidade> <tempo> <ação>\n` + `Tempo: s (segundos), m (minutos), h (horas)\n` + `Ação: ban (banimento direto) ou adv (advertências)`);
           }
-          const args = q.trim().split(' ');
           if (args.length !== 3) {
             return reply("  ❌ Formato inválido! Use: " + `${prefix}limitmessage <quantidade> <tempo> <ação>`);
           }
@@ -12494,7 +12491,6 @@ ${groupData.rules.length}. ${q}`);
     if (!isOwner && !isAdmins && !isGroupAdmins) return reply('⚠️ Este comando é apenas para administradores!');
     
     try {
-      const args = text.trim().split(' ');
       const action = args[0]?.toLowerCase();
       
       if (!action || (action !== 'on' && action !== 'off' && action !== 'status' && action !== 'link')) {
