@@ -1,6 +1,7 @@
 // ====== Enhanced Gold System ======
 import fs from 'fs';
 import path from 'path';
+import { loadJsonFile } from '../index.js';
 
 function loadEconomy() {
   try {
