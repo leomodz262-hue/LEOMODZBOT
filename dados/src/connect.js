@@ -234,7 +234,6 @@ async function initializeOptimizedCaches() {
         
         messagesCache = new Map();
         
-        console.log('✅ Sistema de otimização inicializado com sucesso!');
     } catch (error) {
         console.error('❌ Erro ao inicializar sistema de otimização:', error.message);
         
@@ -244,7 +243,6 @@ async function initializeOptimizedCaches() {
         });
         messagesCache = new Map();
         
-        console.log('⚠️ Usando caches tradicionais como fallback');
     }
 }
 
@@ -260,7 +258,6 @@ setInterval(() => {
     if (messagesCache && messagesCache.size > 5000) {
         const keysToDelete = Array.from(messagesCache.keys()).slice(0, messagesCache.size - 2000);
         keysToDelete.forEach(key => messagesCache.delete(key));
-        console.log(`🧹 Cache de mensagens limpo: ${keysToDelete.length} entradas removidas`);
     }
 }, 600000);
 
@@ -397,7 +394,6 @@ async function handleGroupParticipantsUpdate(NazunaSock, inf) {
                     }
                 }
                 if (membersToRemove.length > 0) {
-                    console.log(`[MODERAÇÃO] Removendo ${membersToRemove.length} membros do grupo ${groupMetadata.subject}.`);
                     await NazunaSock.groupParticipantsUpdate(from, membersToRemove, 'remove');
                     await NazunaSock.sendMessage(from, {
                         text: `🚫 Foram removidos ${membersToRemove.length} membros por regras de moderação:\n- ${removalReasons.join('\n- ')}`,
@@ -405,7 +401,6 @@ async function handleGroupParticipantsUpdate(NazunaSock, inf) {
                     });
                 }
                 if (membersToWelcome.length > 0) {
-                    console.log(`[BOAS-VINDAS] Enviando mensagem para ${membersToWelcome.length} novos membros em ${groupMetadata.subject}.`);
                     const message = await createGroupMessage(NazunaSock, groupMetadata, membersToWelcome, groupSettings.welcome || {
                         text: groupSettings.textbv
                     });
@@ -415,7 +410,6 @@ async function handleGroupParticipantsUpdate(NazunaSock, inf) {
             }
             case 'remove': {
                 if (groupSettings.exit?.enabled) {
-                    console.log(`[SAÍDA] Enviando mensagem de saída para ${inf.participants.length} membros em ${groupMetadata.subject}.`);
                     const message = await createGroupMessage(NazunaSock, groupMetadata, inf.participants, groupSettings.exit, false);
                     await NazunaSock.sendMessage(from, message);
                 }
@@ -431,7 +425,6 @@ async function handleGroupParticipantsUpdate(NazunaSock, inf) {
                     if (!isOwner) {
                         // Prevent the action if not a group owner
                         const action = inf.action === 'promote' ? 'promoção' : 'rebaixamento';
-                        console.log(`[ANTI-ARQUIVAMENTO] Bloqueado ${action} por @${inf.author.split('@')[0]} em ${groupMetadata.subject}. Ação revertida.`);
                         
                         // Revert the action by promoting/demoting back
                         for (const participant of inf.participants) {
@@ -453,7 +446,6 @@ async function handleGroupParticipantsUpdate(NazunaSock, inf) {
                 if (groupSettings.x9) {
                     for (const participant of inf.participants) {
                         const action = inf.action === 'promote' ? 'promovido a ADM' : 'rebaixado de ADM';
-                        console.log(`[X9] ${participant.split('@')[0]} foi ${action} em ${groupMetadata.subject}.`);
                         await NazunaSock.sendMessage(from, {
                             text: `🚨 @${participant.split('@')[0]} foi ${action} por @${inf.author.split('@')[0]}.`,
                             mentions: [participant, inf.author],
@@ -623,7 +615,6 @@ async function replaceJidsInContent(affectedFiles, jidToLidMap, orphanJidsSet) {
                 totalReplacements += replacementsCount.count;
                 totalRemovals += removalsCount.count;
                 updatedFiles.push(path.basename(filePath));
-                console.log(`✅ Substituídas ${replacementsCount.count} ocorrências e removidas ${removalsCount.count} JIDs órfãos em ${path.basename(filePath)}.`);
             }
         } catch (err) {
             console.error(`Erro ao substituir em ${filePath}: ${err.message}`);
@@ -646,7 +637,6 @@ async function handleJidFiles(jidFiles, jidToLidMap, orphanJidsSet) {
                 await fs.unlink(oldPath);
                 deletedFiles.push(path.basename(oldPath));
                 totalRemovals++;
-                console.log(`🗑️ Arquivo órfão ${path.basename(oldPath)} excluído.`);
                 continue;
             } catch (err) {
                 console.error(`Erro ao excluir arquivo órfão ${oldPath}: ${err.message}`);
@@ -655,7 +645,6 @@ async function handleJidFiles(jidFiles, jidToLidMap, orphanJidsSet) {
 
         const lid = jidToLidMap.get(jid);
         if (!lid) {
-            console.warn(`LID não encontrado para JID ${jid} em ${oldPath}. Pulando renomeação.`);
             continue;
         }
 
@@ -673,7 +662,6 @@ async function handleJidFiles(jidFiles, jidToLidMap, orphanJidsSet) {
 
             try {
                 await fs.access(newPath);
-                console.warn(`Arquivo ${newPath} já existe. Pulando renomeação para ${oldPath}.`);
                 continue;
             } catch {}
 
@@ -684,9 +672,6 @@ async function handleJidFiles(jidFiles, jidToLidMap, orphanJidsSet) {
             updatedFiles.push(path.basename(newPath));
             renamedFiles.push({ old: path.basename(oldPath), new: path.basename(newPath) });
 
-            if (replacementsCount.count > 0 || removalsCount.count > 0) {
-                console.log(`Substituídas ${replacementsCount.count} ocorrências e removidas ${removalsCount.count} JIDs órfãos no conteúdo de ${path.basename(oldPath)}.`);
-            }
         } catch (err) {
             console.error(`Erro ao processar renomeação de ${oldPath}: ${err.message}`);
         }
@@ -702,16 +687,14 @@ async function fetchLidWithRetry(NazunaSock, jid, maxRetries = 3) {
             if (result && result[0] && result[0].lid) {
                 return { jid, lid: result[0].lid };
             }
-            console.warn(`Tentativa ${attempt} falhou para JID ${jid}: LID não encontrado.`);
             return null;
         } catch (err) {
-            console.warn(`Tentativa ${attempt} falhou para JID ${jid}: ${err.message}`);
+            // Retry silently
         }
         if (attempt < maxRetries) {
             await new Promise(resolve => setTimeout(resolve, 100 * attempt));
         }
     }
-    console.warn(`Falha após ${maxRetries} tentativas para JID ${jid}. Pulando.`);
     return null;
 }
 
@@ -722,7 +705,6 @@ async function fetchLidsInBatches(NazunaSock, uniqueJids, batchSize = 5) {
 
     for (let i = 0; i < uniqueJids.length; i += batchSize) {
         const batch = uniqueJids.slice(i, i + batchSize);
-        console.log(`🔄 Processando lote ${Math.floor(i / batchSize) + 1}: ${batch.length} JIDs.`);
         
         const batchPromises = batch.map(jid => fetchLidWithRetry(NazunaSock, jid));
         const batchResults = await Promise.allSettled(batchPromises);
@@ -751,9 +733,6 @@ async function updateOwnerLid(NazunaSock) {
         if (result) {
             config.lidowner = result.lid;
             await fs.writeFile(configPath, JSON.stringify(config, null, 2), 'utf-8');
-            console.log(`✅ LID do dono atualizado no config.json: ${result.lid}`);
-        } else {
-            console.warn(`⚠️ Falha ao obter LID do dono. Config não atualizado.`);
         }
     } catch (err) {
         console.error(`❌ Erro ao atualizar LID do dono: ${err.message}`);
@@ -761,8 +740,6 @@ async function updateOwnerLid(NazunaSock) {
 }
 
 async function performMigration(NazunaSock) {
-    console.log('🔍 Verificando se há dados antigos para migração...');
-
     let scanResult;
     try {
         scanResult = await scanForJids(DATABASE_DIR);
@@ -774,21 +751,15 @@ async function performMigration(NazunaSock) {
     const { uniqueJids, affectedFiles, jidFiles } = scanResult;
 
     if (uniqueJids.length === 0) {
-        console.log('ℹ️ Nenhum JID antigo encontrado. Bot pronto para usar LIDs nativamente.');
         return;
     }
-
-    console.log(`� Detectados ${uniqueJids.length} JIDs antigos. Iniciando migração para LIDs...`);
     
     const { jidToLidMap, successfulFetches } = await fetchLidsInBatches(NazunaSock, uniqueJids);
     const orphanJidsSet = new Set(uniqueJids.filter(jid => !jidToLidMap.has(jid)));
 
     if (jidToLidMap.size === 0) {
-        console.log('⚠️ Não foi possível obter LIDs. Bot continuará funcionando normalmente.');
         return;
     }
-
-    console.log(`✅ Obtidos LIDs para ${successfulFetches}/${uniqueJids.length} JIDs.`);
 
     let totalReplacements = 0;
     let totalRemovals = 0;
@@ -810,8 +781,6 @@ async function performMigration(NazunaSock) {
         return;
     }
 
-    console.log(`✅ Migração finalizada: ${totalReplacements} substituições e ${totalRemovals} remoções em ${allUpdatedFiles.length} arquivos.`);
-    console.log('🌸 Bot agora está totalmente otimizado para LIDs!');
 }
 
 async function createBotSocket(authDir) {
@@ -939,10 +908,6 @@ async function createBotSocket(authDir) {
                     
                     await Promise.allSettled(messageProcessingPromises);
                     
-                    if (Math.random() < 0.01) {
-                        const status = messageQueue.getStatus();
-                        console.log(`📊 Queue status: ${status.queueLength} queued, ${status.activeWorkers} active, ${status.totalProcessed} processed (${status.throughput}/s)`);
-                    }
                 } catch (err) {
                     console.error(`❌ Error in message upsert handler: ${err.message}`);
                     
@@ -988,22 +953,7 @@ async function createBotSocket(authDir) {
                 console.log(`✅ Bot ${nomebot} iniciado com sucesso! Prefixo: ${prefixo} | Dono: ${nomedono}`);
                 
                 setTimeout(() => {
-                    const stats = performanceOptimizer.getFullStatistics();
-                    console.log('📊 Sistema de otimização pronto:', {
-                        módulos: Object.keys(stats.modules).length,
-                        tempo_inicialização: `${Math.round((Date.now() - stats.optimizer.startTime) / 1000)}s`
-                    });
-                    
-                    // Log initial queue status
-                    const queueStatus = messageQueue.getStatus();
-                    console.log('📦 Message Queue Status:', {
-                        queueLength: queueStatus.queueLength,
-                        activeWorkers: queueStatus.activeWorkers,
-                        maxWorkers: queueStatus.maxWorkers,
-                        totalProcessed: queueStatus.totalProcessed,
-                        uptime: queueStatus.uptimeFormatted,
-                        throughput: `${queueStatus.throughput}/s`
-                    });
+                    // Skip unnecessary initialization logs
                 }, 5000);
             }
             if (connection === 'close') {

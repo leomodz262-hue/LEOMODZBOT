@@ -1524,13 +1524,9 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
 
   // Validação da API Key
   if (!KeyCog || KeyCog.trim() === '') {
-    console.warn('⚠️ API key não configurada. Sistema de IA e downloads automáticos estarão desativados.');
     KeyCog = false;
   } else if (!isValidApiKey(KeyCog)) {
-    console.warn('⚠️ API key parece inválida. Sistema de IA e downloads automáticos podem não funcionar.');
     KeyCog = false;
-  } else {
-    console.log('✅ API key configurada e validada com sucesso.');
   }
 
   // Função centralizada para lidar com downloads automáticos
@@ -2385,8 +2381,6 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
             const nowMin = getNowMinutes();
             const today = getTodayStr();
             
-            // Log worker start for debugging
-            console.log(`[Schedule Worker] Running at ${nowMin}min (${today}) - Checking ${files.length} groups`);
             
             for (const f of files) {
               const groupId = f.replace(/\.json$/, '');
@@ -2402,17 +2396,12 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
               const schedule = data.schedule || {};
               const lastRun = schedule.lastRun || {};
               
-              // Log current time and schedule info for debugging
-              console.log(`[Schedule Check] Group: ${groupId}, Current Time: ${nowMin}min, Today: ${today}`);
-              console.log(`[Schedule Check] Open Time: ${schedule.openTime}, Close Time: ${schedule.closeTime}`);
-              console.log(`[Schedule Check] Last Run - Open: ${lastRun.open}, Close: ${lastRun.close}`);
               
               // Handle opening schedule
               if (schedule.openTime) {
                 const t = parseTimeToMinutes(schedule.openTime);
                 if (t !== null && t === nowMin && lastRun.open !== today) {
                   try {
-                    console.log(`[Schedule Action] Opening group ${groupId} at ${schedule.openTime}`);
                     await nazuInstance.groupSettingUpdate(groupId, 'not_announcement');
                     await nazuInstance.sendMessage(groupId, { text: '🔓 Grupo aberto automaticamente pelo agendamento diário.' });
                     schedule.lastRun = schedule.lastRun || {};
@@ -2430,7 +2419,6 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
                 const t = parseTimeToMinutes(schedule.closeTime);
                 if (t !== null && t === nowMin && lastRun.close !== today) {
                   try {
-                    console.log(`[Schedule Action] Closing group ${groupId} at ${schedule.closeTime}`);
                     await nazuInstance.groupSettingUpdate(groupId, 'announcement');
                     await nazuInstance.sendMessage(groupId, { text: '🔒 Grupo fechado automaticamente pelo agendamento diário.' });
                     schedule.lastRun = schedule.lastRun || {};
@@ -2444,7 +2432,6 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
               }
             }
           } catch (err) {
-            console.error('[Schedule Worker] Error:', err);
           }
         }, 60 * 1000); // Check every minute for precise timing
       } catch (e) {
@@ -3149,7 +3136,6 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
             }, pathz.join(__dirname, 'index.js'), KeyCog, nazu, nmrdn);
             
             if (respAssist.erro === 'Sistema de IA temporariamente desativado') {
-              console.log('🚨 Sistema de IA temporariamente desativado devido a problemas de API key.');
               return;
             }
             

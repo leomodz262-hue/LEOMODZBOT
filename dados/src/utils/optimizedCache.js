@@ -163,7 +163,6 @@ class OptimizedCacheManager {
         if (cache) {
             const keysCount = cache.keys().length;
             cache.flushAll();
-            console.log(`🗑️ Cache '${cacheType}' limpo (${keysCount} itens removidos)`);
             return true;
         }
         return false;
@@ -359,7 +358,6 @@ class OptimizedCacheManager {
             const keys = cache.keys();
             const stats = cache.getStats();
             
-            console.log(`  ${type}: ${keys.length} itens, ${stats.hits} hits, ${stats.misses} misses`);
         }
     }
 
@@ -416,7 +414,6 @@ class OptimizedCacheManager {
         for (const [type, cache] of this.caches) {
             const keysCount = cache.keys().length;
             cache.flushAll();
-            console.log(`🗑️ Cache '${type}': ${keysCount} itens removidos`);
         }
 
         if (global.gc) {
