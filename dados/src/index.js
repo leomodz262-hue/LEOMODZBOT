@@ -1500,35 +1500,25 @@ const getMenuDesignWithDefaults = (botName, userName) => {
   return processedDesign;
 };
 
+const performanceOptimizer = new PerformanceOptimizer();
+await performanceOptimizer.initialize();
+  
 async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirationManager = null) {
   var config = JSON.parse(fs.readFileSync(__dirname + '/config.json'));
   
-  // Initialize performance optimizer for caching
-  const performanceOptimizer = new PerformanceOptimizer();
-  await performanceOptimizer.initialize();
-  
-  /**
-   * Get cached group metadata with 1-minute TTL
-   * @param {string} groupId - The group ID
-   * @returns {Promise<Object>} - Group metadata
-   */
   async function getCachedGroupMetadata(groupId) {
     try {
-      // Try to get from cache first
       const cached = await performanceOptimizer.modules.cacheManager.getIndexGroupMeta(groupId);
       if (cached) {
         return cached;
       }
       
-      // Not in cache, fetch fresh data
       const freshData = await nazu.groupMetadata(groupId).catch(() => ({}));
       
-      // Cache the data with 1-minute TTL
       await performanceOptimizer.modules.cacheManager.setIndexGroupMeta(groupId, freshData);
       
       return freshData;
     } catch (error) {
-      // Fallback to direct fetch if cache fails
       return await nazu.groupMetadata(groupId).catch(() => ({}));
     }
   }
@@ -1542,29 +1532,24 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
   } = config;
   var KeyCog = config.apikey || '';
 
-  // Função para validar API Key
   function isValidApiKey(key) {
     if (!key || typeof key !== 'string') return false;
     if (key.trim() === '') return false;
     if (key.length < 10) return false;
     
-    // Verifica se a chave contém caracteres alfanuméricos básicos
     const validChars = /^[a-zA-Z0-9\-_]+$/;
     return validChars.test(key.trim());
   }
 
-  // Validação da API Key
   if (!KeyCog || KeyCog.trim() === '') {
     KeyCog = false;
   } else if (!isValidApiKey(KeyCog)) {
     KeyCog = false;
   }
 
-  // Função centralizada para lidar com downloads automáticos
   async function handleAutoDownload(nazu, from, url, info) {
     try {
       if (url.includes('tiktok.com')) {
-        // Verificar se tem API key antes de fazer download automático
         if (!KeyCog) {
           console.warn('⚠️ TikTok autodl ignorado: API Key não configurada');
           return false;
@@ -1586,7 +1571,6 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
           return false;
         }
       } else if (url.includes('instagram.com')) {
-        // Verificar se tem API key antes de fazer download automático
         if (!KeyCog) {
           console.warn('⚠️ Instagram autodl ignorado: API Key não configurada');
           return false;
@@ -1606,7 +1590,6 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
           return false;
         }
       } else if (url.includes('pinterest.com') || url.includes('pin.it')) {
-        // Pinterest não requer API key
         const datinha = await pinterest.dl(url);
         if (datinha.ok) {
           await nazu.sendMessage(from, {

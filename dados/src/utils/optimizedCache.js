@@ -91,7 +91,6 @@ class OptimizedCacheManager {
             forceString: false
         }));
 
-        console.log('✅ Caches otimizados inicializados');
     }
 
     /**
@@ -122,7 +121,6 @@ class OptimizedCacheManager {
         try {
             const cache = this.caches.get(cacheType);
             if (!cache) {
-                console.warn(`⚠️ Cache type '${cacheType}' não encontrado`);
                 return false;
             }
 
@@ -151,7 +149,6 @@ class OptimizedCacheManager {
         try {
             const cache = this.caches.get(cacheType);
             if (!cache) {
-                console.warn(`⚠️ Cache type '${cacheType}' não encontrado`);
                 return undefined;
             }
 
@@ -216,7 +213,6 @@ class OptimizedCacheManager {
                 timestamp: Date.now()
             };
         } catch (error) {
-            console.warn('⚠️ Erro na compressão, retornando dados originais:', error.message);
             return data;
         }
     }
@@ -238,7 +234,6 @@ class OptimizedCacheManager {
             }
             return JSON.parse(compressedData.data);
         } catch (error) {
-            console.warn('⚠️ Erro na descompressão, retornando dados originais:', error.message);
             return compressedData;
         }
     }
@@ -267,20 +262,15 @@ class OptimizedCacheManager {
             const totalMB = Math.round(memUsage.heapTotal / 1024 / 1024);
             const rssMB = Math.round(memUsage.rss / 1024 / 1024);
             
-            // Calcula porcentagem de uso
             const memoryPercentage = memUsage.heapUsed / memUsage.heapTotal;
 
-            if (memoryPercentage > this.memoryThreshold) {
-                console.log(`🚨 Uso de memória alto: ${usedMB}MB/${totalMB}MB (${Math.round(memoryPercentage * 100)}%)`);
+            if (memoryPercentage > 1024) {
                 await this.optimizeMemory('high_memory_usage');
-            } else if (usedMB > 300) { // Mais de 300MB
-                console.log(`⚠️ Uso moderado de memória: ${usedMB}MB/${totalMB}MB`);
+            } else if (usedMB > 300) {
                 await this.optimizeMemory('moderate_memory_usage');
             }
 
-            // Log estatísticas a cada 30 minutos
             if (Date.now() % (30 * 60 * 1000) < this.cleanupInterval) {
-                console.log(`📊 Memória: Heap ${usedMB}/${totalMB}MB, RSS ${rssMB}MB`);
                 this.logCacheStatistics();
             }
         } catch (error) {
@@ -296,11 +286,9 @@ class OptimizedCacheManager {
         this.isOptimizing = true;
 
         try {
-            console.log(`🔧 Iniciando otimização de memória: ${reason}`);
             
             let freedMemory = 0;
             
-            // 1. Limpa caches menos importantes primeiro
             const cacheOrder = ['media', 'messages', 'commands', 'userData', 'indexGroupMeta', 'groupMeta', 'msgRetry'];
             
             for (const cacheType of cacheOrder) {
@@ -309,16 +297,12 @@ class OptimizedCacheManager {
                     const beforeKeys = cache.keys().length;
                     
                     if (reason === 'high_memory_usage') {
-                        // Uso alto: limpa completamente caches menos críticos
                         if (['media', 'messages'].includes(cacheType)) {
                             cache.flushAll();
-                            console.log(`🗑️ Cache '${cacheType}' completamente limpo (${beforeKeys} itens)`);
                         } else {
-                            // Para outros, remove 50% dos itens mais antigos
                             await this.removeOldCacheItems(cache, 0.5);
                         }
                     } else {
-                        // Uso moderado: remove apenas itens expirados e alguns antigos
                         cache.flushExpired();
                         await this.removeOldCacheItems(cache, 0.2);
                     }
@@ -333,14 +317,11 @@ class OptimizedCacheManager {
             // 2. Força garbage collection final
             if (global.gc) {
                 global.gc();
-                console.log('🗑️ Garbage collection executado');
             }
 
             // 3. Verifica resultado
             const newMemUsage = process.memoryUsage();
             const newUsedMB = Math.round(newMemUsage.heapUsed / 1024 / 1024);
-            
-            console.log(`✅ Otimização concluída. Memória atual: ${newUsedMB}MB`);
             
         } catch (error) {
             console.error('❌ Erro durante otimização de memória:', error.message);
@@ -366,7 +347,6 @@ class OptimizedCacheManager {
                 cache.del(key);
             }
             
-            console.log(`🗑️ ${removeCount} itens antigos removidos do cache`);
         } catch (error) {
             console.error('❌ Erro ao remover itens antigos do cache:', error.message);
         }
@@ -376,7 +356,6 @@ class OptimizedCacheManager {
      * Registra estatísticas dos caches
      */
     logCacheStatistics() {
-        console.log('📊 Estatísticas dos Caches:');
         
         for (const [type, cache] of this.caches) {
             const keys = cache.keys();
@@ -422,18 +401,12 @@ class OptimizedCacheManager {
             this.compressionEnabled = options.compressionEnabled;
         }
 
-        console.log('⚙️ Cache manager reconfigurado:', {
-            memoryThreshold: this.memoryThreshold,
-            cleanupInterval: this.cleanupInterval,
-            compressionEnabled: this.compressionEnabled
-        });
     }
 
     /**
      * Força limpeza de todos os caches
      */
     forceCleanup() {
-        console.log('🧹 Forçando limpeza de todos os caches...');
         
         for (const [type, cache] of this.caches) {
             const keysCount = cache.keys().length;
@@ -442,10 +415,8 @@ class OptimizedCacheManager {
 
         if (global.gc) {
             global.gc();
-            console.log('🗑️ Garbage collection forçado');
         }
 
-        console.log('✅ Limpeza forçada concluída');
     }
 
     /**
@@ -453,7 +424,6 @@ class OptimizedCacheManager {
      */
     stopMonitoring() {
         this.isOptimizing = false;
-        console.log('⏹️ Monitoramento de cache parado');
     }
 }
 
