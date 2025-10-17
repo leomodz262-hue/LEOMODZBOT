@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import * as crypto from 'crypto';
 import WaLib from '@cognima/walib';
+import PerformanceOptimizer from './utils/performanceOptimizer.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -1501,6 +1502,36 @@ const getMenuDesignWithDefaults = (botName, userName) => {
 
 async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirationManager = null) {
   var config = JSON.parse(fs.readFileSync(__dirname + '/config.json'));
+  
+  // Initialize performance optimizer for caching
+  const performanceOptimizer = new PerformanceOptimizer();
+  await performanceOptimizer.initialize();
+  
+  /**
+   * Get cached group metadata with 1-minute TTL
+   * @param {string} groupId - The group ID
+   * @returns {Promise<Object>} - Group metadata
+   */
+  async function getCachedGroupMetadata(groupId) {
+    try {
+      // Try to get from cache first
+      const cached = await performanceOptimizer.modules.cacheManager.getIndexGroupMeta(groupId);
+      if (cached) {
+        return cached;
+      }
+      
+      // Not in cache, fetch fresh data
+      const freshData = await nazu.groupMetadata(groupId).catch(() => ({}));
+      
+      // Cache the data with 1-minute TTL
+      await performanceOptimizer.modules.cacheManager.setIndexGroupMeta(groupId, freshData);
+      
+      return freshData;
+    } catch (error) {
+      // Fallback to direct fetch if cache fails
+      return await nazu.groupMetadata(groupId).catch(() => ({}));
+    }
+  }
   var {
     numerodono,
     nomedono,
@@ -1752,7 +1783,7 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
     const sender_ou_n = (menc_jid2 && menc_jid2.length > 0) ? menc_jid2[0] : menc_prt || sender;
     const groupFile = pathz.join(__dirname, '..', 'database', 'grupos', `${from}.json`);
     let groupData = {};
-    const groupMetadata = !isGroup ? {} : await nazu.groupMetadata(from).catch(() => ({}));
+    const groupMetadata = !isGroup ? {} : await getCachedGroupMetadata(from).catch(() => ({}));
     const groupName = groupMetadata?.subject || '';
     if (isGroup) {
       if (!fs.existsSync(groupFile)) {
@@ -5193,7 +5224,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
             message += '📋 *Grupos com Aluguel*:\n\n';
             let index = 1;
             for (const [groupId, info] of Object.entries(groupRentals)) {
-              const groupMetadata = await nazu.groupMetadata(groupId).catch(() => ({
+              const groupMetadata = await getCachedGroupMetadata(groupId).catch(() => ({
                 subject: 'Desconhecido'
               }));
               const groupName = groupMetadata.subject || 'Sem Nome';
@@ -5321,7 +5352,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
               successCount++;
               summary += `✅ ${groupId}: ${extendResult.message}\n`;
               try {
-                const groupMeta = await nazu.groupMetadata(groupId);
+                const groupMeta = await getCachedGroupMetadata(groupId);
                 const msg = `🎉 Atenção, ${groupMeta.subject}! Adicionados ${extraDays} dias extras de aluguel.\nNova expiração: ${new Date(rentalData.groups[groupId].expiresAt).toLocaleDateString('pt-BR')}.\nMotivo: ${motivo}`;
                 await nazu.sendMessage(groupId, {
                   text: msg
@@ -5422,7 +5453,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           for (const groupId in rentalData.groups) {
             const rentalStatus = getGroupRentalStatus(groupId);
             if (rentalStatus.active || rentalStatus.permanent) continue;
-            const groupMetadata = await nazu.groupMetadata(groupId).catch(() => null);
+            const groupMetadata = await getCachedGroupMetadata(groupId).catch(() => null);
             if (!groupMetadata) {
               delete rentalData.groups[groupId];
               groupsCleaned++;
@@ -7656,7 +7687,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           if (groupsPremium.length > 0) {
             for (let i = 0; i < groupsPremium.length; i++) {
               try {
-                const groupInfo = await nazu.groupMetadata(groupsPremium[i]);
+                const groupInfo = await getCachedGroupMetadata(groupsPremium[i]);
                 
                 teks += `🔹 ${i + 1}. ${groupInfo.subject}\n`;
               } catch {
@@ -7860,7 +7891,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
               // Get group metadata with error handling
               let metadata;
               try {
-                metadata = await nazu.groupMetadata(groupId).catch(() => null);
+                metadata = await getCachedGroupMetadata(groupId).catch(() => null);
               } catch (metaError) {
                 console.log(`[LIMPAR RANK GLOBAL] Error getting metadata for group ${groupId}:`, metaError.message);
                 failedGroups.push(`${groupId}: Erro ao obter metadados`);
@@ -8524,7 +8555,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
       case 'dadosgp':
         try {
           if (!isGroup) return reply("❌ Este comando só funciona em grupos!");
-          const meta = await nazu.groupMetadata(from);
+          const meta = await getCachedGroupMetadata(from);
           const subject = meta.subject || "—";
           const desc = meta.desc?.toString() || "Sem descrição";
           const createdAt = meta.creation ? new Date(meta.creation * 1000).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : "Desconhecida";
@@ -10073,13 +10104,13 @@ Exemplos:
           const admins = groupAdmins || [];
           const fantasmas = contador.filter(u => (u.msg || 0) <= limite && !admins.includes(u.id) && u.id !== botNumber && u.id !== sender && u.id !== nmrdn).map(u => u.id);
           if (!fantasmas.length) return reply(`🎉 Nenhum fantasma com até ${limite} msg.`);
-          const antes = (await nazu.groupMetadata(from)).participants.map(p => p.lid || p.id);
+          const antes = (await getCachedGroupMetadata(from)).participants.map(p => p.lid || p.id);
           try {
             await nazu.groupParticipantsUpdate(from, fantasmas, 'remove');
           } catch (e) {
             console.error("Erro ao remover:", e);
           }
-          const depois = (await nazu.groupMetadata(from)).participants.map(p => p.lid || p.id);
+          const depois = (await getCachedGroupMetadata(from)).participants.map(p => p.lid || p.id);
           const removidos = fantasmas.filter(jid => antes.includes(jid) && !depois.includes(jid)).length;
           reply(removidos === 0 ? `⚠️ Nenhum fantasma pôde ser removido com até ${limite} msg.` : `✅ ${removidos} fantasma(s) removido(s).`);
         } catch (e) {

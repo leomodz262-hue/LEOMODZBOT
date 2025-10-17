@@ -41,6 +41,16 @@ class OptimizedCacheManager {
             forceString: false
         }));
 
+        // Cache para metadados de grupos específico do index.js (TTL de 1 minuto)
+        this.caches.set('indexGroupMeta', new NodeCache({
+            stdTTL: 60, // 1 minuto
+            checkperiod: 30, // Verifica a cada 30 segundos
+            useClones: false,
+            maxKeys: 500, // Máximo 500 grupos
+            deleteOnExpire: true,
+            forceString: false
+        }));
+
         // Cache para mensagens recentes (para anti-delete)
         this.caches.set('messages', new NodeCache({
             stdTTL: 60, // 1 minuto apenas
@@ -89,6 +99,20 @@ class OptimizedCacheManager {
      */
     getCache(type) {
         return this.caches.get(type);
+    }
+
+    /**
+     * Obtém valor do cache de metadados de grupos específico do index.js
+     */
+    async getIndexGroupMeta(groupId) {
+        return await this.get('indexGroupMeta', groupId);
+    }
+
+    /**
+     * Define valor no cache de metadados de grupos específico do index.js
+     */
+    async setIndexGroupMeta(groupId, value) {
+        return await this.set('indexGroupMeta', groupId, value, 60); // 1 minuto TTL
     }
 
     /**
@@ -277,7 +301,7 @@ class OptimizedCacheManager {
             let freedMemory = 0;
             
             // 1. Limpa caches menos importantes primeiro
-            const cacheOrder = ['media', 'messages', 'commands', 'userData', 'groupMeta', 'msgRetry'];
+            const cacheOrder = ['media', 'messages', 'commands', 'userData', 'indexGroupMeta', 'groupMeta', 'msgRetry'];
             
             for (const cacheType of cacheOrder) {
                 const cache = this.caches.get(cacheType);
