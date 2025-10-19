@@ -2,61 +2,6 @@ import axios from 'axios';
 
 const API_URL = 'https://htmltoimage.cognima.com.br/api.php';
 
-export const Welcome = async (profilePic, userNumber, groupName, memberCount) => {
-  const html = `
-    <html>
-      <body>
-        <div class="banner">
-          <div class="card">
-            <img class="avatar" src="${profilePic}" />
-            <div class="text-content">
-              <div class="welcome">Bem-vindo(a), <span>${userNumber}</span></div>
-              <div class="group-name">ao grupo <strong>${groupName}</strong></div>
-              <div class="member">Você é o <span>#${memberCount}º membro</span></div>
-              <div class="message">☕ Quer um café enquanto lê as regras?</div>
-            </div>
-          </div>
-        </div>
-      </body>
-    </html>
-  `;
-
-  const css = `
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Poppins', sans-serif;
-      background: #0f0c29;
-    }
-    .banner { width: 1200px; height: 500px; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); display: flex; align-items: center; justify-content: center; color: white; }
-    .card { display: flex; align-items: center; background: rgba(44, 47, 63, 0.95); padding: 50px 60px; border-radius: 28px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5); max-width: 1000px; width: 100%; }
-    .avatar { width: 150px; height: 150px; border-radius: 50%; border: 5px solid #fff; object-fit: cover; margin-right: 40px; }
-    .text-content { display: flex; flex-direction: column; justify-content: center; }
-    .welcome { font-size: 36px; font-weight: 600; margin-bottom: 10px; }
-    .welcome span { color: #00d2ff; }
-    .group-name { font-size: 28px; margin-bottom: 8px; }
-    .group-name strong { color: #feca57; }
-    .member { font-size: 24px; color: #ccc; margin-bottom: 25px; }
-    .message { font-size: 22px; font-style: italic; opacity: 0.9; }
-  `;
-
-  const payload = {
-    html,
-    css,
-    viewport_width: '1200',
-    viewport_height: '500',
-    google_fonts: 'Poppins',
-    device_scale: '2'
-  };
-
-  try {
-    const { data } = await axios.post(API_URL, payload, { responseType: "arraybuffer"});
-    return data;
-  } catch (err) {
-    console.error(err);
-    return null;
-  }
-};
 
 export const Ping = async (backgroundImage, characterImage, botName, pingSpeed, uptime, totalGroups, totalUsers) => {
   const html = `

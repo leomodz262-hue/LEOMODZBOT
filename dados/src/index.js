@@ -3320,7 +3320,7 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
       case 'lembrete':
       case 'lembrar': {
         try {
-          if (!q) return reply(`Como usar:\n${prefix}lembrete em 30m beber água\n${prefix}lembrete 15/09 18:30 reunião\n${prefix}lembrete amanhã 08:00 acordar`);
+          if (!q) return reply(`📅 *Como usar o comando lembrete:*\n\n💡 *Exemplos:*\n• ${prefix}lembrete em 30m beber água\n• ${prefix}lembrete 15/09 18:30 reunião\n• ${prefix}lembrete amanhã 08:00 acordar`);
           const parsed = parseReminderInput(q);
           if (!parsed) return reply('❌ Não consegui entender a data/hora. Exemplos:\n- em 10m tomar remédio\n- 25/12 09:00 ligar para a família\n- hoje 21:15 estudar');
           const { at, message } = parsed;
@@ -3365,7 +3365,7 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
       case 'removerlembrete': {
         try {
           const idArg = (q||'').trim();
-          if (!idArg) return reply(`Use: ${prefix}apagalembrete <id|tudo>`);
+          if (!idArg) return reply(`🗑️ *Uso do comando apagalembrete:*\n\n📝 *Formato:* ${prefix}apagalembrete <id|tudo>\n\n💡 *Exemplos:*\n• ${prefix}apagalembrete 123456\n• ${prefix}apagalembrete tudo`);
           let list = loadReminders();
           if (['tudo','todos','all'].includes(idArg.toLowerCase())) {
             const before = list.length;
@@ -3455,7 +3455,7 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
       case 'resetgold':
       {
         if (!isGroup) return reply('💰 Os comandos de economia funcionam apenas em grupos.');
-  if (!groupData.modogold) return reply(`💤 O Modo Gold está desativado aqui. Um admin pode ativar com: ${prefix}modogold`);
+  if (!groupData.modogold) return reply(`🌟 *Modo Gold desativado!*\n\n🔒 Este recurso está disponível apenas quando o Modo Gold está ativado.\n🔐 *Administradores* podem ativar com: ${prefix}modogold`);
     const econ = loadEconomy();
     const changedEconomy = ensureEconomyDefaults(econ);
   const me = getEcoUser(econ, sender);
@@ -3523,7 +3523,7 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
         }
 
         if (sub === 'transferir' || sub === 'pix') {
-          if (!mentioned) return reply('Marque o usuário e informe o valor. Ex: '+prefix+sub+' @user 100');
+          if (!mentioned) return reply(`👥 *Transferência de recursos*\n\n.Marque um usuário e informe o valor.\n📝 *Exemplo:* ${prefix}${sub} @user 100`);
           const amount = parseAmount(args.slice(-1)[0], me.wallet);
           if (!isFinite(amount) || amount <= 0) return reply('Informe um valor válido.');
           if (amount > me.wallet) return reply('Você não tem esse valor na carteira.');
@@ -4265,7 +4265,7 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
             });
             return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
           }
-          if (!q) return reply(`Falta o prompt.\nEx: ${prefix}${command} Black Cat`);
+          if (!q) return reply(`🎨 *Gerador de Imagens AI*\n\n💡 *Como usar:*\n• Forneça uma descrição detalhada do que deseja\n• Ex: ${prefix}${command} Black Cat\n• Ex: ${prefix}${command} paisagem montanha pôr do sol realista`);
           await reply('⏳ Só um segundinho, estou gerando a imagem... ✨');
           var ImageS;
           ImageS = await ia.makeCognimaImageRequest({
@@ -4692,7 +4692,7 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
         }
         break;
       case 'resumir':
-        if (!q) return reply(`📝 Para usar o resumidor, envie o texto após o comando. Exemplo: ${prefix}resumir [seu texto aqui]`);
+        if (!q) return reply(`📝 *Resumidor de Texto*\n\n💡 *Como usar:*\n• Envie o texto que deseja resumir após o comando\n• Ex: ${prefix}resumir [seu texto aqui]\n\n✨ O texto será resumido de forma clara e objetiva!`);
         if (!KeyCog) {
           await nazu.sendMessage(nmrdn, {
             text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Caso tenha interesse, entre em contato comigo pelo link abaixo! Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês. 🚀\nwa.me/553399285117`
@@ -4874,7 +4874,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
         }
         break;
       case 'qrcode':
-        if (!q) return reply(`📲 Quer gerar um QR Code? Me envie o texto ou link depois do comando ${prefix}qrcode! 😊`);
+        if (!q) return reply(`📲 *Gerador de QR Code*\n\n💡 *Como usar:*\n• Envie o texto ou link após o comando\n• Ex: ${prefix}qrcode https://exemplo.com\n• Ex: ${prefix}qrcode Seu texto aqui\n\n✨ O QR Code será gerado instantaneamente!`);
         try {
           await reply('Aguarde um momentinho... ☀️');
           const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(q)}`;
@@ -6023,7 +6023,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
       case 'gerarnick':
       case 'nickgenerator':
         try {
-          if (!q) return reply('Digite o nick após o comando.');
+          if (!q) return reply(`🎮 *Consulta de Nick Free Fire*\n\n📝 *Como usar:*\n• Digite o ID do jogador após o comando\n• Ex: ${prefix}ffnick 123456789\n\n🔍 O nick será pesquisado na database do Free Fire!`);
           var datzn;
           datzn = await styleText(q);
           await reply(datzn.join('\n'));
@@ -7219,7 +7219,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
       case 'prefix':
         try {
           if (!isOwner) return reply("Este comando é exclusivo para o meu dono!");
-          if (!q) return reply(`Por favor, digite o novo prefixo.\nExemplo: ${prefix}${command} /`);
+          if (!q) return reply(`⚙️ *Configuração de Prefixo*\n\n📝 *Como usar:*\n• Digite o novo prefixo após o comando\n• Ex: ${prefix}${command} /\n• Ex: ${prefix}${command} !\n\n✅ O prefixo do bot será atualizado para o valor especificado!`);
           let config = JSON.parse(fs.readFileSync(__dirname + '/config.json'));
           config.prefixo = q;
           fs.writeFileSync(__dirname + '/config.json', JSON.stringify(config, null, 2));
@@ -8512,7 +8512,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
       case 'cmdinfo':
       case 'comandoinfo':
         try {
-          if (!q) return reply(`Por favor, especifique um comando para ver suas estatísticas.\nExemplo: ${prefix}cmdinfo menu`);
+          if (!q) return reply(`📊 *Estatísticas de Comandos*\n\n📝 *Como usar:*\n• Especifique o comando após o comando\n• Ex: ${prefix}cmdinfo menu\n• Ex: ${prefix}cmdinfo ping\n\n📈 Visualize estatísticas detalhadas de uso do comando!`);
           const cmdName = q.startsWith(prefix) ? q.slice(prefix.length) : q;
           const stats = await commandStats.getCommandStats(cmdName);
           if (!stats) {
@@ -9040,7 +9040,7 @@ case 'roubar':
       case 'stickerpack':
       case 'packfig':
         try {
-          if (!q) return reply(`🎨 *Pack de Figurinhas*\n\n📝 Use: ${prefix}figurinhas [1-30]\n\n💡 *Exemplo:* ${prefix}figurinhas 10\n\n🔢 Escolha quantas figurinhas você quer no pack (mínimo 1, máximo 30)`);
+          if (!q) return reply(`🎨 *Criador de Pack de Figurinhas*\n\n🔢 *Como usar:*\n• Escolha quantas figurinhas deseja (1-30)\n• Ex: ${prefix}figurinhas 10\n• Ex: ${prefix}figurinhas 5\n\n✨ O pack será criado com figurinhas aleatórias!`);
           
           const quantidade = parseInt(q);
           
@@ -10126,7 +10126,7 @@ Exemplos:
         {
           if (!isGroup) return reply("isso so pode ser usado em grupo 💔");
           if (!isGroupAdmin) return reply("você precisa ser adm 💔");
-          if (!isQuotedImage && !isImage && (!q || q.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') !== 'banner')) return reply(`❌ Marque uma imagem ou envie uma imagem com o comando ou digite \`${prefix}${command} banner\``);
+          if (!isQuotedImage && !isImage) return reply(`❌ Marque uma imagem ou envie uma imagem com o comando.`);
           try {
             if (isQuotedImage || isImage) {
               const imgMessage = isQuotedImage ? info.message.extendedTextMessage.contextInfo.quotedMessage.imageMessage : info.message.imageMessage;
@@ -10151,7 +10151,7 @@ Exemplos:
               fs.writeFileSync(__dirname + `/../database/grupos/${from}.json`, JSON.stringify(groupData, null, 2));
               await reply('✅ Foto de boas-vindas configurada com sucesso!');
             } else {
-              await reply(`❌ Marque uma imagem ou envie uma imagem com o comando ou digite \`${prefix}${command} banner\``);
+              await reply(`❌ Marque uma imagem ou envie uma imagem com o comando.`);
             }
             ;
           } catch (error) {
@@ -11197,7 +11197,7 @@ ${nivelSorte >= 70 ? '🎉 Hoje é seu dia de sorte!' : nivelSorte >= 40 ? '🤔
         break;
       case 'ppt':
         try {
-          if (!q) return reply('Escolha: pedra, papel ou tesoura! Exemplo: ' + prefix + 'ppt pedra');
+          if (!q) return reply(`🎮 *Pedra, Papel ou Tesoura*\n\n💡 *Como jogar:*\n• Escolha sua jogada após o comando\n• Ex: ${prefix}ppt pedra\n• Ex: ${prefix}ppt papel\n• Ex: ${prefix}ppt tesoura\n\n🎲 Vamos ver quem ganha!`);
           const escolhas = ['pedra', 'papel', 'tesoura'];
           if (!escolhas.includes(q.toLowerCase())) return reply('Escolha inválida! Use: pedra, papel ou tesoura.');
           const botEscolha = escolhas[Math.floor(Math.random() * 3)];

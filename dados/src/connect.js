@@ -345,11 +345,13 @@ async function createGroupMessage(NazunaSock, groupMetadata, participants, setti
        
         const image = settings.image !== 'banner' ? {
             url: settings.image
-        } : await banner.Welcome(profilePicUrl, bannerName, groupMetadata.subject, groupMetadata.participants.length);
+        } : null;
         
-        message.image = image;
-        message.caption = text;
-        delete message.text;
+        if (image) {
+            message.image = image;
+            message.caption = text;
+            delete message.text;
+        }
     }
     return message;
 }
