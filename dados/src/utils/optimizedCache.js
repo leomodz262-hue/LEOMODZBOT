@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 class OptimizedCacheManager {
     constructor() {
         this.caches = new Map();
-        this.memoryThreshold = 0.85; // 85% da memória disponível
+        this.memoryThreshold = 0.95; // 95% da memória disponível
         this.cleanupInterval = 5 * 60 * 1000; // 5 minutos
         this.compressionEnabled = true;
         this.isOptimizing = false;
