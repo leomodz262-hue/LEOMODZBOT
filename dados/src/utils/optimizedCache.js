@@ -303,7 +303,7 @@ class OptimizedCacheManager {
                             await this.removeOldCacheItems(cache, 0.5);
                         }
                     } else {
-                        cache.flushExpired();
+                        cache.flushAll();
                         await this.removeOldCacheItems(cache, 0.2);
                     }
                 }
