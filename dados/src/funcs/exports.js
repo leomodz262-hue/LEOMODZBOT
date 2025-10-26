@@ -1,6 +1,6 @@
-import { promises as fs } from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+const fs = require('fs').promises;
+const path = require('path');
+const { fileURLToPath } = require('url');
 
 // Configuração de caminhos para o ambiente ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -64,7 +64,7 @@ const localModulePaths = {
     temuScammer: "./private/temuScammer.js",
 };
 
-export default (async () => {
+module.exports = (async () => {
     try {
         // Carrega todos os módulos locais em paralelo
         const localModulePromises = Object.entries(localModulePaths).map(async ([key, filePath]) => {

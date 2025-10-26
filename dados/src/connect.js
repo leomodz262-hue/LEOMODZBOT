@@ -1,28 +1,20 @@
-import {
-    makeWASocket,
-    useMultiFileAuthState,
-    DisconnectReason,
-    fetchLatestBaileysVersion,
-    makeCacheableSignalKeyStore
-} from '@cognima/walib';
-import {
-    Boom
-} from '@hapi/boom';
-import NodeCache from '@cacheable/node-cache';
-import readline from 'readline';
-import pino from 'pino';
-import fs from 'fs/promises';
-import path from 'path';
-import qrcode from 'qrcode-terminal';
-import { readFile } from "fs/promises";
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import crypto from 'crypto';
+const { makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore } = require('@cognima/walib');
+const { Boom } = require('@hapi/boom');
+const NodeCache = require('@cacheable/node-cache');
+const readline = require('readline');
+const pino = require('pino');
+const fs = require('fs/promises');
+const path = require('path');
+const qrcode = require('qrcode-terminal');
+const { readFile } = require('fs/promises');
+const { fileURLToPath } = require('url');
+const { dirname, join } = require('path');
+const crypto = require('crypto');
 
-import PerformanceOptimizer from './utils/performanceOptimizer.js';
-import RentalExpirationManager from './utils/rentalExpirationManager.js';
+const PerformanceOptimizer = require('./utils/performanceOptimizer.js');
+const RentalExpirationManager = require('./utils/rentalExpirationManager.js');
 
-export { rentalExpirationManager };
+module.exports = { rentalExpirationManager };
 
 class MessageQueue {
     constructor(maxWorkers = 4) {
@@ -197,7 +189,7 @@ const __dirname = dirname(__filename);
 const configPath = new URL("./config.json", import.meta.url);
 let config = JSON.parse(await readFile(configPath, "utf8"));
 
-import indexModule from './index.js';
+const indexModule = require('./index.js');
 
 const performanceOptimizer = new PerformanceOptimizer();
 

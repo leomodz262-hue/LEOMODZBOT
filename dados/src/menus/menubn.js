@@ -254,4 +254,4 @@ ${bottomBorder}
 `;
     return menuContent;
 }
-export default menubn;
+module.exports = menubn;

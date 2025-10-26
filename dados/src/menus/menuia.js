@@ -64,4 +64,4 @@ ${middleBorder}${menuItemIcon}${prefix}resumirurl
 ${bottomBorder}
 `;
 }
-export default menuIa;
+module.exports = menuIa;

@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
-import fs from 'fs/promises';
-import * as fsSync from 'fs';
-import path from 'path';
-import { execSync, exec } from 'child_process';
-import readline from 'readline';
-import os from 'os';
-import { promisify } from 'util';
+const fs = require('fs/promises');
+const fsSync = require('fs');
+const path = require('path');
+const { execSync, exec } = require('child_process');
+const readline = require('readline');
+const os = require('os');
+const { promisify } = require('util');
 const execAsync = promisify(exec);
 
 const REPO_URL = 'https://github.com/hiudyy/nazuna.git';

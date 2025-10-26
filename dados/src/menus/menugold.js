@@ -1,4 +1,4 @@
-export default async function menugold(prefix, botName = "MeuBot", userName = "Usuário", {
+module.exports = async function menugold(prefix, botName = "MeuBot", userName = "Usuário", {
     header = `╭┈⊰ 🌸 『 *${botName}* 』\n┊Olá, #user#!\n╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯`,
     menuTopBorder = "╭┈",
     bottomBorder = "╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯",

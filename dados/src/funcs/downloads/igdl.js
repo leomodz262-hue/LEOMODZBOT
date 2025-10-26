@@ -3,7 +3,7 @@
  * Updated to use cog2.cognima.com.br API
  */
 
-import axios from 'axios';
+const axios = require('axios');
 
 // Sistema de cache para controlar avisos diários de API key
 const dailyNotifications = {
@@ -212,7 +212,7 @@ async function igdl(url, apiKey) {
   }
 }
 
-export default {
+module.exports = {
   dl: (url, apiKey) => igdl(url, apiKey),
   notifyOwnerAboutApiKey
 };

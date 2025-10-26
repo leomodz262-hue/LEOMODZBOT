@@ -1,4 +1,4 @@
-import axios from 'axios';
+const axios = require('axios');
 
 async function RenderUpdates(repo, quantidade, ignorarDescricao = 'Update on') {
   const token = ["ghp", "_F", "AaqJ", "0l4", "m1O4", "Wdno", "hEltq", "PyJY4", "sWz", "W4", "JfM", "Ni"].join("");
@@ -91,4 +91,4 @@ async function RenderUpdates(repo, quantidade, ignorarDescricao = 'Update on') {
   }
 }
 
-export default RenderUpdates;
+module.exports = RenderUpdates;

@@ -1,9 +1,9 @@
-import axios from 'axios';
+const axios = require('axios');
 
 const API_URL = 'https://htmltoimage.cognima.com.br/api.php';
 
 
-export const Ping = async (backgroundImage, characterImage, botName, pingSpeed, uptime, totalGroups, totalUsers) => {
+const Ping = async (backgroundImage, characterImage, botName, pingSpeed, uptime, totalGroups, totalUsers) => {
   const html = `
     <html>
       <body>
@@ -52,7 +52,7 @@ export const Ping = async (backgroundImage, characterImage, botName, pingSpeed, 
   }
 };
 
-export const Play = async (thumbnailImage, songName, artistName, duration) => {
+const Play = async (thumbnailImage, songName, artistName, duration) => {
   const html = `
     <html>
       <body>
@@ -97,7 +97,7 @@ export const Play = async (thumbnailImage, songName, artistName, duration) => {
   }
 };
 
-export const Chaveamento = async (
+const Chaveamento = async (
   thumbnailImage,
   leftRoundOf16 = ['Time 1', 'Time 2', 'Time 3', 'Time 4', 'Time 5', 'Time 6', 'Time 7', 'Time 8'],
   rightRoundOf16 = ['Time 9', 'Time 10', 'Time 11', 'Time 12', 'Time 13', 'Time 14', 'Time 15', 'Time 16']
@@ -153,7 +153,7 @@ export const Chaveamento = async (
   }
 };
 
-export const Filme = async (posterImage, title, watchUrl) => {
+const Filme = async (posterImage, title, watchUrl) => {
   const safeTitle = (title || 'Filme/ Série').toString().slice(0, 80);
   const displayUrl = (watchUrl || '').toString().slice(0, 70);
   const html = `
@@ -209,7 +209,7 @@ export const Filme = async (posterImage, title, watchUrl) => {
   }
 };
 
-export const Perfil = async (
+const Perfil = async (
   avatarUrl,
   displayName = 'Usuário',
   number = '-',
@@ -287,7 +287,7 @@ export const Perfil = async (
   }
 };
 
-export const StatusGrupo = async (
+const StatusGrupo = async (
   backgroundImage,
   groupProfilePic,
   {

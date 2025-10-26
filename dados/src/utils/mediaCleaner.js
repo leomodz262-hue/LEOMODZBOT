@@ -1,8 +1,8 @@
-import fs from 'fs/promises';
-import path from 'path';
-import { exec } from 'child_process';
-import { fileURLToPath } from 'url';
-import { promisify } from 'util';
+const fs = require('fs/promises');
+const path = require('path');
+const { exec } = require('child_process');
+const { fileURLToPath } = require('url');
+const { promisify } = require('util');
 
 // Configuração de caminhos para o ambiente ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -496,4 +496,4 @@ class MediaCleaner {
     }
 }
 
-export default MediaCleaner;
+module.exports = MediaCleaner;

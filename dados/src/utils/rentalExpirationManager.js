@@ -1,7 +1,7 @@
-import fs from 'fs/promises';
-import path from 'path';
-import cron from 'node-cron';
-import { fileURLToPath } from 'url';
+const fs = require('fs/promises');
+const path = require('path');
+const cron = require('node-cron');
+const { fileURLToPath } = require('url');
 
 // Configuração de caminhos para o ambiente ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -425,4 +425,4 @@ O aluguel deste grupo expirou e o bot está saindo agora. Para voltar a usar o b
   }
 }
 
-export default RentalExpirationManager;
+module.exports = RentalExpirationManager;

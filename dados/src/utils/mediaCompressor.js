@@ -1,8 +1,8 @@
-import fs from 'fs/promises';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import path from 'path';
-import { fileURLToPath } from 'url';
+const fs = require('fs/promises');
+const { exec } = require('child_process');
+const { promisify } = require('util');
+const path = require('path');
+const { fileURLToPath } = require('url');
 
 // Configuração de caminhos para o ambiente ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -542,4 +542,4 @@ class MediaCompressor {
     }
 }
 
-export default MediaCompressor;
+module.exports = MediaCompressor;

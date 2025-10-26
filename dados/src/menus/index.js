@@ -1,7 +1,7 @@
 // Lista central de todos os módulos de menu que queremos carregar.
 // O nome da chave será o nome no objeto final. O valor é o caminho do arquivo.
-import { fileURLToPath } from 'url';
-import path from 'path';
+const { fileURLToPath } = require('url');
+const path = require('path');
 
 // Configuração de caminhos para o ambiente ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -67,4 +67,4 @@ async function loadMenus() {
 // Usamos uma IIAFE (Immediately Invoked Asynchronous Function Expression) para carregar e exportar.
 const menus = await loadMenus();
 
-export default menus;
+module.exports = menus;

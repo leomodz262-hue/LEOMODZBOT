@@ -1,6 +1,6 @@
-import NodeCache from '@cacheable/node-cache';
-import { fileURLToPath } from 'url';
-import path from 'path';
+const NodeCache = require('@cacheable/node-cache');
+const { fileURLToPath } = require('url');
+const path = require('path');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -427,4 +427,4 @@ class OptimizedCacheManager {
     }
 }
 
-export default OptimizedCacheManager;
+module.exports = OptimizedCacheManager;

@@ -4,8 +4,8 @@
 // Caso for usar, deixe os créditos!
 // <3
 
-import axios from 'axios';
-import { parseHTML } from 'linkedom';
+const axios = require('axios');
+const { parseHTML } = require('linkedom');
 
 // Lista de chaves da API do Google Custom Search
 const API_KEYS = [
@@ -96,4 +96,4 @@ async function Filmes(texto) {
   return null;
 }
 
-export default Filmes;
+module.exports = Filmes;

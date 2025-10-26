@@ -55,4 +55,4 @@ ${middleBorder}${menuItemIcon}${prefix}infoff
 ${bottomBorder}
 `;
 }
-export default menuMembros;
+module.exports = menuMembros;

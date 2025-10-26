@@ -34,4 +34,4 @@ ${middleBorder}${menuItemIcon}${prefix}igstory
 ${bottomBorder}
 `;
 }
-export default menudown;
+module.exports = menudown;

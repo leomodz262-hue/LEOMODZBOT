@@ -1,16 +1,16 @@
-import { downloadContentFromMessage, generateWAMessageFromContent, generateWAMessage, isJidNewsletter, getContentType } from '@cognima/walib';
-import { exec, execSync } from 'child_process';
-import { parseHTML } from 'linkedom';
-import axios from 'axios';
-import * as pathz from 'path';
-import fs from 'fs';
-import os from 'os';
-import https from 'https';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-import * as crypto from 'crypto';
-import WaLib from '@cognima/walib';
-import PerformanceOptimizer from './utils/performanceOptimizer.js';
+const { downloadContentFromMessage, generateWAMessageFromContent, generateWAMessage, isJidNewsletter, getContentType } = require('@cognima/walib');
+const { exec, execSync } = require('child_process');
+const { parseHTML } = require('linkedom');
+const axios = require('axios');
+const pathz = require('path');
+const fs = require('fs');
+const os = require('os');
+const https = require('https');
+const { fileURLToPath } = require('url');
+const { dirname } = require('path');
+const crypto = require('crypto');
+const WaLib = require('@cognima/walib');
+const PerformanceOptimizer = require('./utils/performanceOptimizer.js');
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);const API_KEY_REQUIRED_MESSAGE = 'Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺';
 const OWNER_ONLY_MESSAGE = '🚫 Este comando é apenas para o dono do bot!';
@@ -12563,4 +12563,4 @@ function getDiskSpaceInfo() {
     };
   }
 }
-export default NazuninhaBotExec;
+module.exports = NazuninhaBotExec;

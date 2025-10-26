@@ -1,8 +1,8 @@
-import axios from 'axios';
-import crypto from 'crypto';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+const axios = require('axios');
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+const { fileURLToPath } = require('url');
 
 // Configuração de caminhos para o ambiente ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -1739,7 +1739,7 @@ function getNazunaResponseDelay(grupoUserId) {
 }
 
 
-export default {
+module.exports = {
   makeAssistentRequest: processUserMessages,
   makeCognimaRequest,
   makeCognimaImageRequest,

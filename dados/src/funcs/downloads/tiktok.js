@@ -3,7 +3,7 @@
  * Updated to use cog2.cognima.com.br API
  */
 
-import axios from 'axios';
+const axios = require('axios');
 
 const dailyNotifications = {
   count: 0,
@@ -225,7 +225,7 @@ async function tiktokDownload(url, apiKey) {
   }
 }
 
-export default {
+module.exports = {
   dl: (url, apiKey) => tiktokDownload(url, apiKey),
   search: (text, apiKey) => tiktokSearch(text, apiKey),
   notifyOwnerAboutApiKey

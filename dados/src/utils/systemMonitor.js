@@ -1,7 +1,7 @@
-import fs from 'fs/promises';
-import { execSync } from 'child_process';
-import path from 'path';
-import { fileURLToPath } from 'url';
+const fs = require('fs/promises');
+const { execSync } = require('child_process');
+const path = require('path');
+const { fileURLToPath } = require('url');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -354,4 +354,4 @@ class SystemMonitor {
     }
 }
 
-export default SystemMonitor;
+module.exports = SystemMonitor;

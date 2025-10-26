@@ -1,10 +1,10 @@
-import { promises as fs } from "fs";
-import fsSync from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-import webp from "node-webpmux";
-import axios from "axios";
-import ffmpeg from "fluent-ffmpeg";
+const fs = require('fs').promises;
+const fsSync = require('fs');
+const path = require('path');
+const { fileURLToPath } = require('url');
+const webp = require('node-webpmux');
+const axios = require('axios');
+const ffmpeg = require('fluent-ffmpeg');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -191,5 +191,5 @@ const sendSticker = async (nazu, jid, {
   return webpBuffer;
 };
 
-export { sendSticker };
-export default { sendSticker };
+module.exports = { sendSticker };
+module.exports = { sendSticker };

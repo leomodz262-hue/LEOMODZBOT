@@ -34,4 +34,4 @@ ${middleBorder}${menuItemIcon}${prefix}toimg
 ${bottomBorder}
 `;
 }
-export default menuSticker;
+module.exports = menuSticker;
