@@ -1,12 +1,9 @@
 const fs = require('fs').promises;
 const fsSync = require('fs');
 const path = require('path');
-const { fileURLToPath } = require('url');
 const webp = require('node-webpmux');
 const axios = require('axios');
 const ffmpeg = require('fluent-ffmpeg');
-
-const __filename = fileURLToPath(import.meta.url);
 
 // Diretório temporário
 function ensureTmpDir() {

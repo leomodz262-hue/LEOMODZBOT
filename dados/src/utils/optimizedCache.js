@@ -1,5 +1,4 @@
-const NodeCache = require('@cacheable/node-cache');
-const { fileURLToPath } = require('url');
+const NodeCache = require('node-cache');
 const path = require('path');
 
 class OptimizedCacheManager {

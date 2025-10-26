@@ -1,9 +1,6 @@
 const { spawn } = require('child_process');
 const fs = require('fs/promises');
 const path = require('path');
-const { fileURLToPath } = require('url');
-
-const __filename = fileURLToPath(import.meta.url);
 
 class AutoRestarter {
     constructor() {
@@ -19,8 +16,8 @@ class AutoRestarter {
             'ERR_UNHANDLED_ERROR',
             'UnhandledPromiseRejectionWarning'
         ];
-        this.logFile = path.join(path.dirname(__filename), '../../../logs/auto-restart.log');
-        this.pidFile = path.join(path.dirname(__filename), '../../../nazuna.pid');
+        this.logFile = path.join(__dirname, '../../../logs/auto-restart.log');
+        this.pidFile = path.join(__dirname, '../../../nazuna.pid');
         this.isShuttingDown = false;
         this.childProcess = null;
         
@@ -216,7 +213,7 @@ class AutoRestarter {
             
             for (const tempPattern of tempDirs) {
                 try {
-                    const { exec } = await import('child_process');
+                    const { exec } = require('child_process');
                     exec(`rm -rf ${tempPattern}`, { timeout: 5000 }, (error) => {
                         if (error && !error.message.includes('No such file')) {
                             console.warn(`⚠️ Erro na limpeza de ${tempPattern}:`, error.message);

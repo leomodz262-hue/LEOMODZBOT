@@ -3,7 +3,6 @@ const MediaCleaner = require('./mediaCleaner.js');
 const AutoRestarter = require('./autoRestarter.js');
 const OptimizedCacheManager = require('./optimizedCache.js');
 const MediaCompressor = require('./mediaCompressor.js');
-const { fileURLToPath } = require('url');
 const path = require('path');
 
 class PerformanceOptimizer {

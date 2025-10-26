@@ -1,6 +1,7 @@
-const { makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore } = require('@cognima/walib');
+const { default: makeWASocket } = require('whaileys/lib/Socket');
+const { useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore } = require('whaileys');
 const { Boom } = require('@hapi/boom');
-const NodeCache = require('@cacheable/node-cache');
+const NodeCache = require('node-cache');
 const readline = require('readline');
 const pino = require('pino');
 const fs = require('fs/promises');
@@ -14,8 +15,6 @@ const crypto = require('crypto');
 
 const PerformanceOptimizer = require('./utils/performanceOptimizer.js');
 const RentalExpirationManager = require('./utils/rentalExpirationManager.js');
-
-module.exports = { rentalExpirationManager };
 
 class MessageQueue {
     constructor(maxWorkers = 4) {
@@ -326,9 +325,8 @@ async function createGroupMessage(NazunaSock, groupMetadata, participants, setti
         if (participants.length === 1 && isWelcome) {
             profilePicUrl = await NazunaSock.profilePictureUrl(participants[0], 'image').catch(() => profilePicUrl);
         }
-        
-        const loadedModulesPromise = await import(new URL('./funcs/exports.js', import.meta.url));
-        const modules = await loadedModulesPromise.default;
+
+        const modules = require('./funcs/exports.js');
         const {
         banner,
         } = modules;
@@ -777,9 +775,9 @@ async function performMigration(NazunaSock) {
 
 async function createBotSocket(authDir) {
     try {
-        const { 
-            banner 
-        } = await import(new URL('./funcs/exports.js', import.meta.url));
+        const {
+            banner
+        } = require('./funcs/exports.js');
         await fs.mkdir(path.join(DATABASE_DIR, 'grupos'), { recursive: true });
         await fs.mkdir(authDir, { recursive: true });
         const {
@@ -1025,5 +1023,7 @@ process.on('uncaughtException', async (error) => {
         }
     }
 });
+
+module.exports = { rentalExpirationManager };
 
 startNazu();

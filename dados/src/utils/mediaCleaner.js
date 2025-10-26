@@ -1,17 +1,13 @@
 const fs = require('fs/promises');
 const path = require('path');
 const { exec } = require('child_process');
-const { fileURLToPath } = require('url');
 const { promisify } = require('util');
-
-// Configuração de caminhos para o ambiente ES Modules
-const __filename = fileURLToPath(import.meta.url);
 
 const execAsync = promisify(exec);
 
 class MediaCleaner {
     constructor() {
-        this.baseDir = path.join(path.dirname(__filename), '../../../');
+        this.baseDir = path.join(__dirname, '../../../');
         this.mediaDirs = [
             path.join(this.baseDir, 'dados/midias'),
             path.join(this.baseDir, 'temp'),

@@ -1,8 +1,5 @@
 const fs = require('fs').promises;
 const path = require('path');
-const { fileURLToPath } = require('url');
-
-const __filename = fileURLToPath(import.meta.url);
 const STATS_FILE = path.join(path.dirname(__filename), '../../../database/commandStats.json');
 
 let statsCache = null;

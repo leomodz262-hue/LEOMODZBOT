@@ -1,7 +1,6 @@
 const fs = require('fs/promises');
 const path = require('path');
 const cron = require('node-cron');
-const { fileURLToPath } = require('url');
 
 class RentalExpirationManager {
   constructor(nazu, config = {}) {

@@ -1,4 +1,5 @@
-const { downloadContentFromMessage, generateWAMessageFromContent, generateWAMessage, isJidNewsletter, getContentType } = require('@cognima/walib');
+const { default: makeWASocket } = require('whaileys/lib/Socket');
+const { downloadContentFromMessage, generateWAMessageFromContent, generateWAMessage, isJidNewsletter, getContentType } = require('whaileys');
 const { exec, execSync } = require('child_process');
 const { parseHTML } = require('linkedom');
 const axios = require('axios');
@@ -6,13 +7,9 @@ const pathz = require('path');
 const fs = require('fs');
 const os = require('os');
 const https = require('https');
-const { fileURLToPath } = require('url');
-const { dirname } = require('path');
 const crypto = require('crypto');
-const WaLib = require('@cognima/walib');
-const PerformanceOptimizer = require('./utils/performanceOptimizer.js');
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);const API_KEY_REQUIRED_MESSAGE = 'Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺';
+const PerformanceOptimizer = require('./utils/performanceOptimizer');
+const API_KEY_REQUIRED_MESSAGE = 'Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺';
 const OWNER_ONLY_MESSAGE = '🚫 Este comando é apenas para o dono do bot!';
 
 
@@ -1479,7 +1476,7 @@ const saveMenuDesign = (design) => {
 
 const getMenuDesignWithDefaults = (botName, userName) => {
   const design = loadMenuDesign();
-  
+
   // Substitui os placeholders pelos valores atuais
   const processedDesign = {};
   for (const [key, value] of Object.entries(design)) {
@@ -1491,12 +1488,14 @@ const getMenuDesignWithDefaults = (botName, userName) => {
       processedDesign[key] = value;
     }
   }
-  
+
   return processedDesign;
 };
 
-const performanceOptimizer = new PerformanceOptimizer();
-await performanceOptimizer.initialize();
+(async () => {
+  const performanceOptimizer = new PerformanceOptimizer();
+  await performanceOptimizer.initialize();
+})();
   
 async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirationManager = null) {
   var config = JSON.parse(fs.readFileSync(__dirname + '/config.json'));
@@ -1607,8 +1606,7 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
       return false;
     }
   }
-  const menusModule = await import(new URL('./menus/index.js', import.meta.url));
-  const menus = await menusModule.default;
+  const menus = require('./menus/index.js');
   const {
     menu,
     menuButtons,
@@ -1627,8 +1625,7 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
   } = menus;
   var prefix = prefixo;
   var numerodono = String(numerodono);
-  const loadedModulesPromise = await import(new URL('./funcs/exports.js', import.meta.url));
-  const modules = await loadedModulesPromise.default;
+  const modules = require('./funcs/exports.js');
   const {
     youtube,
     banner,
