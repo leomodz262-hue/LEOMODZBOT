@@ -1,6 +1,6 @@
 const fs = require('fs');
 const pathz = require('path');
-const { ensureDirectoryExists, ensureJsonFileExists, loadJsonFile } = require('./helpers');
+const { ensureDirectoryExists, ensureJsonFileExists, loadJsonFile, normalizar } = require('./helpers');
 
 const DATABASE_DIR = __dirname + '/../database';
 const GRUPOS_DIR = DATABASE_DIR + '/grupos';
