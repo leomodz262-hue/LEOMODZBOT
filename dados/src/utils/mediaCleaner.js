@@ -2,6 +2,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const { exec } = require('child_process');
 const { promisify } = require('util');
+const zlib = require('zlib');
 
 const execAsync = promisify(exec);
 
@@ -95,6 +96,7 @@ class MediaCleaner {
                     }
                 } catch (error) {
                     console.warn(`⚠️ Erro ao processar arquivo ${file}:`, error.message);
+                    // Continue processing other files
                 }
             }
 
@@ -387,7 +389,7 @@ class MediaCleaner {
             
             // Usa ImageMagick para comprimir (se disponível)
             try {
-                await execAsync(`convert "${filePath}" -quality 75 -resize 1920x1920> "${tempPath}"`, { timeout: 30000 });
+                await execAsync(`convert "${filePath}" -quality 80 -resize 1920x1920> -strip "${tempPath}"`, { timeout: 30000 });
                 
                 const compressedStats = await fs.stat(tempPath);
                 
@@ -434,7 +436,7 @@ class MediaCleaner {
             const tempPath = filePath + '.compressed.mp4';
             
             // Comprime vídeo com ffmpeg
-            await execAsync(`ffmpeg -i "${filePath}" -c:v libx264 -preset fast -crf 28 -c:a aac -b:a 128k -y "${tempPath}"`, { timeout: 60000 });
+            await execAsync(`ffmpeg -i "${filePath}" -c:v libx264 -preset medium -crf 25 -c:a aac -b:a 128k -movflags +faststart -y "${tempPath}"`, { timeout: 60000 });
             
             const compressedStats = await fs.stat(tempPath);
             

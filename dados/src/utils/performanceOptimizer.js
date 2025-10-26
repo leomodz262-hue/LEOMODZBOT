@@ -89,6 +89,7 @@ class PerformanceOptimizer {
                 } catch (error) {
                     console.error(`❌ Erro ao inicializar ${module.name}:`, error.message);
                     this.modules[module.name] = null;
+                    // Continue with other modules
                 }
             }
         }

@@ -1,5 +1,6 @@
 const NodeCache = require('node-cache');
 const path = require('path');
+const zlib = require('zlib');
 
 class OptimizedCacheManager {
     constructor() {
@@ -8,6 +9,8 @@ class OptimizedCacheManager {
         this.cleanupInterval = 5 * 60 * 1000; // 5 minutos
         this.compressionEnabled = true;
         this.isOptimizing = false;
+        this.lruOrder = new Map(); // For LRU eviction
+        this.accessCounts = new Map(); // For dynamic TTL
         
         this.initializeCaches();
         this.startMemoryMonitoring();
@@ -127,8 +130,19 @@ class OptimizedCacheManager {
                 finalValue = await this.compressData(value);
             }
 
-            if (ttl) {
-                return cache.set(key, finalValue, ttl);
+            // Update access counts and LRU
+            this.accessCounts.set(key, (this.accessCounts.get(key) || 0) + 1);
+            this.lruOrder.set(key, Date.now());
+
+            // Calculate dynamic TTL based on access frequency
+            const accessCount = this.accessCounts.get(key);
+            let dynamicTtl = ttl;
+            if (!ttl && accessCount > 5) {
+                dynamicTtl = Math.min(60 * 60, accessCount * 60); // Up to 1 hour for frequently accessed
+            }
+
+            if (dynamicTtl) {
+                return cache.set(key, finalValue, dynamicTtl);
             } else {
                 return cache.set(key, finalValue);
             }
@@ -150,8 +164,14 @@ class OptimizedCacheManager {
 
             let value = cache.get(key);
             
-            if (value !== undefined && this.compressionEnabled && this.isCompressed(value)) {
-                value = await this.decompressData(value);
+            if (value !== undefined) {
+                // Update LRU and access counts
+                this.lruOrder.set(key, Date.now());
+                this.accessCounts.set(key, (this.accessCounts.get(key) || 0) + 1);
+
+                if (this.compressionEnabled && this.isCompressed(value)) {
+                    value = await this.decompressData(value);
+                }
             }
 
             return value;
@@ -165,11 +185,21 @@ class OptimizedCacheManager {
      * Remove item do cache
      */
     del(cacheType, key) {
-        const cache = this.caches.get(cacheType);
-        if (cache) {
-            return cache.del(key);
+        try {
+            const cache = this.caches.get(cacheType);
+            if (cache) {
+                const deleted = cache.del(key);
+                if (deleted) {
+                    this.lruOrder.delete(key);
+                    this.accessCounts.delete(key);
+                }
+                return deleted;
+            }
+            return false;
+        } catch (error) {
+            console.error(`❌ Erro ao remover cache ${cacheType}:`, error.message);
+            return false;
         }
-        return false;
     }
 
     /**
@@ -198,17 +228,21 @@ class OptimizedCacheManager {
     }
 
     /**
-     * Comprime dados (simulado - implementar compressão real se necessário)
+     * Comprime dados usando zlib
      */
     async compressData(data) {
         try {
-            // Marca como comprimido para identificação
+            const dataString = JSON.stringify(data);
+            const compressed = zlib.gzipSync(dataString);
             return {
                 __compressed: true,
-                data: JSON.stringify(data),
+                data: compressed,
+                originalSize: dataString.length,
+                compressedSize: compressed.length,
                 timestamp: Date.now()
             };
         } catch (error) {
+            console.error('❌ Erro na compressão:', error.message);
             return data;
         }
     }
@@ -221,15 +255,17 @@ class OptimizedCacheManager {
     }
 
     /**
-     * Descomprime dados
+     * Descomprime dados usando zlib
      */
     async decompressData(compressedData) {
         try {
             if (!this.isCompressed(compressedData)) {
                 return compressedData;
             }
-            return JSON.parse(compressedData.data);
+            const decompressed = zlib.gunzipSync(compressedData.data);
+            return JSON.parse(decompressed.toString());
         } catch (error) {
+            console.error('❌ Erro na descompressão:', error.message);
             return compressedData;
         }
     }
@@ -327,7 +363,7 @@ class OptimizedCacheManager {
     }
 
     /**
-     * Remove itens antigos do cache
+     * Remove itens antigos do cache usando LRU
      */
     async removeOldCacheItems(cache, percentage) {
         try {
@@ -336,11 +372,14 @@ class OptimizedCacheManager {
             
             if (removeCount === 0) return;
 
-            // Remove itens aleatórios (como aproximação para itens antigos)
-            const keysToRemove = keys.sort(() => Math.random() - 0.5).slice(0, removeCount);
+            // Sort by LRU order (oldest first)
+            const sortedKeys = keys.sort((a, b) => (this.lruOrder.get(a) || 0) - (this.lruOrder.get(b) || 0));
+            const keysToRemove = sortedKeys.slice(0, removeCount);
             
             for (const key of keysToRemove) {
                 cache.del(key);
+                this.lruOrder.delete(key);
+                this.accessCounts.delete(key);
             }
             
         } catch (error) {
