@@ -1819,10 +1819,60 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
     if (isGroup && banGpIds[from] && !isOwner && !isPremium) {
       return;
     };
-    const AllgroupMembers = !isGroup ? [] : groupMetadata.participants?.map(p => p.lid || p.id) || [];
-    const groupAdmins = !isGroup ? [] : groupMetadata.participants?.filter(p => p.admin).map(p => p.lid || p.id) || [];
-    const botNumber = nazu.user.lid.split(':')[0] + '@lid';
-    const isBotAdmin = !isGroup ? false : groupAdmins.includes(botNumber);
+    // Enhanced participant ID extraction with both LID and JID support
+    const extractParticipantId = (participant) => {
+      if (!participant) return null;
+      // Prioritize LID format, fallback to JID format
+      return participant.lid || participant.id || null;
+    };
+
+    const AllgroupMembers = !isGroup ? [] :
+      groupMetadata.participants?.map(extractParticipantId).filter(Boolean) || [];
+
+    const groupAdmins = !isGroup ? [] :
+      groupMetadata.participants?.filter(p => p.admin).map(extractParticipantId).filter(Boolean) || [];
+
+    // Robust bot ID extraction with multiple fallback mechanisms
+    const getBotNumber = (nazu) => {
+      try {
+        // Primary: Try LID format first (most common)
+        if (nazu.user?.lid) {
+          const botId = nazu.user.lid.split(':')[0];
+          return botId ? `${botId}@lid` : null;
+        }
+
+        // Secondary: Try user.id format
+        if (nazu.user?.id) {
+          const botId = nazu.user.id.split(':')[0];
+          // Check if it's already in LID format
+          if (botId.includes('@lid')) {
+            return botId;
+          }
+          // Convert to LID format for consistency
+          return botId ? `${botId}@lid` : null;
+        }
+
+        // Tertiary: Use existing getBotId function if available
+        if (typeof getBotId === 'function') {
+          return getBotId(nazu);
+        }
+
+        // Final fallback: construct from available data
+        if (nazu.user?.id?.split) {
+          const botId = nazu.user.id.split(':')[0];
+          return `${botId}@s.whatsapp.net`;
+        }
+
+        console.warn('Unable to determine bot number - user object:', nazu.user);
+        return null;
+      } catch (error) {
+        console.error('Error extracting bot number:', error);
+        return null;
+      }
+    };
+
+    const botNumber = getBotNumber(nazu);
+    const isBotAdmin = !isGroup || !botNumber ? false : groupAdmins.includes(botNumber);
     let isGroupAdmin = false;
     if (isGroup) {
       const isModeratorActionAllowed = groupData.moderators?.includes(sender) && groupData.allowedModCommands?.includes(command);
