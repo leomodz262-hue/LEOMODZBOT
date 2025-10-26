@@ -12,7 +12,11 @@ import * as crypto from 'crypto';
 import WaLib from '@cognima/walib';
 import PerformanceOptimizer from './utils/performanceOptimizer.js';
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = dirname(__filename);const API_KEY_REQUIRED_MESSAGE = 'Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺';
+const OWNER_ONLY_MESSAGE = '🚫 Este comando é apenas para o dono do bot!';
+
+
+
 
 const packageJson = JSON.parse(fs.readFileSync(pathz.join(__dirname, '..', '..', 'package.json'), 'utf-8'));
 const botVersion = packageJson.version;
@@ -57,7 +61,6 @@ function formatUptime(seconds, longFormat = false, showZero = false) {
   if (s > 0 || showZero) uptimeStr.push(formats.s(s));
   return uptimeStr.length > 0 ? uptimeStr.join(longFormat ? ', ' : ' ') : longFormat ? '0 segundos' : '0s';
 }
-;
 const normalizar = (texto, keepCase = false) => {
   if (!texto || typeof texto !== 'string') return '';
   const normalizedText = texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -79,6 +82,13 @@ const getUserName = (userId) => {
     return userId.split('@')[0];
   }
   return userId.split('@')[0] || userId;
+};
+
+// Função para enviar aviso de API key não configurada
+const sendApiKeyWarning = async (nazu, nmrdn, prefix, command) => {
+  await nazu.sendMessage(nmrdn, {
+    text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês! 🚀\nwa.me/553399285117`
+  });
 };
 
 // Função para obter LID a partir de JID (quando necessário para compatibilidade)
@@ -115,15 +125,12 @@ function ensureDirectoryExists(dirPath) {
         recursive: true
       });
     }
-    ;
     return true;
   } catch (error) {
     console.error(`❌ Erro ao criar diretório ${dirPath}:`, error);
     return false;
   }
-  ;
 }
-;
 function ensureJsonFileExists(filePath, defaultContent = {}) {
   try {
     if (!fs.existsSync(filePath)) {
@@ -131,15 +138,12 @@ function ensureJsonFileExists(filePath, defaultContent = {}) {
       ensureDirectoryExists(dirPath);
       fs.writeFileSync(filePath, JSON.stringify(defaultContent, null, 2));
     }
-    ;
     return true;
   } catch (error) {
     console.error(`❌ Erro ao criar arquivo JSON ${filePath}:`, error);
     return false;
   }
-  ;
 }
-;
 const loadJsonFile = (path, defaultValue = {}) => {
   try {
     return fs.existsSync(path) ? JSON.parse(fs.readFileSync(path, 'utf-8')) : defaultValue;
@@ -511,7 +515,6 @@ const saveSubdonos = subdonoList => {
     console.error('❌ Erro ao salvar subdonos:', error);
     return false;
   }
-  ;
 };
 const isSubdono = userId => {
   const currentSubdonos = loadSubdonos();
@@ -524,7 +527,6 @@ const addSubdono = (userId, numerodono) => {
       message: 'ID de usuário inválido. Use o LID ou marque o usuário.'
     };
   }
-  ;
   let currentSubdonos = loadSubdonos();
   if (currentSubdonos.includes(userId)) {
     return {
@@ -532,7 +534,6 @@ const addSubdono = (userId, numerodono) => {
       message: '✨ Este usuário já é um subdono!'
     };
   }
-  ;
   const nmrdn_check = buildUserId(numerodono, config);
   const ownerJid = `${numerodono}@s.whatsapp.net`;
   if (userId === nmrdn_check || userId === ownerJid || (config.lidowner && userId === config.lidowner)) {
@@ -541,7 +542,6 @@ const addSubdono = (userId, numerodono) => {
       message: '🤔 O Dono principal já tem todos os superpoderes! Não dá pra adicionar como subdono. 😉'
     };
   }
-  ;
   currentSubdonos.push(userId);
   if (saveSubdonos(currentSubdonos)) {
     return {
@@ -554,7 +554,6 @@ const addSubdono = (userId, numerodono) => {
       message: '❌ Erro ao salvar a lista de subdonos. Tente novamente.'
     };
   }
-  ;
 };
 const removeSubdono = userId => {
   if (!userId || typeof userId !== 'string' || (!isUserId(userId) && !isValidJid(userId))) {
@@ -570,7 +569,6 @@ const removeSubdono = userId => {
       message: '🤔 Este usuário não está na lista de subdonos.'
     };
   }
-  ;
   const initialLength = currentSubdonos.length;
   currentSubdonos = currentSubdonos.filter(id => id !== userId);
   if (currentSubdonos.length === initialLength) {
@@ -579,7 +577,6 @@ const removeSubdono = userId => {
       message: 'Usuário não encontrado na lista (erro inesperado). 🤷'
     };
   }
-  ;
   if (saveSubdonos(currentSubdonos)) {
     return {
       success: true,
@@ -591,7 +588,6 @@ const removeSubdono = userId => {
       message: '❌ Erro ao salvar a lista após remover o subdono. Tente novamente.'
     };
   }
-  ;
 };
 const getSubdonos = () => {
   return [...loadSubdonos()];
@@ -810,7 +806,6 @@ const useActivationCode = (code, groupId, userId) => {
       message: '🔒 Este código de ativação é específico para outro grupo!'
     };
   }
-  ;
   const rentalResult = setGroupRental(groupId, codeInfo.duration);
   if (!rentalResult.success) {
     return {
@@ -1776,7 +1771,6 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
           groupName: groupName
         }, null, 2));
       }
-      ;
       try {
         groupData = JSON.parse(fs.readFileSync(groupFile));
       } catch (error) {
@@ -1837,7 +1831,6 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
       const isModeratorActionAllowed = groupData.moderators?.includes(sender) && groupData.allowedModCommands?.includes(command);
       isGroupAdmin = groupAdmins.includes(sender) || isOwner || isModeratorActionAllowed;
     }
-    ;
     const isModoBn = groupData.modobrincadeira;
     const isOnlyAdmin = groupData.soadm;
     const isAntiPorn = groupData.antiporn;
@@ -1894,9 +1887,7 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
       } else {
         await reply("⚠️ Não posso remover o usuário porque não sou administrador.");
       }
-      ;
     }
-    ;
     if (isGroup && isButtonMessage && isAntiBtn && !isGroupAdmin) {
       if (isBotAdmin) {
         await nazu.sendMessage(from, {
@@ -1911,13 +1902,10 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
       } else {
         await reply("⚠️ Não posso remover o usuário porque não sou administrador.");
       }
-      ;
     }
-    ;
     if (isGroup && isCmd && isOnlyAdmin && !isGroupAdmin) {
       return;
     }
-    ;
     if (isGroup && info.message.protocolMessage && info.message.protocolMessage.type === 0 && isAntiDel) {
       const msg = messagesCache.get(info.message.protocolMessage.key.id);
       if (!msg) return;
@@ -1937,7 +1925,6 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
       }
       await nazu.sendMessage(from, clone);
     }
-    ;
     if (isGroup && isCmd && !isGroupAdmin && groupData.blockedCommands && groupData.blockedCommands[command]) {
       await reply('⛔ Este comando foi bloqueado pelos administradores do grupo.');
       return;
@@ -1976,7 +1963,6 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
         console.error('Erro no AntiSpam Global:', e);
       }
     }
-    ;
     if (isGroup && groupData.afkUsers && groupData.afkUsers[sender]) {
       try {
         const afkReason = groupData.afkUsers[sender].reason;
@@ -1989,9 +1975,7 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
       } catch (error) {
         console.error("Erro ao processar remoção de AFK:", error);
       }
-      ;
     }
-    ;
     if (isGroup && isMuted) {
       try {
         await nazu.sendMessage(from, {
@@ -2013,16 +1997,13 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
         } else {
           await reply("⚠️ Não posso remover o usuário porque não sou administrador.");
         }
-        ;
         delete groupData.mutedUsers[sender];
         fs.writeFileSync(groupFile, JSON.stringify(groupData, null, 2));
         return;
       } catch (error) {
         console.error("Erro ao processar usuário mutado:", error);
       }
-      ;
     }
-    ;
     const rentalModeOn = isRentalModeActive();
     let groupHasActiveRental = false;
     let rentalStatusChecked = false;
@@ -2035,9 +2016,7 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
         await reply("⏳ O aluguel deste grupo expirou ou não está ativo. Para usar os comandos, ative com um código ou solicite ao dono a renovação.");
         return;
       }
-      ;
     }
-    ;
     if (isGroup && !isCmd && body && /\b[A-F0-9]{8}\b/.test(body.toUpperCase())) {
       const potentialCode = body.match(/\b[A-F0-9]{8}\b/)[0].toUpperCase();
       const validation = validateActivationCode(potentialCode);
@@ -2048,15 +2027,11 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
           if (activationResult.success) {
             return;
           }
-          ;
         } catch (e) {
           console.error(`Erro ao tentar usar código de ativação ${potentialCode} no grupo ${from}:`, e);
         }
-        ;
       }
-      ;
     }
-    ;
     if (isGroup) {
       try {
         groupData.contador = groupData.contador || [];
@@ -2070,11 +2045,9 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
           } else {
             userData.msg = (userData.msg || 0) + 1;
           }
-          ;
           if (pushname && userData.pushname !== pushname) {
             userData.pushname = pushname;
           }
-          ;
           userData.lastActivity = new Date().toISOString();
         } else {
           groupData.contador.push({
@@ -2087,14 +2060,11 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
             lastActivity: new Date().toISOString()
           });
         }
-        ;
         fs.writeFileSync(groupFile, JSON.stringify(groupData, null, 2));
       } catch (error) {
         console.error("Erro no sistema de contagem de mensagens:", error);
       }
-      ;
     }
-    ;
     if (isGroup && groupData.levelingEnabled) {
       const levelingData = loadJsonFile(LEVELING_FILE);
       levelingData.users[sender] = levelingData.users[sender] || {
@@ -2115,7 +2085,6 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
       checkLevelUp(sender, userData, levelingData, nazu, from);
       fs.writeFileSync(LEVELING_FILE, JSON.stringify(levelingData, null, 2));
     }
-    ;
     async function reply(text, options = {}) {
       try {
         const {
@@ -2692,7 +2661,6 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
             } else {
               console.warn("Anti-porn API response format unexpected:", apiResponse.data);
             }
-            ;
             const pornThreshold = 0.7;
             const hentaiThreshold = 0.7;
             const isPorn = scores.Porn >= pornThreshold;
@@ -2715,7 +2683,6 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
                     mentions: [sender]
                   });
                 }
-                ;
               } else {
                 await reply(`@${getUserName(sender)} enviou conteúdo impróprio (${reason}), mas não posso removê-lo sem ser admin.`, {
                   mentions: [sender]
@@ -2728,11 +2695,8 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
         } catch (error) {
           console.error("Erro na verificação anti-porn:", error);
         }
-        ;
       }
-      ;
     }
-    ;
     if (isGroup && groupData.antiloc && !isGroupAdmin && type === 'locationMessage') {
       await nazu.sendMessage(from, {
         delete: {
@@ -2747,7 +2711,6 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
         mentions: [sender]
       });
     }
-    ;
     if (isGroup && antifloodData[from]?.enabled && isCmd && !isGroupAdmin) {
       antifloodData[from].users = antifloodData[from].users || {};
       const now = Date.now();
@@ -2756,13 +2719,11 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
       if (now - lastCmd < interval) {
         return reply(`⏳ Aguarde ${Math.ceil((interval - (now - lastCmd)) / 1000)} segundos antes de usar outro comando.`);
       }
-      ;
       antifloodData[from].users[sender] = {
         lastCmd: now
       };
       fs.writeFileSync(__dirname + '/../database/antiflood.json', JSON.stringify(antifloodData, null, 2));
     }
-    ;
     if (isGroup && groupData.antidoc && !isGroupAdmin && (type === 'documentMessage' || type === 'documentWithCaptionMessage')) {
       await nazu.sendMessage(from, {
         delete: {
@@ -2777,7 +2738,6 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
         mentions: [sender]
       });
     }
-    ;
     if (isGroup && cmdLimitData[from]?.enabled && isCmd && !isGroupAdmin) {
       cmdLimitData[from].users = cmdLimitData[from].users || {};
       const today = new Date().toISOString().split('T')[0];
@@ -2797,7 +2757,6 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
       cmdLimitData[from].users[sender].count++;
       fs.writeFileSync(__dirname + '/../database/cmdlimit.json', JSON.stringify(cmdLimitData, null, 2));
     }
-    ;
     if (isGroup && groupData.autodl && budy2.includes('http') && !isCmd) {
       const urlMatch = body.match(/(https?:\/\/[^\s]+)/g);
       if (urlMatch) {
@@ -2835,7 +2794,6 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
         console.error("Erro ao converter mídia em figurinha automática:", e);
       }
     }
-    ;
     if (isGroup && groupData.antilinkhard && !isGroupAdmin && budy2.includes('http') && !isOwner) {
       try {
         await nazu.sendMessage(from, {
@@ -2856,14 +2814,11 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
             mentions: [sender]
           });
         }
-        ;
         return;
       } catch (error) {
         console.error("Erro no sistema antilink hard:", error);
       }
-      ;
     }
-    ;
     let quotedMessageContent = null;
     if (type === 'extendedTextMessage' && info.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
       quotedMessageContent = info.message.extendedTextMessage.contextInfo.quotedMessage;
@@ -2888,18 +2843,14 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
           if (err) {
             return reply(`❌ *Erro na execução*\n\n${err}`);
           }
-          ;
           if (stdout) {
             reply(`✅ *Resultado do comando*\n\n${stdout}`);
           }
-          ;
         });
       } catch (error) {
         reply(`❌ *Erro ao executar comando*\n\n${error}`);
       }
-      ;
     }
-    ;
     if (body.startsWith('>>')) {
       if (!isOwner) return;
       try {
@@ -2911,15 +2862,12 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
                 
                 codeLines[codeLines.length - 1] = 'return ' + codeLines[codeLines.length - 1];
               }
-              ;
             } else {
               if (!codeLines[0].includes('return')) {
                 
                 codeLines[0] = 'return ' + codeLines[0];
               }
-              ;
             }
-            ;
             const result = await eval(`(async () => { ${codeLines.join('\n')} })()`);
             let output;
             if (typeof result === 'object' && result !== null) {
@@ -2932,7 +2880,6 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
               
               output = String(result);
             }
-            ;
             return reply(`✅ *Resultado da execução*\n\n${output}`).catch(e => reply(String(e)));
           } catch (e) {
             return reply(`❌ *Erro na execução*\n\n${String(e)}`);
@@ -2941,9 +2888,7 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
       } catch (e) {
         reply(`❌ *Erro crítico*\n\n${String(e)}`);
       }
-      ;
     }
-    ;
 
     if (isGroup && isAntiLinkGp && !isGroupAdmin) {
       let foundGroupLink = false;
@@ -2989,7 +2934,6 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
         console.error("Erro no sistema antilink de grupos:", error);
       }
     }
-    ;
     const botStateFile = __dirname + '/../database/botState.json';
     if (botState.status === 'off' && !isOwner) return;
     if (botState.viewMessages) nazu.readMessages([info.key]);
@@ -3017,11 +2961,9 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
         console.log(`┃ 🕒 Data/Hora: ${timestamp.padEnd(27)}`);
         console.log('┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n');
       }
-      ;
     } catch (error) {
       console.error('┃ 🚨 Erro ao gerar logs:', error, '');
     }
-    ;
     if (isGroup) {
       try {
         if (tictactoe.hasPendingInvitation(from) && budy2) {
@@ -3034,19 +2976,16 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
             });
           }
         }
-        ;
         if (tictactoe.hasActiveGame(from) && budy2) {
           if (['tttend', 'rv', 'fimjogo'].includes(budy2)) {
             if (!isGroupAdmin) {
               await reply("⚠️ Apenas administradores podem encerrar um jogo da velha em andamento.");
               return;
             }
-            ;
             const result = tictactoe.endGame(from);
             await reply(result.message);
             return;
           }
-          ;
           const position = parseInt(budy2.trim());
           if (!isNaN(position)) {
             const result = tictactoe.makeMove(from, sender, position);
@@ -3058,18 +2997,13 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
             } else if (result.message) {
               await reply(result.message);
             }
-            ;
           }
-          ;
           return;
         }
-        ;
       } catch (error) {
 
       }
-      ;
     }
-    ;
     if (isGroup && groupData.blockedUsers && (groupData.blockedUsers[sender] || groupData.blockedUsers[getUserName(sender)]) && isCmd) {
       return reply(`🚫 Você não tem permissão para usar comandos neste grupo.\nMotivo: ${groupData.blockedUsers[sender] ? groupData.blockedUsers[sender].reason : groupData.blockedUsers[getUserName(sender)].reason}`);
     };
@@ -3084,19 +3018,15 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
       const blacklistEntry = groupData.blacklist[sender] || groupData.blacklist[getUserName(sender)];
       return reply(`🚫 Você está na blacklist deste grupo e não pode usar comandos.\nMotivo: ${blacklistEntry.reason}\nData: ${new Date(blacklistEntry.timestamp).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`);
     }
-    ;
     if (sender && sender.includes('@') && globalBlocks.users && (globalBlocks.users[sender] || globalBlocks.users[getUserName(sender)]) && isCmd) {
       return reply(`🚫 Parece que você está bloqueado de usar meus comandos globalmente.\nMotivo: ${globalBlocks.users[sender] ? globalBlocks.users[sender].reason : globalBlocks.users[getUserName(sender)].reason}`);
     }
-    ;
     if (isCmd && globalBlocks.commands && globalBlocks.commands[command]) {
       return reply(`🚫 O comando *${command}* está temporariamente desativado globalmente.\nMotivo: ${globalBlocks.commands[command].reason}`);
     }
-    ;
     if (isCmd && commandStats && commandStats.trackCommandUsage && command && command.length > 0) {
       commandStats.trackCommandUsage(command, sender);
     }
-    ;
     if (budy2.match(/^(\d+)d(\d+)$/)) reply(+budy2.match(/^(\d+)d(\d+)$/)[1] > 50 || +budy2.match(/^(\d+)d(\d+)$/)[2] > 100 ? "❌ Limite: max 50 dados e 100 lados" : "🎲 Rolando " + budy2.match(/^(\d+)d(\d+)$/)[1] + "d" + budy2.match(/^(\d+)d(\d+)$/)[2] + "...\n🎯 Resultados: " + (r = [...Array(+budy2.match(/^(\d+)d(\d+)$/)[1])].map(_ => 1 + Math.floor(Math.random() * +budy2.match(/^(\d+)d(\d+)$/)[2]))).join(", ") + "\n📊 Total: " + r.reduce((a, b) => a + b, 0));
     if (!info.key.fromMe && isAssistente && !isCmd && (budy2.includes(nazu.user.id.split(':')[0]) || (budy2.includes(nazu.user.lid.split(':')[0])) || menc_os2 && menc_os2 == getBotId(nazu)) && KeyCog) {
       if (budy2.replaceAll('@' + nazu.user.id.split(':')[0], '').length > 2) {
@@ -3136,7 +3066,6 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
             jSoNzIn.id_enviou_marcada = jsonO.participant;
             jSoNzIn.marcou_sua_mensagem = jsonO.participant == getBotId(nazu);
           }
-          ;
             if (!KeyCog) {
               await nazu.sendMessage(nmrdn, {
                 text: '🤖 *Sistema de IA desativado*\n\n😅 O sistema de IA está desativado porque a API key não foi configurada.\n\n⚙️ Para configurar, use o comando: `!apikey SUA_API_KEY`\n📞 Suporte: wa.me/553399285117'
@@ -3174,23 +3103,16 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
                   } else if (msgza.actions.params.length > 0) {
                     var q = msgza.actions.params;
                   }
-                  ;
                 }
-                ;
               }
-              ;
             }
-            ;
           }
         } catch (assistentError) {
           console.error('Erro no assistente virtual:', assistentError.message);
           await reply('🤖 Erro técnico no assistente virtual. Tente novamente em alguns minutos.');
         }
-        ;
       }
-      ;
     }
-    ;
     //ANTI FLOOD DE MENSAGENS
     if (isGroup && groupData.messageLimit?.enabled && !isGroupAdmin && !isOwnerOrSub && !info.key.fromMe) {
       try {
@@ -3205,7 +3127,6 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
           userData.count = 0;
           userData.lastReset = now;
         }
-        ;
         userData.count++;
         groupData.messageLimit.users[sender] = userData;
         if (userData.count > groupData.messageLimit.limit) {
@@ -3260,9 +3181,7 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
           mentions: [sender]
         });
       }
-      ;
     }
-    ;
     //ANTI FIGURINHAS
     if (isGroup && groupData.antifig && groupData.antifig.enabled && type === "stickerMessage" && !isGroupAdmin && !info.key.fromMe) {
       try {
@@ -3308,9 +3227,7 @@ async function NazuninhaBotExec(nazu, info, store, messagesCache, rentalExpirati
         var command = matchedCommand.command;
         var isCmd = true;
       }
-      ;
     }
-    ;
     switch (command) {
       case 'menugold': {
         await sendMenuWithMedia('menugold', menuGold);
@@ -4151,7 +4068,6 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'videorapido':
       case 'fastvid':
@@ -4240,12 +4156,10 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
           } else {
             reply(command === 'tomp3' ? "🎬 Para converter vídeo para áudio, responda a uma mensagem que contenha um vídeo." : "🎬 Para aplicar este efeito de vídeo, responda a uma mensagem que contenha um vídeo.");
           }
-          ;
         } catch (e) {
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       //INTELIGENCIA ARTIFICIAL
       case 'genrealism':
@@ -4260,10 +4174,8 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
         try {
           let styleKey = command === 'genrealism' ? 'default' : command.slice(3);
           if (!KeyCog) {
-            await nazu.sendMessage(nmrdn, {
-              text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês! 🚀\nwa.me/553399285117`
-            });
-            return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+            await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+            return reply(API_KEY_REQUIRED_MESSAGE);
           }
           if (!q) return reply(`🎨 *Gerador de Imagens AI*\n\n💡 *Como usar:*\n• Forneça uma descrição detalhada do que deseja\n• Ex: ${prefix}${command} Black Cat\n• Ex: ${prefix}${command} paisagem montanha pôr do sol realista`);
           await reply('⏳ Só um segundinho, estou gerando a imagem... ✨');
@@ -4297,10 +4209,8 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
       case 'gemma':
         if (!q) return reply(`🤔 Qual sua dúvida para o Gemma? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
         if (!KeyCog) {
-          await nazu.sendMessage(nmrdn, {
-            text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês! 🚀\nwa.me/553399285117`
-          });
-          return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+          await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+          return reply(API_KEY_REQUIRED_MESSAGE);
         }
         try {
           await reply(`⏳ Só um segundinho, estou consultando o Gemma... ✨`);
@@ -4321,10 +4231,8 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
       case 'phi3':
         if (!q) return reply(`🤔 Qual sua dúvida para o Phi? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
         if (!KeyCog) {
-          await nazu.sendMessage(nmrdn, {
-            text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês! 🚀\nwa.me/553399285117`
-          });
-          return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+          await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+          return reply(API_KEY_REQUIRED_MESSAGE);
         }
         try {
           await reply(`⏳ Só um segundinho, estou consultando o Phi... ✨`);
@@ -4344,10 +4252,8 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
       case 'qwen2':
         if (!q) return reply(`🤔 Qual sua dúvida para o Qwen2? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
         if (!KeyCog) {
-          await nazu.sendMessage(nmrdn, {
-            text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês! 🚀\nwa.me/553399285117`
-          });
-          return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+          await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+          return reply(API_KEY_REQUIRED_MESSAGE);
         }
         try {
           await reply(`⏳ Só um segundinho, estou consultando o Qwen2... ✨`);
@@ -4368,10 +4274,8 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
       case 'qwen3':
         if (!q) return reply(`🤔 Qual sua dúvida para o Qwen? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
         if (!KeyCog) {
-          await nazu.sendMessage(nmrdn, {
-            text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Caso tenha interesse, entre em contato comigo pelo link abaixo! Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês. 🚀\nwa.me/553399285117`
-          });
-          return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+          await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+          return reply(API_KEY_REQUIRED_MESSAGE);
         }
         try {
           await reply(`⏳ Só um segundinho, estou consultando o Qwen... ✨`);
@@ -4392,10 +4296,8 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
       case 'llama3':
         if (!q) return reply(`🤔 Qual sua dúvida para o Llama? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
         if (!KeyCog) {
-          await nazu.sendMessage(nmrdn, {
-            text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Caso tenha interesse, entre em contato comigo pelo link abaixo! Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês. 🚀\nwa.me/553399285117`
-          });
-          return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+          await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+          return reply(API_KEY_REQUIRED_MESSAGE);
         }
         try {
           await reply(`⏳ Só um segundinho, estou consultando o Llama... ✨`);
@@ -4416,10 +4318,8 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
       case 'baichuan2':
         if (!q) return reply(`🤔 Qual sua dúvida para o Baichuan? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
         if (!KeyCog) {
-          await nazu.sendMessage(nmrdn, {
-            text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Caso tenha interesse, entre em contato comigo pelo link abaixo! Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês. 🚀\nwa.me/553399285117`
-          });
-          return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+          await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+          return reply(API_KEY_REQUIRED_MESSAGE);
         }
         try {
           await reply(`⏳ Só um segundinho, estou consultando o Baichuan... ✨`);
@@ -4439,10 +4339,8 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
       case 'marin':
         if (!q) return reply(`🤔 Qual sua dúvida para o Marin? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
         if (!KeyCog) {
-          await nazu.sendMessage(nmrdn, {
-            text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Caso tenha interesse, entre em contato comigo pelo link abaixo! Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês. 🚀\nwa.me/553399285117`
-          });
-          return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+          await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+          return reply(API_KEY_REQUIRED_MESSAGE);
         }
         try {
           await reply(`⏳ Só um segundinho, estou consultando o Marin... ✨`);
@@ -4463,10 +4361,8 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
       case 'kimik2':
         if (!q) return reply(`🤔 Qual sua dúvida para o Kimi? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
         if (!KeyCog) {
-          await nazu.sendMessage(nmrdn, {
-            text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Caso tenha interesse, entre em contato comigo pelo link abaixo! Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês. 🚀\nwa.me/553399285117`
-          });
-          return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+          await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+          return reply(API_KEY_REQUIRED_MESSAGE);
         }
         try {
           await reply(`⏳ Só um segundinho, estou consultando o Kimi... ✨`);
@@ -4486,10 +4382,8 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
       case 'mistral':
         if (!q) return reply(`🤔 Qual sua dúvida para o Mistral? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
         if (!KeyCog) {
-          await nazu.sendMessage(nmrdn, {
-            text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Caso tenha interesse, entre em contato comigo pelo link abaixo! Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês. 🚀\nwa.me/553399285117`
-          });
-          return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+          await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+          return reply(API_KEY_REQUIRED_MESSAGE);
         }
         try {
           await reply(`⏳ Só um segundinho, estou consultando o Mistral... ✨`);
@@ -4509,10 +4403,8 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
       case 'magistral':
         if (!q) return reply(`🤔 Qual sua dúvida para o Magistral? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
         if (!KeyCog) {
-          await nazu.sendMessage(nmrdn, {
-            text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Caso tenha interesse, entre em contato comigo pelo link abaixo! Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês. 🚀\nwa.me/553399285117`
-          });
-          return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+          await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+          return reply(API_KEY_REQUIRED_MESSAGE);
         }
         try {
           await reply(`⏳ Só um segundinho, estou consultando o Magistral... ✨`);
@@ -4533,10 +4425,8 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
       case 'rocket':
         if (!q) return reply(`🤔 Qual sua dúvida para o RakutenAI? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
         if (!KeyCog) {
-          await nazu.sendMessage(nmrdn, {
-            text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Caso tenha interesse, entre em contato comigo pelo link abaixo! Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês. 🚀\nwa.me/553399285117`
-          });
-          return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+          await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+          return reply(API_KEY_REQUIRED_MESSAGE);
         }
         try {
           await reply(`⏳ Só um segundinho, estou consultando o RakutenAI... ✨`);
@@ -4556,10 +4446,8 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
       case 'yi':
         if (!q) return reply(`🤔 Qual sua dúvida para o Yi? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
         if (!KeyCog) {
-          await nazu.sendMessage(nmrdn, {
-            text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Caso tenha interesse, entre em contato comigo pelo link abaixo! Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês. 🚀\nwa.me/553399285117`
-          });
-          return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+          await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+          return reply(API_KEY_REQUIRED_MESSAGE);
         }
         try {
           await reply(`⏳ Só um segundinho, estou consultando o Yi... ✨`);
@@ -4579,10 +4467,8 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
       case 'gemma2':
         if (!q) return reply(`🤔 Qual sua dúvida para o Gemma2? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
         if (!KeyCog) {
-          await nazu.sendMessage(nmrdn, {
-            text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Caso tenha interesse, entre em contato comigo pelo link abaixo! Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês. 🚀\nwa.me/553399285117`
-          });
-          return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+          await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+          return reply(API_KEY_REQUIRED_MESSAGE);
         }
         try {
           await reply(`⏳ Só um segundinho, estou consultando o Gemma2... ✨`);
@@ -4602,10 +4488,8 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
       case 'swallow':
         if (!q) return reply(`🤔 Qual sua dúvida para o Swallow? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
         if (!KeyCog) {
-          await nazu.sendMessage(nmrdn, {
-            text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Caso tenha interesse, entre em contato comigo pelo link abaixo! Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês. 🚀\nwa.me/553399285117`
-          });
-          return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+          await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+          return reply(API_KEY_REQUIRED_MESSAGE);
         }
         try {
           await reply(`⏳ Só um segundinho, estou consultando o Swallow... ✨`);
@@ -4625,10 +4509,8 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
       case 'falcon':
         if (!q) return reply(`🤔 Qual sua dúvida para o Falcon? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
         if (!KeyCog) {
-          await nazu.sendMessage(nmrdn, {
-            text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Caso tenha interesse, entre em contato comigo pelo link abaixo! Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês. 🚀\nwa.me/553399285117`
-          });
-          return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+          await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+          return reply(API_KEY_REQUIRED_MESSAGE);
         }
         try {
           await reply(`⏳ Só um segundinho, estou consultando o Falcon... ✨`);
@@ -4648,10 +4530,8 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
       case 'qwencoder':
         if (!q) return reply(`🤔 Qual sua dúvida para o Qwencoder? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
         if (!KeyCog) {
-          await nazu.sendMessage(nmrdn, {
-            text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Caso tenha interesse, entre em contato comigo pelo link abaixo! Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês. 🚀\nwa.me/553399285117`
-          });
-          return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+          await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+          return reply(API_KEY_REQUIRED_MESSAGE);
         }
         try {
           await reply(`⏳ Só um segundinho, estou consultando o Qwencoder... ✨`);
@@ -4671,10 +4551,8 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
       case 'codegemma':
         if (!q) return reply(`🤔 Qual sua dúvida para o CodeGemma? Informe a pergunta após o comando! Exemplo: ${prefix}${command} quem descobriu o Brasil? 🌍`);
         if (!KeyCog) {
-          await nazu.sendMessage(nmrdn, {
-            text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Caso tenha interesse, entre em contato comigo pelo link abaixo! Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês. 🚀\nwa.me/553399285117`
-          });
-          return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+          await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+          return reply(API_KEY_REQUIRED_MESSAGE);
         }
         try {
           await reply(`⏳ Só um segundinho, estou consultando o CodeGemma... ✨`);
@@ -4694,10 +4572,8 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
       case 'resumir':
         if (!q) return reply(`📝 *Resumidor de Texto*\n\n💡 *Como usar:*\n• Envie o texto que deseja resumir após o comando\n• Ex: ${prefix}resumir [seu texto aqui]\n\n✨ O texto será resumido de forma clara e objetiva!`);
         if (!KeyCog) {
-          await nazu.sendMessage(nmrdn, {
-            text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Caso tenha interesse, entre em contato comigo pelo link abaixo! Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês. 🚀\nwa.me/553399285117`
-          });
-          return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+          await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+          return reply(API_KEY_REQUIRED_MESSAGE);
         }
         try {
           await reply('⏳ Aguarde enquanto preparo um resumo bem caprichado... ✨');
@@ -4718,10 +4594,8 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
       case 'resumirurl':
         if (!q) return reply(`🌐 Quer resumir uma página? Envie a URL após o comando ${prefix}resumirurl! Exemplo: ${prefix}resumirurl https://exemplo.com/artigo 😊`);
         if (!KeyCog) {
-          await nazu.sendMessage(nmrdn, {
-            text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Caso tenha interesse, entre em contato comigo pelo link abaixo! Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês. 🚀\nwa.me/553399285117`
-          });
-          return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+          await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+          return reply(API_KEY_REQUIRED_MESSAGE);
         }
         try {
           if (!q.startsWith('http://') && !q.startsWith('https://')) {
@@ -4764,10 +4638,8 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
       case 'ideia':
         if (!q) return reply(`💡 Quer ideias criativas? Diga o tema após o comando ${prefix}ideias! Exemplo: ${prefix}ideias nomes para um aplicativo de receitas 😊`);
         if (!KeyCog) {
-          await nazu.sendMessage(nmrdn, {
-            text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Caso tenha interesse, entre em contato comigo pelo link abaixo! Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês. 🚀\nwa.me/553399285117`
-          });
-          return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+          await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+          return reply(API_KEY_REQUIRED_MESSAGE);
         }
         try {
           await reply('⏳ Um segundinho, estou pensando em ideias incríveis... ✨');
@@ -4789,10 +4661,8 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
       case 'explique':
         if (!q) return reply(`🤓 Quer entender algo? Diga o que deseja explicar após o comando ${prefix}explicar! Exemplo: ${prefix}explicar o que é inteligência artificial 😊`);
         if (!KeyCog) {
-          await nazu.sendMessage(nmrdn, {
-            text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Caso tenha interesse, entre em contato comigo pelo link abaixo! Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês. 🚀\nwa.me/553399285117`
-          });
-          return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+          await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+          return reply(API_KEY_REQUIRED_MESSAGE);
         }
         try {
           await reply('⏳ Um momentinho, estou preparando uma explicação bem clara... ✨');
@@ -4814,10 +4684,8 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
       case 'correcao':
         if (!q) return reply(`✍️ Quer corrigir um texto? Envie o texto após o comando ${prefix}corrigir! Exemplo: ${prefix}corrigir Eu foi no mercado e comprei frutas. 😊`);
         if (!KeyCog) {
-          await nazu.sendMessage(nmrdn, {
-            text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Caso tenha interesse, entre em contato comigo pelo link abaixo! Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês. 🚀\nwa.me/553399285117`
-          });
-          return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+          await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+          return reply(API_KEY_REQUIRED_MESSAGE);
         }
         try {
           await reply('⏳ Aguarde enquanto dou um polimento no seu texto... ✨');
@@ -4832,10 +4700,8 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
       case 'cog':
         if (!q) return reply(`📢 Ei, falta a pergunta! Me diga o que quer saber após o comando ${prefix}cog! 😴`);
         if (!KeyCog) {
-          await nazu.sendMessage(nmrdn, {
-            text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Caso tenha interesse, entre em contato comigo pelo link abaixo! Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês. 🚀\nwa.me/553399285117`
-          });
-          return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+          await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+          return reply(API_KEY_REQUIRED_MESSAGE);
         }
         try {
           await reply('⏳ Um momentinho, estou pensando na melhor resposta... 🌟');
@@ -4851,10 +4717,8 @@ Capacidade: ${cap === '∞' ? 'ilimitada' : fmt(cap)}
         if (!q) return reply(`🌍 Quer traduzir algo? Me diga o idioma e o texto assim: ${prefix}${command} idioma | texto
 Exemplo: ${prefix}tradutor inglês | Bom dia! 😊`);
         if (!KeyCog) {
-          await nazu.sendMessage(nmrdn, {
-            text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Caso tenha interesse, entre em contato comigo pelo link abaixo! Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês. 🚀\nwa.me/553399285117`
-          });
-          return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+          await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+          return reply(API_KEY_REQUIRED_MESSAGE);
         }
         try {
           await reply('Aguarde um momentinho... ☀️');
@@ -4978,10 +4842,8 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
       case 'dictionary':
         if (!q) return reply(`📔 Qual palavra você quer procurar no dicionário? Me diga após o comando ${prefix}${command}! 😊`);
         if (!KeyCog) {
-          await nazu.sendMessage(nmrdn, {
-            text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Caso tenha interesse, entre em contato comigo pelo link abaixo! Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês. 🚀\nwa.me/553399285117`
-          });
-          return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+          await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+          return reply(API_KEY_REQUIRED_MESSAGE);
         }
         reply("📔 Procurando no dicionário... Aguarde um pouquinho! ⏳");
         try {
@@ -5045,11 +4907,9 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           } else {
             await reply('Você ja esta utilizando a versão mais recente da bot.');
           }
-          ;
         } catch (e) {
           console.error(e);
         }
-        ;
         break;
       case 'addsubdono':
         if (!isOwner || isSubOwner) return reply("🚫 Apenas o Dono principal pode adicionar subdonos!");
@@ -5139,7 +4999,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
         break;
       case 'viewmsg':
         try {
-          if (!isOwner) return reply('🚫 Este comando é apenas para o dono do bot!');
+          if (!isOwner) return reply(OWNER_ONLY_MESSAGE);
           if (!q) return reply(`Use: ${prefix}viewmsg [on/off]`);
           const botStateFile = DATABASE_DIR + '/botState.json';
           let botState = loadJsonFile(botStateFile, {
@@ -5192,7 +5052,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
       case 'listaluguel':
       case 'listaaluguel':
         try {
-          if (!isOwner) return reply('🚫 Este comando é apenas para o dono do bot!');
+          if (!isOwner) return reply(OWNER_ONLY_MESSAGE);
           const rentalData = loadRentalData();
           const globalMode = rentalData.globalMode ? '🟢 Ativo' : '🔴 Desativado';
           const groupRentals = rentalData.groups || {};
@@ -5484,7 +5344,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
       case 'addautoresponse':
       case 'addauto':
         try {
-          if (!isOwner) return reply('🚫 Este comando é apenas para o dono do bot!');
+          if (!isOwner) return reply(OWNER_ONLY_MESSAGE);
           if (!q || !q.includes('/')) return reply(`Por favor, forneça a mensagem recebida e a resposta separadas por /. Ex: ${groupPrefix}addauto bom dia/Olá, bom dia!`);
           const [received, response] = q.split('/').map(s => s.trim());
           if (!received || !response) return reply("Formato inválido. Use: mensagem recebida/mensagem do bot");
@@ -5508,7 +5368,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
       case 'addautomedia':
       case 'addautomidia':
         try {
-          if (!isOwner) return reply('🚫 Este comando é apenas para o dono do bot!');
+          if (!isOwner) return reply(OWNER_ONLY_MESSAGE);
           if (!q) return reply(`📝 Como usar:\n\n1️⃣ ${groupPrefix}addautomidia [trigger]\n2️⃣ Responda uma mídia (imagem, vídeo, áudio ou sticker)\n3️⃣ Opcionalmente adicione uma legenda\n\nExemplo: ${groupPrefix}addautomidia oi (respondendo uma imagem)`);
           
           const trigger = q.trim();
@@ -5645,7 +5505,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
       case 'listautoresponses':
       case 'listauto':
         try {
-          if (!isOwner) return reply('🚫 Este comando é apenas para o dono do bot!');
+          if (!isOwner) return reply(OWNER_ONLY_MESSAGE);
           const autoResponses = loadCustomAutoResponses();
           if (autoResponses.length === 0) return reply("📜 Nenhuma auto-resposta global definida.");
           
@@ -5721,7 +5581,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
       case 'delautoresponse':
       case 'delauto':
         try {
-          if (!isOwner) return reply('🚫 Este comando é apenas para o dono do bot!');
+          if (!isOwner) return reply(OWNER_ONLY_MESSAGE);
           if (!q || isNaN(parseInt(q))) return reply(`Por favor, forneça o número da auto-resposta a ser removida. Ex: ${groupPrefix}delauto 1`);
           const index = parseInt(q) - 1;
           const autoResponses = loadCustomAutoResponses();
@@ -5840,7 +5700,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
       case 'addnoprefix':
       case 'addnopref':
         try {
-          if (!isOwner) return reply('🚫 Este comando é apenas para o dono do bot!');
+          if (!isOwner) return reply(OWNER_ONLY_MESSAGE);
           if (!q || !q.includes('/')) return reply(`Por favor, forneça a mensagem e o comando separados por /. Ex: ${groupPrefix}addnoprefix 😸/ban`);
           const [trigger, targetCommand] = q.split('/').map(s => s.trim());
           if (!trigger || !targetCommand) return reply("Formato inválido. Use: mensagem/comando");
@@ -5865,7 +5725,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
       case 'listnoprefix':
       case 'listnopref':
         try {
-          if (!isOwner) return reply('🚫 Este comando é apenas para o dono do bot!');
+          if (!isOwner) return reply(OWNER_ONLY_MESSAGE);
           const noPrefixCommands = loadNoPrefixCommands();
           if (noPrefixCommands.length === 0) return reply("📜 Nenhum comando sem prefixo definido.");
           let responseText = `📜 *Comandos Sem Prefixo do Grupo ${groupName}*\n\n`;
@@ -5882,7 +5742,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
       case 'delnoprefix':
       case 'delnopref':
         try {
-          if (!isOwner) return reply('🚫 Este comando é apenas para o dono do bot!');
+          if (!isOwner) return reply(OWNER_ONLY_MESSAGE);
           if (!q || isNaN(parseInt(q))) return reply(`Por favor, forneça o número do comando sem prefixo a ser removido. Ex: ${groupPrefix}delnoprefix 1`);
           const index = parseInt(q) - 1;
           const noPrefixCommands = loadNoPrefixCommands();
@@ -5900,7 +5760,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
         break;
       case 'addalias':
         try {
-          if (!isOwner) return reply('🚫 Este comando é apenas para o dono do bot!');
+          if (!isOwner) return reply(OWNER_ONLY_MESSAGE);
           if (!q || !q.includes('/')) return reply(`Por favor, forneça o apelido e o comando separados por /. Ex: ${groupPrefix}addalias h/hidetag`);
           const [alias, targetCommand] = q.split('/').map(s => s.trim());
           if (!alias || !targetCommand) return reply("Formato inválido. Use: apelido/comando");
@@ -5924,7 +5784,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
         break;
       case 'listalias':
         try {
-          if (!isOwner) return reply('🚫 Este comando é apenas para o dono do bot!');
+          if (!isOwner) return reply(OWNER_ONLY_MESSAGE);
           const aliases = loadCommandAliases();
           if (aliases.length === 0) return reply("📜 Nenhum apelido de comando definido.");
           let responseText = `📜 *Apelidos de Comandos do Grupo ${groupName}*\n\n`;
@@ -5940,7 +5800,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
         break;
       case 'delalias':
         try {
-          if (!isOwner) return reply('🚫 Este comando é apenas para o dono do bot!');
+          if (!isOwner) return reply(OWNER_ONLY_MESSAGE);
           if (!q || isNaN(parseInt(q))) return reply(`Por favor, forneça o número do apelido a ser removido. Ex: ${groupPrefix}delalias 1`);
           const index = parseInt(q) - 1;
           const aliases = loadCommandAliases();
@@ -6017,7 +5877,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'nick':
       case 'gerarnick':
@@ -6031,7 +5890,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'printsite':
       case 'ssweb':
@@ -6048,7 +5906,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'upload':
       case 'imgpralink':
@@ -6070,7 +5927,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           } else if (isQuotedAudio) {
             media = await getFileBuffer(audio1, "audio");
           }
-          ;
           let linkz = await upload(media);
           await reply(`${linkz}`);
         } catch (e) {
@@ -6105,7 +5961,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'mcplugin':
       case 'mcplugins':
@@ -6126,14 +5981,11 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'shazam':
         if (!KeyCog) {
-          await nazu.sendMessage(nmrdn, {
-            text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Caso tenha interesse, entre em contato comigo pelo link abaixo! Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês. 🚀\nwa.me/553399285117`
-          });
-          return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+          await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+          return reply(API_KEY_REQUIRED_MESSAGE);
         }
         try {
           if (isMedia && !info.message.imageMessage && !info.message.videoMessage || isQuotedAudio) {
@@ -6158,7 +6010,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
             if (!dlRes.ok) {
               return reply(`❌ Erro ao baixar o áudio: ${dlRes.msg}`);
             }
-            ;
             try {
               await nazu.sendMessage(from, {
                 audio: dlRes.buffer,
@@ -6179,13 +6030,10 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
               } else {
                 throw audioError;
               }
-              ;
             }
-            ;
           } else {
             await reply('Use o comando marcando um audio... ☀️');
           }
-          ;
         } catch (e) {
           console.error(e);
           
@@ -6196,7 +6044,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
             await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
           }
         }
-        ;
         break;
       case 'play':
       case 'ytmp3':
@@ -6207,10 +6054,8 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
 
           // Verificar se tem API key
           if (!KeyCog) {
-            await nazu.sendMessage(nmrdn, {
-              text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês! 🚀\nwa.me/553399285117`
-            });
-            return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+            await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+            return reply(API_KEY_REQUIRED_MESSAGE);
           }
 
           let videoUrl;
@@ -6327,10 +6172,8 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           
           // Verificar se tem API key
           if (!KeyCog) {
-            await nazu.sendMessage(nmrdn, {
-              text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês! 🚀\nwa.me/553399285117`
-            });
-            return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+            await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+            return reply(API_KEY_REQUIRED_MESSAGE);
           }
 
           let videoUrl;
@@ -6443,7 +6286,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           console.error(e);
           reply("ocorreu um erro 💔");
         }
-        ;
         break;
       case 'tiktok':
       case 'tiktokaudio':
@@ -6457,10 +6299,8 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           
           // Verificar se tem API key
           if (!KeyCog) {
-            await nazu.sendMessage(nmrdn, {
-              text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês! 🚀\nwa.me/553399285117`
-            });
-            return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+            await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+            return reply(API_KEY_REQUIRED_MESSAGE);
           }
 
           await reply('Aguarde um momentinho... ☀️');
@@ -6509,10 +6349,8 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           
           // Verificar se tem API key
           if (!KeyCog) {
-            await nazu.sendMessage(nmrdn, {
-              text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês! 🚀\nwa.me/553399285117`
-            });
-            return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+            await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+            return reply(API_KEY_REQUIRED_MESSAGE);
           }
 
           await reply('Aguarde um momentinho... ☀️');
@@ -6713,7 +6551,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
         break;
       case 'configcmdnotfound':
       case 'setcmdmsg':
-        if (!isOwner) return reply('🚫 Este comando é apenas para o dono do bot!');
+        if (!isOwner) return reply(OWNER_ONLY_MESSAGE);
         
         const cmdNotFoundConfig = loadCmdNotFoundConfig();
         const subcommand = args[0]?.toLowerCase();
@@ -6829,7 +6667,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
             await reply("⚠️ Este menu é exclusivo para o dono do bot.");
             return;
           }
-          ;
           await sendMenuWithMedia('dono', menuDono);
         } catch (error) {
           console.error('Erro ao enviar menu do dono:', error);
@@ -6872,7 +6709,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
             quoted: info
           });
         }
-        ;
       case 'antipv3':
         try {
           if (!isOwner) return reply("Este comando é apenas para o meu dono 💔");
@@ -6909,7 +6745,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
       case 'antipvmessage':
       case 'antipvmsg':
         try {
-          if (!isOwner) return reply('🚫 Este comando é apenas para o dono do bot!');
+          if (!isOwner) return reply(OWNER_ONLY_MESSAGE);
           if (!q) return reply(`Por favor, forneça a nova mensagem para o antipv. Exemplo: ${prefix}antipvmessage Comandos no privado estão desativados!`);
           const antipvFile = DATABASE_DIR + '/antipv.json';
           let antipvData = loadJsonFile(antipvFile, {
@@ -7042,13 +6878,11 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           while ((match = caseRegex.exec(indexContent)) !== null) {
             cases.add(match[1]);
           }
-          ;
           const multiCaseRegex = /case\s+'([^']+)'\s*:\s*case\s+'([^']+)'\s*:/g;
           while ((match = multiCaseRegex.exec(indexContent)) !== null) {
             cases.add(match[1]);
             cases.add(match[2]);
           }
-          ;
           const caseList = Array.from(cases).sort();
           await reply(`📜 *Lista de Comandos (Cases)*:\n\n${caseList.join('\n')}\n\nTotal: ${caseList.length} comandos`);
         } catch (e) {
@@ -7203,7 +7037,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'sermembro':
         try {
@@ -7213,7 +7046,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'prefixo':
       case 'prefix':
@@ -7537,7 +7369,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
             
             teks += `🔹 *${i + 1}. ${sortedGroups[i].subject}*\n` + `🆔 *ID:* ${sortedGroups[i].id}\n` + `👥 *Participantes:* ${sortedGroups[i].participants.length}\n\n`;
           }
-          ;
           await reply(teks);
         } catch (e) {
           console.log(e);
@@ -7556,13 +7387,11 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           } else {
             await reply('✅ Grupo desbanido, todos podem utilizar o bot novamente.');
           }
-          ;
           fs.writeFileSync(__dirname + `/../database/dono/bangp.json`, JSON.stringify(banGpIds));
         } catch (e) {
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'addpremium':
       case 'addvip':
@@ -7664,7 +7493,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
             
             teks += `   Nenhum usuário premium encontrado.\n`;
           }
-          ;
           
           teks += `\n👥 *Grupos Premium* (${groupsPremium.length})\n`;
           if (groupsPremium.length > 0) {
@@ -7682,7 +7510,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
             
             teks += `   Nenhum grupo premium encontrado.\n`;
           }
-          ;
           await nazu.sendMessage(from, {
             text: teks,
             mentions: usersPremium
@@ -7693,7 +7520,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           console.error(e);
           await reply('😔 Ops, algo deu errado. Tente novamente mais tarde!');
         }
-        ;
         break;
       //COMANDOS GERAIS
       case 'rvisu':
@@ -7734,12 +7560,10 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           } else {
             return reply('Por favor, *mencione uma imagem, video ou áudio em visualização única* para executar o comando.');
           }
-          ;
         } catch (e) {
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'limpardb':
         try {
@@ -8017,10 +7841,8 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
               if (!['0', 'marca'].includes(groupData.mark[blue67[i6].id])) {
                 menc.push(blue67[i6].id);
               }
-              ;
             }
           }
-          ;
           await nazu.sendMessage(from, {
             text: blad,
             mentions: menc
@@ -8031,7 +7853,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           console.error('[RANKATIVO] Erro:', e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'rankinativos':
       case 'rankinativo':
@@ -8081,9 +7902,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
             if (!['0', 'marca'].includes(groupData.mark[blue67[i6].id])) {
               menc.push(blue67[i6].id);
             }
-            ;
           }
-          ;
           await nazu.sendMessage(from, {
             text: blad,
             mentions: menc
@@ -8094,7 +7913,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           console.error('[RANKINATIVO] Erro:', e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'totalcmd':
       case 'totalcomando':
@@ -8128,9 +7946,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
               groupCommands = userData.cmd || 0;
               groupStickers = userData.figu || 0;
             }
-            ;
           }
-          ;
           let totalMessages = 0;
           let totalCommands = 0;
           let totalStickers = 0;
@@ -8145,22 +7961,17 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
                   totalCommands += userData.cmd || 0;
                   totalStickers += userData.figu || 0;
                 }
-                ;
               }
-              ;
             } catch (e) {
               console.error(`Erro ao ler ${file}:`, e);
             }
-            ;
           }
-          ;
           const userName = pushname || getUserName(sender);
           const userStatus = isOwner ? 'Dono' : isPremium ? 'Premium' : isGroupAdmin ? 'Admin' : 'Membro';
           let profilePic = null;
           try {
             profilePic = await nazu.profilePictureUrl(sender, 'image');
           } catch (e) {}
-          ;
           const statusMessage = `📊 *Meu Status - ${userName}* 📊\n\n👤 *Nome*: ${userName}\n📱 *Número*: @${getUserName(sender)}\n⭐ *Status*: ${userStatus}\n\n${isGroup ? `\n📌 *No Grupo: ${groupName}*\n💬 Mensagens: ${groupMessages}\n⚒️ Comandos: ${groupCommands}\n🎨 Figurinhas: ${groupStickers}\n` : ''}\n\n🌐 *Geral (Todos os Grupos)*\n💬 Mensagens: ${totalMessages}\n⚒️ Comandos: ${totalCommands}\n🎨 Figurinhas: ${totalStickers}\n\n✨ *Bot*: ${nomebot} by ${nomedono} ✨`;
           if (profilePic) {
             await nazu.sendMessage(from, {
@@ -8180,12 +7991,10 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
               quoted: info
             });
           }
-          ;
         } catch (e) {
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'infoserver':
         if (!isOwner) {
@@ -8415,7 +8224,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           console.error("Erro em statusbot:", e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'iastatus':
       case 'apikeyinfo':
@@ -8739,7 +8547,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           console.error("Erro no comando ping:", e);
           await reply("❌ Ocorreu um erro ao processar o comando ping");
         }
-        ;
         break;
       case 'toimg':
         if (!isQuotedSticker) return reply('Por favor, *mencione um sticker* para executar o comando.');
@@ -8754,7 +8561,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
         } catch (error) {
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'qc':
         try {
@@ -8765,7 +8571,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           } catch {
             ppimg = 'https://telegra.ph/file/b5427ea4b8701bc47e751.jpg';
           }
-          ;
           const json = {
             "type": "quote",
             "format": "png",
@@ -8805,7 +8610,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'emojimix':
         try {
@@ -8830,7 +8634,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'ttp':
         try {
@@ -8857,7 +8660,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'brat':
         try {
@@ -8875,7 +8677,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
         } catch (e) {
           console.error(e);
         }
-        ;
         break;
       case 'st':
       case 'stk':
@@ -8902,7 +8703,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'st2':
       case 'stk2':
@@ -8928,7 +8728,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'figualeatoria':
       case 'randomsticker':
@@ -8944,7 +8743,6 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'rename':
 case 'roubar':
@@ -9033,7 +8831,6 @@ case 'roubar':
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
 
       case 'figurinhas':
@@ -9131,7 +8928,6 @@ case 'roubar':
           stanzaId = info.key.id;
           participant = info.key.participant || menc_prt;
         }
-        ;
         try {
           await nazu.sendMessage(from, {
             delete: {
@@ -9144,7 +8940,6 @@ case 'roubar':
         } catch (error) {
           reply("ocorreu um erro 💔");
         }
-        ;
         break;
       case 'blockuser':
         if (!isGroup) return reply("isso so pode ser usado em grupo 💔");
@@ -9169,7 +8964,6 @@ case 'roubar':
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'unblockuser':
         if (!isGroup) return reply("isso so pode ser usado em grupo 💔");
@@ -9240,7 +9034,6 @@ case 'roubar':
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'promover':
       case 'promote':
@@ -9341,7 +9134,6 @@ case 'roubar':
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'opengp':
         try {
@@ -9427,7 +9219,6 @@ case 'roubar':
           } else {
             return reply(`❌ Forneça exatamente 16 nomes! Você forneceu 0. Exemplo: ${prefix}${command} nome1,nome2,...,nome16`);
           }
-          ;
           participantes = participantes.sort(() => Math.random() - 0.5);
           const grupo1 = participantes.slice(0, 8);
           const grupo2 = participantes.slice(8, 16);
@@ -9657,13 +9448,11 @@ case 'roubar':
             
             aud_d4.ptt = true;
           }
-          ;
           await nazu.sendMessage(from, DFC4).catch(error => {});
         } catch (e) {
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'antilinkhard':
         try {
@@ -9930,11 +9719,9 @@ case 'divulgar':
           if (newPrefix.length > 1) {
             return reply("🤔 O prefixo deve ter no máximo 1 digito.");
           }
-          ;
           if (newPrefix.includes(' ')) {
             return reply("🤔 O prefixo não pode conter espaços.");
           }
-          ;
           
           groupData.customPrefix = newPrefix;
           fs.writeFileSync(groupFile, JSON.stringify(groupData, null, 2));
@@ -10051,7 +9838,6 @@ Exemplos:
             
             groupData.modobrincadeira = !groupData.modobrincadeira;
           }
-          ;
           fs.writeFileSync(groupFilePath, JSON.stringify(groupData));
           if (groupData.modobrincadeira) {
             await reply('🎉 *Modo de Brincadeiras ativado!* Agora o grupo está no modo de brincadeiras. Divirta-se!');
@@ -10062,7 +9848,6 @@ Exemplos:
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'bemvindo':
       case 'bv':
@@ -10079,7 +9864,6 @@ Exemplos:
             
             groupData.bemvindo = !groupData.bemvindo;
           }
-          ;
           fs.writeFileSync(groupFilePath, JSON.stringify(groupData));
           if (groupData.bemvindo) {
             await reply(`✅ *Boas-vindas ativadas!* Agora, novos membros serão recebidos com uma mensagem personalizada.\n📝 Para configurar a mensagem, use: *${prefixo}legendabv*`);
@@ -10090,7 +9874,6 @@ Exemplos:
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'banghost':
         try {
@@ -10153,7 +9936,6 @@ Exemplos:
             } else {
               await reply(`❌ Marque uma imagem ou envie uma imagem com o comando.`);
             }
-            ;
           } catch (error) {
             console.error(error);
             reply("ocorreu um erro 💔");
@@ -10184,9 +9966,7 @@ Exemplos:
             console.error(error);
             reply("ocorreu um erro 💔");
           }
-          ;
         }
-        ;
         break;
       case 'limpar':
       case 'clean':
@@ -10285,9 +10065,7 @@ Exemplos:
             console.error(error);
             await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
           }
-          ;
         }
-        ;
         break;
       case 'parcerias':
       case 'partnerships':
@@ -10598,7 +10376,6 @@ Exemplos:
             
             groupData.soadm = !groupData.soadm;
           }
-          ;
           fs.writeFileSync(groupFilePath, JSON.stringify(groupData));
           if (groupData.soadm) {
             await reply(`✅ *Modo apenas adm ativado!* Agora apenas administrdores do grupo poderam utilizar o bot*`);
@@ -10609,7 +10386,6 @@ Exemplos:
           console.error(e);
           reply("ocorreu um erro 💔");
         }
-        ;
         break;
       case 'modolite':
       case 'litemode':
@@ -10738,10 +10514,8 @@ Exemplos:
       case 'assistent':
         try {
           if (!KeyCog) {
-            await nazu.sendMessage(nmrdn, {
-              text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Caso tenha interesse, entre em contato comigo pelo link abaixo! Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês. 🚀\nwa.me/553399285117`
-            });
-            return reply('Este comando precisa de API key para funcionar. Meu dono já foi notificado! 😺');
+            await sendApiKeyWarning(nazu, nmrdn, prefix, command);
+            return reply(API_KEY_REQUIRED_MESSAGE);
           }
           if (!isGroup) return reply("Isso só pode ser usado em grupo 💔");
           if (!isGroupAdmin) return reply("Você precisa ser administrador 💔");
@@ -10791,7 +10565,6 @@ Exemplos:
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'mute':
       case 'mutar':
@@ -10905,7 +10678,6 @@ Exemplos:
           });
           break;
         }
-        ;
       case 'chance':
         try {
           if (!isGroup) return reply("🎮 Ops! Esse comando só funciona em grupos! Chama a galera! 👥�");
@@ -10982,7 +10754,6 @@ ${tempo.includes('nunca') ? '😂 Brincadeira! Nunca desista dos seus sonhos!' :
           while (membro2 === membro1) {
             membro2 = membros[Math.floor(Math.random() * membros.length)];
           }
-          ;
           const shipLevel = Math.floor(Math.random() * 101);
           const chance = Math.floor(Math.random() * 101);
           const comentarios = [
@@ -11017,7 +10788,6 @@ ${tempo.includes('nunca') ? '😂 Brincadeira! Nunca desista dos seus sonhos!' :
           while (par === menc_os2) {
             par = membros[Math.floor(Math.random() * membros.length)];
           }
-          ;
           const shipLevel = Math.floor(Math.random() * 101);
           const chance = Math.floor(Math.random() * 101);
           const nomeShip = `${getUserName(menc_os2).slice(0,3)}${getUserName(par).slice(-3)}`;
@@ -11182,11 +10952,9 @@ ${nivelSorte >= 70 ? '🎉 Hoje é seu dia de sorte!' : nivelSorte >= 40 ? '🤔
                 timeZone: 'America/Sao_Paulo'
               });
             }
-            ;
           } catch (error) {
             console.warn(`Falha ao obter status/bio de ${targetName}:`, error.message);
           }
-          ;
           const perfilText = `📋 Perfil de ${targetName} 📋\n\n👤 *Nome*: ${pushname || 'Desconhecido'}\n📱 *Número*: ${targetId}\n📜 *Bio*: ${bio}${bioSetAt ? `\n🕒 *Bio atualizada em*: ${bioSetAt}` : ''}\n💰 *Valor do Pacote*: ${pacoteValue} 🫦\n😸 *Humor*: ${randomHumor}\n\n🎭 *Níveis*:\n  • Puta: ${levels.puta}%\n  • Gado: ${levels.gado}%\n  • Corno: ${levels.corno}%\n  • Sortudo: ${levels.sortudo}%\n  • Carisma: ${levels.carisma}%\n  • Rico: ${levels.rico}%\n  • Gostosa: ${levels.gostosa}%\n  • Feio: ${levels.feio}%`.trim();
           
           await nazu.sendMessage(from, { image: { url: profilePic }, caption: perfilText, mentions: [target] }, { quoted: info });
@@ -11239,7 +11007,6 @@ ${nivelSorte >= 70 ? '🎉 Hoje é seu dia de sorte!' : nivelSorte >= 40 ? '🤔
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'vab':
         try {
@@ -11265,7 +11032,6 @@ ${nivelSorte >= 70 ? '🎉 Hoje é seu dia de sorte!' : nivelSorte >= 40 ? '🤔
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'surubao':
       case 'suruba':
@@ -11301,7 +11067,6 @@ ${nivelSorte >= 70 ? '🎉 Hoje é seu dia de sorte!' : nivelSorte >= 40 ? '🤔
             ABC += `@${menb.split("@")[0]}\n`;
             mencts.push(menb);
           }
-          ;
           await nazu.sendMessage(from, {
             image: {
               url: 'https://raw.githubusercontent.com/nazuninha/uploads/main/outros/1747545773146_rrv7of.bin'
@@ -11313,7 +11078,6 @@ ${nivelSorte >= 70 ? '🎉 Hoje é seu dia de sorte!' : nivelSorte >= 40 ? '🤔
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'suicidio':
         try {
@@ -11328,7 +11092,6 @@ ${nivelSorte >= 70 ? '🎉 Hoje é seu dia de sorte!' : nivelSorte >= 40 ? '🤔
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'gay':
       case 'burro':
@@ -11444,12 +11207,10 @@ ${nivelSorte >= 70 ? '🎉 Hoje é seu dia de sorte!' : nivelSorte >= 40 ? '🤔
               mentions: [target]
             });
           }
-          ;
         } catch (e) {
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'lesbica':
       case 'burra':
@@ -11563,12 +11324,10 @@ ${nivelSorte >= 70 ? '🎉 Hoje é seu dia de sorte!' : nivelSorte >= 40 ? '🤔
               mentions: [target]
             });
           }
-          ;
         } catch (e) {
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'rankgay':
       case 'rankburro':
@@ -11667,7 +11426,6 @@ ${nivelSorte >= 70 ? '🎉 Hoje é seu dia de sorte!' : nivelSorte >= 40 ? '🤔
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'ranklesbica':
       case 'rankburra':
@@ -11764,7 +11522,6 @@ ${nivelSorte >= 70 ? '🎉 Hoje é seu dia de sorte!' : nivelSorte >= 40 ? '🤔
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'chute':
       case 'chutar':
@@ -11826,12 +11583,10 @@ ${nivelSorte >= 70 ? '🎉 Hoje é seu dia de sorte!' : nivelSorte >= 40 ? '🤔
               mentions: [menc_os2]
             });
           }
-          ;
         } catch (e) {
           console.error(e);
           await reply("❌ Ocorreu um erro interno. Tente novamente em alguns minutos.");
         }
-        ;
         break;
       case 'afk':
         try {
@@ -12558,7 +12313,7 @@ ${groupData.rules.length}. ${q}`);
   
       // Rental expiration management commands
       case 'rentalstats':
-        if (!isOwner) return reply('🚫 Este comando é apenas para o dono do bot!');
+        if (!isOwner) return reply(OWNER_ONLY_MESSAGE);
         if (!rentalExpirationManager) return reply('❌ Sistema de gerenciamento de expiração de aluguel não está ativo.');
         
         const stats = rentalExpirationManager.getStats();
@@ -12596,7 +12351,7 @@ ${groupData.rules.length}. ${q}`);
         break;
 
       case 'rentaltest':
-        if (!isOwner) return reply('🚫 Este comando é apenas para o dono do bot!');
+        if (!isOwner) return reply(OWNER_ONLY_MESSAGE);
         if (!rentalExpirationManager) return reply('❌ Sistema de gerenciamento de expiração de aluguel não está ativo.');
         
         await reply('🔄 Iniciando teste manual do sistema de expiração de aluguel...');
@@ -12611,7 +12366,7 @@ ${groupData.rules.length}. ${q}`);
         break;
 
       case 'rentalconfig':
-        if (!isOwner) return reply('🚫 Este comando é apenas para o dono do bot!');
+        if (!isOwner) return reply(OWNER_ONLY_MESSAGE);
         if (!q) return reply(`Uso: ${prefix}rentalconfig <opção> <valor>\n\nOpções disponíveis:\n• interval <cron-expression>\n• warning <dias>\n• final <dias>\n• cleanup <horas>\n• notifications <on|off>\n• autocleanup <on|off>\n\nExemplo: ${prefix}rentalconfig warning 7`);
         
         const [option, value] = q.split(' ', 2);
@@ -12660,7 +12415,7 @@ ${groupData.rules.length}. ${q}`);
         break;
 
       case 'rentalclean':
-        if (!isOwner) return reply('🚫 Este comando é apenas para o dono do bot!');
+        if (!isOwner) return reply(OWNER_ONLY_MESSAGE);
         if (!rentalExpirationManager) return reply('❌ Sistema de gerenciamento de expiração de aluguel não está ativo.');
         
         try {
@@ -12779,7 +12534,6 @@ function getDiskSpaceInfo() {
       console.warn(`Plataforma ${platform} não suportada para informações de disco`);
       return defaultResult;
     }
-    ;
     if (totalBytes > 0 && freeBytes >= 0) {
       const usedBytes = totalBytes - freeBytes;
       const totalGb = (totalBytes / 1024 / 1024 / 1024).toFixed(2);
@@ -12808,7 +12562,5 @@ function getDiskSpaceInfo() {
       percentUsed: 'N/A'
     };
   }
-  ;
 }
-;
 export default NazuninhaBotExec;
