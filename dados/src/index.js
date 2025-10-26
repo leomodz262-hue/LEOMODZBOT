@@ -87,7 +87,7 @@ const getUserName = (userId) => {
 // Função para enviar aviso de API key não configurada
 const sendApiKeyWarning = async (nazu, nmrdn, prefix, command) => {
   await nazu.sendMessage(nmrdn, {
-    text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Você pode entrar em contato para solicitar uma key gratuita com limite de 150 requests por dia ou comprar a ilimitada por R$15/mês! 🚀\nwa.me/553399285117`
+    text: `Olá! 🐝 Passei aqui para avisar que alguém tentou usar o comando "${prefix}${command}", mas parece que a sua API key ainda não foi configurada. 😊 Você pode adquirir uma API key visitando nossa página de planos! 🚀\nhttps://cog2.cognima.com.br/plans`
   });
 };
 
