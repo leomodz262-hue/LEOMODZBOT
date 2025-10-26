@@ -6304,7 +6304,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
           }
 
           await reply('Aguarde um momentinho... ☀️');
-          let isTikTokUrl = /^https?:\/\/(?:www\.|m\.|vm\.|t\.)?tiktok\.com\//.test(q);
+          let isTikTokUrl = q.includes('tiktok');
           let datinha = await (isTikTokUrl ? tiktok.dl(q, KeyCog) : tiktok.search(q, KeyCog));
           
           if (!datinha.ok) return reply(datinha.msg);
