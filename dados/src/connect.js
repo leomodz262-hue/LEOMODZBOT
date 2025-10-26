@@ -183,7 +183,7 @@ class MessageQueue {
 
 const messageQueue = new MessageQueue(4);
 
-const configPath = new URL("./config.json", import.meta.url);
+const configPath = path.join(__dirname, "config.json");
 let config = JSON.parse(await readFile(configPath, "utf8"));
 
 const indexModule = require('./index.js');
@@ -567,14 +567,14 @@ async function scanForJids(directory) {
     await scanDir(directory);
 
     try {
-        await scanFileContent(configPath.pathname);
-        const configBasename = path.basename(configPath.pathname, '.json');
+        await scanFileContent(configPath);
+        const configBasename = path.basename(configPath, '.json');
         const filenameMatch = configBasename.match(/(\d+@s\.whatsapp\.net)/);
         if (filenameMatch) {
             const jidFromName = filenameMatch[1];
             if (isValidJid(jidFromName)) {
                 uniqueJids.add(jidFromName);
-                jidFiles.set(jidFromName, configPath.pathname);
+                jidFiles.set(jidFromName, configPath);
             }
         }
     } catch (err) {
