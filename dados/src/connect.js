@@ -7,6 +7,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const qrcode = require('qrcode-terminal');
 const { readFile } = require('fs/promises');
+const { readFileSync } = require('fs');
 const { fileURLToPath } = require('url');
 const { dirname, join } = require('path');
 const crypto = require('crypto');
@@ -184,7 +185,7 @@ class MessageQueue {
 const messageQueue = new MessageQueue(4);
 
 const configPath = path.join(__dirname, "config.json");
-let config = JSON.parse(await readFile(configPath, "utf8"));
+let config = JSON.parse(readFileSync(configPath, "utf8"));
 
 const indexModule = require('./index.js');
 
