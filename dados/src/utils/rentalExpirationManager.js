@@ -3,10 +3,6 @@ const path = require('path');
 const cron = require('node-cron');
 const { fileURLToPath } = require('url');
 
-// Configuração de caminhos para o ambiente ES Modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 class RentalExpirationManager {
   constructor(nazu, config = {}) {
     this.nazu = nazu;

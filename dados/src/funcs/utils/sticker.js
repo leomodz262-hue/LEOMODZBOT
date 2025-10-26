@@ -7,11 +7,10 @@ const axios = require('axios');
 const ffmpeg = require('fluent-ffmpeg');
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Diretório temporário
 function ensureTmpDir() {
-  const tmpDir = path.join(__dirname, "../../../database/tmp");
+  const tmpDir = path.join(path.dirname(__filename), "../../../database/tmp");
   if (!fsSync.existsSync(tmpDir)) {
     fsSync.mkdirSync(tmpDir, { recursive: true });
   }

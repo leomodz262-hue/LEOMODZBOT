@@ -6,13 +6,12 @@ const { fileURLToPath } = require('url');
 
 // Configuração de caminhos para o ambiente ES Modules
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const execAsync = promisify(exec);
 
 class MediaCompressor {
     constructor() {
-        this.tempDir = path.join(__dirname, '../../../temp/compression');
+        this.tempDir = path.join(path.dirname(__filename), '../../../temp/compression');
         this.compressionQueue = [];
         this.isProcessing = false;
         this.maxConcurrentCompressions = 2;

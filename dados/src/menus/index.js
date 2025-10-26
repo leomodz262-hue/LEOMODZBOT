@@ -3,10 +3,6 @@
 const { fileURLToPath } = require('url');
 const path = require('path');
 
-// Configuração de caminhos para o ambiente ES Modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const menuModules = {
     menu: "./menu.js",
     menuButtons: "./menuButtons.js",

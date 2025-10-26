@@ -2,9 +2,6 @@ const NodeCache = require('@cacheable/node-cache');
 const { fileURLToPath } = require('url');
 const path = require('path');
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 class OptimizedCacheManager {
     constructor() {
         this.caches = new Map();

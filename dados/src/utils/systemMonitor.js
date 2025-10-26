@@ -4,12 +4,11 @@ const path = require('path');
 const { fileURLToPath } = require('url');
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 class SystemMonitor {
     constructor() {
-        this.tempDir = path.join(__dirname, '../../temp');
-        this.mediaDir = path.join(__dirname, '../../midias');
+        this.tempDir = path.join(path.dirname(__filename), '../../temp');
+        this.mediaDir = path.join(path.dirname(__filename), '../../midias');
         this.maxDiskUsage = 90; // Porcentagem máxima de uso do disco
         this.cleanupInterval = 5 * 60 * 1000; // 5 minutos
         this.fileAgeLimit = 24 * 60 * 60 * 1000; // 24 horas

@@ -4,7 +4,6 @@ const { fileURLToPath } = require('url');
 
 // Configuração de caminhos para o ambiente ES Modules
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 /**
  * Carrega um módulo JavaScript local de forma assíncrona usando import() dinâmico com URL.
@@ -29,7 +28,7 @@ async function loadModuleAsync(modulePath) {
  */
 async function loadJson(filePath) {
     try {
-        const fullPath = path.resolve(__dirname, filePath);
+        const fullPath = path.resolve(path.dirname(__filename), filePath);
         const data = await fs.readFile(fullPath, "utf-8");
         return JSON.parse(data);
     } catch (error) {

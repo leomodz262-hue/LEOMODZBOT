@@ -3,8 +3,7 @@ const path = require('path');
 const { fileURLToPath } = require('url');
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const STATS_FILE = path.join(__dirname, '../../../database/commandStats.json');
+const STATS_FILE = path.join(path.dirname(__filename), '../../../database/commandStats.json');
 
 let statsCache = null;
 let isWriting = false;

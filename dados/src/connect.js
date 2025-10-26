@@ -183,9 +183,6 @@ class MessageQueue {
 
 const messageQueue = new MessageQueue(4);
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 const configPath = new URL("./config.json", import.meta.url);
 let config = JSON.parse(await readFile(configPath, "utf8"));
 

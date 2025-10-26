@@ -4,7 +4,6 @@ const path = require('path');
 const { fileURLToPath } = require('url');
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 class AutoRestarter {
     constructor() {
@@ -20,8 +19,8 @@ class AutoRestarter {
             'ERR_UNHANDLED_ERROR',
             'UnhandledPromiseRejectionWarning'
         ];
-        this.logFile = path.join(__dirname, '../../../logs/auto-restart.log');
-        this.pidFile = path.join(__dirname, '../../../nazuna.pid');
+        this.logFile = path.join(path.dirname(__filename), '../../../logs/auto-restart.log');
+        this.pidFile = path.join(path.dirname(__filename), '../../../nazuna.pid');
         this.isShuttingDown = false;
         this.childProcess = null;
         
