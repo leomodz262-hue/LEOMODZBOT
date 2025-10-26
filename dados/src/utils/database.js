@@ -1,8 +1,8 @@
 const fs = require('fs');
 const pathz = require('path');
-const { ensureDirectoryExists, ensureJsonFileExists, loadJsonFile, normalizar } = require('./helpers');
+const { ensureDirectoryExists, ensureJsonFileExists, loadJsonFile, normalizar, getUserName, isGroupId, isUserId, isValidLid, isValidJid, buildUserId } = require('./helpers');
 
-const DATABASE_DIR = __dirname + '/../database';
+const DATABASE_DIR = __dirname + '/../../database';
 const GRUPOS_DIR = DATABASE_DIR + '/grupos';
 const USERS_DIR = DATABASE_DIR + '/users';
 const DONO_DIR = DATABASE_DIR + '/dono';
