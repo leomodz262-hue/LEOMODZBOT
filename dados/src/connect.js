@@ -383,11 +383,9 @@ async function handleGroupParticipantsUpdate(NazunaSock, inf) {
             return;
         }
         const groupSettings = await loadGroupSettings(from);
-        console.log('Configurações do grupo carregadas:', JSON.stringify(groupSettings, null, 2));
         const globalBlacklist = await loadGlobalBlacklist();
         switch (inf.action) {
             case 'add': {
-                console.log('Evento de adição detectado. Participantes:', inf.participants);
                 const membersToWelcome = [];
                 const membersToRemove = [];
                 const removalReasons = [];
@@ -403,10 +401,7 @@ async function handleGroupParticipantsUpdate(NazunaSock, inf) {
                         continue;
                     }
                     if (groupSettings.bemvindo || groupSettings.welcome?.enabled) {
-                        console.log(`Usuário ${participant} será recebido. Bem-vindo ativado: ${groupSettings.bemvindo}, Welcome ativado: ${groupSettings.welcome?.enabled}`);
                         membersToWelcome.push(participant);
-                    } else {
-                        console.log(`Usuário ${participant} não será recebido. Bem-vindo: ${groupSettings.bemvindo}, Welcome: ${groupSettings.welcome?.enabled}`);
                     }
                 }
                 if (membersToRemove.length > 0) {
@@ -417,7 +412,6 @@ async function handleGroupParticipantsUpdate(NazunaSock, inf) {
                     });
                 }
                 if (membersToWelcome.length > 0) {
-                    console.log(`Enviando mensagem de boas-vindas para ${membersToWelcome.length} membros`);
                     const welcomeSettings = groupSettings.welcome || groupSettings.bemvindo || {};
                     
                     if (groupSettings.bemvindo && !welcomeSettings.text && groupSettings.textbv) {
@@ -425,11 +419,9 @@ async function handleGroupParticipantsUpdate(NazunaSock, inf) {
                     }
                     
                     const message = await createGroupMessage(NazunaSock, groupMetadata, membersToWelcome, welcomeSettings, true);
-                    console.log('Mensagem de boas-vindas criada:', JSON.stringify(message, null, 2));
                     
                     try {
                         await NazunaSock.sendMessage(from, message);
-                        console.log('Mensagem de boas-vindas enviada com sucesso');
                     } catch (error) {
                         console.error('❌ Erro ao enviar mensagem de boas-vindas:', error);
                         const fallbackMessage = {
@@ -437,8 +429,6 @@ async function handleGroupParticipantsUpdate(NazunaSock, inf) {
                         };
                         await NazunaSock.sendMessage(from, fallbackMessage);
                     }
-                } else {
-                    console.log('Nenhum membro para receber mensagem de boas-vindas');
                 }
                 break;
             }
