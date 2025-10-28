@@ -314,8 +314,8 @@ async function createGroupMessage(NazunaSock, groupMetadata, participants, setti
     };
     const defaultText = isWelcome ?
         (jsonGp.textbv ? jsonGp.textbv : "🚀 Bem-vindo(a/s), #numerodele#! Vocês entraram no grupo *#nomedogp#*. Membros: #membros#.") :
-        (jsonGp.exit.text ? jsonGp.exit.text : "👋 Adeus, #numerodele#! Até mais!");
-    const text = formatMessageText(settings.text || defaultText, replacements);
+        (jsonGp.exit?.text ? jsonGp.exit.text : "👋 Adeus, #numerodele#! Até mais!");
+    const text = formatMessageText(settings.text || settings.message || defaultText, replacements);
     const message = {
         text,
         mentions
@@ -323,7 +323,11 @@ async function createGroupMessage(NazunaSock, groupMetadata, participants, setti
     if (settings.image) {
         let profilePicUrl = 'https://raw.githubusercontent.com/nazuninha/uploads/main/outros/1747053564257_bzswae.bin';
         if (participants.length === 1 && isWelcome) {
-            profilePicUrl = await NazunaSock.profilePictureUrl(participants[0], 'image').catch(() => profilePicUrl);
+            try {
+                profilePicUrl = await NazunaSock.profilePictureUrl(participants[0], 'image');
+            } catch (error) {
+                console.error('❌ Erro ao obter foto de perfil do usuário:', error);
+            }
         }
 
         const modules = require('./funcs/exports.js');
@@ -339,6 +343,23 @@ async function createGroupMessage(NazunaSock, groupMetadata, participants, setti
             message.image = image;
             message.caption = text;
             delete message.text;
+        } else if (settings.image === 'banner') {
+            try {
+                const bannerImage = await banner.generateWelcomeBanner({
+                    groupName: groupMetadata.subject,
+                    participants: participants,
+                    isWelcome: isWelcome
+                });
+                if (bannerImage) {
+                    message.image = {
+                        url: bannerImage
+                    };
+                    message.caption = text;
+                    delete message.text;
+                }
+            } catch (error) {
+                console.error('❌ Erro ao gerar banner de boas-vindas:', error);
+            }
         }
     }
     return message;
@@ -362,9 +383,11 @@ async function handleGroupParticipantsUpdate(NazunaSock, inf) {
             return;
         }
         const groupSettings = await loadGroupSettings(from);
+        console.log('Configurações do grupo carregadas:', JSON.stringify(groupSettings, null, 2));
         const globalBlacklist = await loadGlobalBlacklist();
         switch (inf.action) {
             case 'add': {
+                console.log('Evento de adição detectado. Participantes:', inf.participants);
                 const membersToWelcome = [];
                 const membersToRemove = [];
                 const removalReasons = [];
@@ -379,8 +402,11 @@ async function handleGroupParticipantsUpdate(NazunaSock, inf) {
                         removalReasons.push(`@${participant.split('@')[0]} (lista negra do grupo: ${groupSettings.blacklist[participant].reason})`);
                         continue;
                     }
-                    if (groupSettings.bemvindo) {
+                    if (groupSettings.bemvindo || groupSettings.welcome?.enabled) {
+                        console.log(`Usuário ${participant} será recebido. Bem-vindo ativado: ${groupSettings.bemvindo}, Welcome ativado: ${groupSettings.welcome?.enabled}`);
                         membersToWelcome.push(participant);
+                    } else {
+                        console.log(`Usuário ${participant} não será recebido. Bem-vindo: ${groupSettings.bemvindo}, Welcome: ${groupSettings.welcome?.enabled}`);
                     }
                 }
                 if (membersToRemove.length > 0) {
@@ -391,10 +417,28 @@ async function handleGroupParticipantsUpdate(NazunaSock, inf) {
                     });
                 }
                 if (membersToWelcome.length > 0) {
-                    const message = await createGroupMessage(NazunaSock, groupMetadata, membersToWelcome, groupSettings.welcome || {
-                        text: groupSettings.textbv
-                    });
-                    await NazunaSock.sendMessage(from, message);
+                    console.log(`Enviando mensagem de boas-vindas para ${membersToWelcome.length} membros`);
+                    const welcomeSettings = groupSettings.welcome || groupSettings.bemvindo || {};
+                    
+                    if (groupSettings.bemvindo && !welcomeSettings.text && groupSettings.textbv) {
+                        welcomeSettings.text = groupSettings.textbv;
+                    }
+                    
+                    const message = await createGroupMessage(NazunaSock, groupMetadata, membersToWelcome, welcomeSettings, true);
+                    console.log('Mensagem de boas-vindas criada:', JSON.stringify(message, null, 2));
+                    
+                    try {
+                        await NazunaSock.sendMessage(from, message);
+                        console.log('Mensagem de boas-vindas enviada com sucesso');
+                    } catch (error) {
+                        console.error('❌ Erro ao enviar mensagem de boas-vindas:', error);
+                        const fallbackMessage = {
+                            text: `🚀 Bem-vindo(a/s), ${membersToWelcome.map(p => `@${p.split('@')[0]}`).join(', ')}! Vocês entraram no grupo *${groupMetadata.subject}*.`
+                        };
+                        await NazunaSock.sendMessage(from, fallbackMessage);
+                    }
+                } else {
+                    console.log('Nenhum membro para receber mensagem de boas-vindas');
                 }
                 break;
             }
@@ -447,6 +491,7 @@ async function handleGroupParticipantsUpdate(NazunaSock, inf) {
         }
     } catch (error) {
         console.error(`❌ Erro em handleGroupParticipantsUpdate: ${error.message}\n${error.stack}`);
+        console.error('Dados do evento:', JSON.stringify(inf, null, 2));
     }
 }
 
