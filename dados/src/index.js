@@ -10585,8 +10585,8 @@ ${groupData.rules.length}. ${q}`);
     msg += `🏅 *Rank Atual:* ${basic.rank || 'N/A'}\n`;
     msg += `🐾 *Pet:* ${pet.name || 'Nenhum'}\n`;
     msg += `👥 *Clã:* ${clan.name || 'Nenhum'}\n`;
-    msg += `📅 *Criado em:* ${basic.createAt ? new Date(parseInt(basic.createAt) * 1000).toLocaleDateString('pt-BR') : 'N/A'}\n`;
-    msg += `🕒 *Último Login:* ${basic.lastLoginAt ? new Date(parseInt(basic.lastLoginAt) * 1000).toLocaleString('pt-BR') : 'N/A'}`;
+    msg += `📅 *Criado em:* ${basic.createAt ? new Date(parseInt(basic.createAt) * 1000).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'N/A'}\n`;
+    msg += `🕒 *Último Login:* ${basic.lastLoginAt ? new Date(parseInt(basic.lastLoginAt) * 1000).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'N/A'}`;
 
     if (basic.avatars && basic.avatars.png) {
       const avatarUrl = basic.avatars.png;
