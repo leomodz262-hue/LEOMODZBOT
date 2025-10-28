@@ -9766,6 +9766,71 @@ ${nivelSorte >= 70 ? '🎉 Hoje é seu dia de sorte!' : nivelSorte >= 40 ? '🤔
       case 'poderoso':
       case 'vencedor':
       case 'senhor':
+      case 'fofoqueiro':
+      case 'dorminhoco':
+      case 'comilao':
+      case 'sedentario':
+      case 'atleta':
+      case 'estudioso':
+      case 'romantico':
+      case 'ciumento':
+      case 'extrovertido':
+      case 'introvertido':
+      case 'calmo':
+      case 'nervoso':
+      case 'organizado':
+      case 'bagunceiro':
+      case 'economico':
+      case 'gastador':
+      case 'saudavel':
+      case 'doente':
+      case 'supersticioso':
+      case 'cetico':
+      case 'religioso':
+      case 'ateu':
+      case 'tradicional':
+      case 'moderno':
+      case 'conservador':
+      case 'liberal':
+      case 'patriotico':
+      case 'cosmopolita':
+      case 'rural':
+      case 'urbano':
+      case 'aventureiro':
+      case 'caseiro':
+      case 'viajante':
+      case 'local':
+      case 'global':
+      case 'tecnologico':
+      case 'analogico':
+      case 'digital':
+      case 'offline':
+      case 'online':
+      case 'social':
+      case 'antisocial':
+      case 'popular':
+      case 'solitario':
+      case 'lider':
+      case 'seguidor':
+      case 'independente':
+      case 'dependente':
+      case 'criativo':
+      case 'pratico':
+      case 'sonhador':
+      case 'realista':
+      case 'otimista':
+      case 'pessimista':
+      case 'confiante':
+      case 'inseguro':
+      case 'maduro':
+      case 'infantil':
+      case 'serio':
+      case 'brincalhao':
+      case 'sorte':
+      case 'zueira':
+      case 'viaja nte':
+      case 'responsavel':
+      case 'irresponsavel':
         try {
           if (isModoLite && ['pirocudo', 'pirokudo', 'gostoso', 'nazista', 'machista', 'homofobico', 'racista'].includes(command)) return nazu.react('❌', {
             key: info.key
@@ -9883,6 +9948,68 @@ ${nivelSorte >= 70 ? '🎉 Hoje é seu dia de sorte!' : nivelSorte >= 40 ? '🤔
       case 'poderosa':
       case 'vencedora':
       case 'senhora':
+      case 'fofoqueira':
+      case 'dorminhoca':
+      case 'comilona':
+      case 'sedentaria':
+      case 'atleta':
+      case 'estudiosa':
+      case 'romantica':
+      case 'ciumenta':
+      case 'extrovertida':
+      case 'introvertida':
+      case 'calma':
+      case 'nervosa':
+      case 'organizada':
+      case 'bagunceira':
+      case 'economica':
+      case 'gastadora':
+      case 'saudavel':
+      case 'doente':
+      case 'supersticiosa':
+      case 'cetica':
+      case 'religiosa':
+      case 'ateia':
+      case 'tradicional':
+      case 'moderna':
+      case 'conservadora':
+      case 'liberal':
+      case 'patriotica':
+      case 'cosmopolita':
+      case 'rural':
+      case 'urbana':
+      case 'aventureira':
+      case 'caseira':
+      case 'viajante':
+      case 'local':
+      case 'global':
+      case 'tecnologica':
+      case 'analogica':
+      case 'digital':
+      case 'offline':
+      case 'online':
+      case 'social':
+      case 'antisocial':
+      case 'popular':
+      case 'solitaria':
+      case 'lider':
+      case 'seguidora':
+      case 'independente':
+      case 'dependente':
+      case 'criativa':
+      case 'pratica':
+      case 'sonhadora':
+      case 'realista':
+      case 'otimista':
+      case 'pessimista':
+      case 'confiante':
+      case 'insegura':
+      case 'madura':
+      case 'infantil':
+      case 'seria':
+      case 'brincalhona':
+      case 'responsavel':
+      case 'irresponsavel':
         try {
           if (isModoLite && ['bucetuda', 'cachorra', 'vagabunda', 'racista', 'nazista', 'gostosa', 'machista', 'homofobica'].includes(command)) return nazu.react('❌', {
             key: info.key
