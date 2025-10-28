@@ -314,8 +314,8 @@ async function createGroupMessage(NazunaSock, groupMetadata, participants, setti
     };
     const defaultText = isWelcome ?
         (jsonGp.textbv ? jsonGp.textbv : "🚀 Bem-vindo(a/s), #numerodele#! Vocês entraram no grupo *#nomedogp#*. Membros: #membros#.") :
-        (jsonGp.exit?.text ? jsonGp.exit.text : "👋 Adeus, #numerodele#! Até mais!");
-    const text = formatMessageText(settings.text || settings.message || defaultText, replacements);
+        (jsonGp.exit.text ? jsonGp.exit.text : "👋 Adeus, #numerodele#! Até mais!");
+    const text = formatMessageText(settings.text || defaultText, replacements);
     const message = {
         text,
         mentions
@@ -323,11 +323,7 @@ async function createGroupMessage(NazunaSock, groupMetadata, participants, setti
     if (settings.image) {
         let profilePicUrl = 'https://raw.githubusercontent.com/nazuninha/uploads/main/outros/1747053564257_bzswae.bin';
         if (participants.length === 1 && isWelcome) {
-            try {
-                profilePicUrl = await NazunaSock.profilePictureUrl(participants[0], 'image');
-            } catch (error) {
-                console.error('❌ Erro ao obter foto de perfil do usuário:', error);
-            }
+            profilePicUrl = await NazunaSock.profilePictureUrl(participants[0], 'image').catch(() => profilePicUrl);
         }
 
         const modules = require('./funcs/exports.js');
@@ -343,23 +339,6 @@ async function createGroupMessage(NazunaSock, groupMetadata, participants, setti
             message.image = image;
             message.caption = text;
             delete message.text;
-        } else if (settings.image === 'banner') {
-            try {
-                const bannerImage = await banner.generateWelcomeBanner({
-                    groupName: groupMetadata.subject,
-                    participants: participants,
-                    isWelcome: isWelcome
-                });
-                if (bannerImage) {
-                    message.image = {
-                        url: bannerImage
-                    };
-                    message.caption = text;
-                    delete message.text;
-                }
-            } catch (error) {
-                console.error('❌ Erro ao gerar banner de boas-vindas:', error);
-            }
         }
     }
     return message;
@@ -400,7 +379,7 @@ async function handleGroupParticipantsUpdate(NazunaSock, inf) {
                         removalReasons.push(`@${participant.split('@')[0]} (lista negra do grupo: ${groupSettings.blacklist[participant].reason})`);
                         continue;
                     }
-                    if (groupSettings.bemvindo || groupSettings.welcome?.enabled) {
+                    if (groupSettings.bemvindo) {
                         membersToWelcome.push(participant);
                     }
                 }
@@ -412,23 +391,10 @@ async function handleGroupParticipantsUpdate(NazunaSock, inf) {
                     });
                 }
                 if (membersToWelcome.length > 0) {
-                    const welcomeSettings = groupSettings.welcome || groupSettings.bemvindo || {};
-                    
-                    if (groupSettings.bemvindo && !welcomeSettings.text && groupSettings.textbv) {
-                        welcomeSettings.text = groupSettings.textbv;
-                    }
-                    
-                    const message = await createGroupMessage(NazunaSock, groupMetadata, membersToWelcome, welcomeSettings, true);
-                    
-                    try {
-                        await NazunaSock.sendMessage(from, message);
-                    } catch (error) {
-                        console.error('❌ Erro ao enviar mensagem de boas-vindas:', error);
-                        const fallbackMessage = {
-                            text: `🚀 Bem-vindo(a/s), ${membersToWelcome.map(p => `@${p.split('@')[0]}`).join(', ')}! Vocês entraram no grupo *${groupMetadata.subject}*.`
-                        };
-                        await NazunaSock.sendMessage(from, fallbackMessage);
-                    }
+                    const message = await createGroupMessage(NazunaSock, groupMetadata, membersToWelcome, groupSettings.welcome || {
+                        text: groupSettings.textbv
+                    });
+                    await NazunaSock.sendMessage(from, message);
                 }
                 break;
             }
@@ -481,7 +447,6 @@ async function handleGroupParticipantsUpdate(NazunaSock, inf) {
         }
     } catch (error) {
         console.error(`❌ Erro em handleGroupParticipantsUpdate: ${error.message}\n${error.stack}`);
-        console.error('Dados do evento:', JSON.stringify(inf, null, 2));
     }
 }
 
