@@ -4475,7 +4475,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
       case 'gerarnick':
       case 'nickgenerator':
         try {
-          if (!q) return reply(`🎮 *Consulta de Nick Free Fire*\n\n📝 *Como usar:*\n• Digite o ID do jogador após o comando\n• Ex: ${prefix}ffnick 123456789\n\n🔍 O nick será pesquisado na database do Free Fire!`);
+          if (!q) return reply(`🎮 *GERADOR DE NICK*\n\n📝 *Como usar:*\n• Digite o nick após o comando\n• Ex: ${prefix}nick nazuna`);
           var datzn;
           datzn = await styleText(q);
           await reply(datzn.join('\n'));
