@@ -59,7 +59,7 @@ function setupGracefulShutdown() {
 
 async function displayHeader() {
   const header = [
-    `${colors.bold}🚀 Nazuna - Atualizador${colors.reset}`,
+    `${colors.bold}🚀 LEO MODZ BOT - Atualizador${colors.reset}`,
     `${colors.bold}👨‍💻 Criado por Hiudy${colors.reset}`,
   ];
 
@@ -78,7 +78,7 @@ async function checkRequirements() {
     await execAsync('git --version');
     printDetail('✅ Git encontrado.');
   } catch (error) {
-    printWarning('⚠️ Git não encontrado! É necessário para atualizar o Nazuna.');
+    printWarning('⚠️ Git não encontrado! É necessário para atualizar o LEO MODZ BOT.');
     if (isWindows) {
       printInfo('📥 Instale o Git em: https://git-scm.com/download/win');
     } else if (os.platform() === 'darwin') {
@@ -197,7 +197,7 @@ async function createBackup() {
 }
 
 async function downloadUpdate() {
-  printMessage('📥 Baixando a versão mais recente do Nazuna...');
+  printMessage('📥 Baixando a versão mais recente do LEO MODZ BOT...');
 
   try {
     // Validate temp directory path

@@ -31,8 +31,8 @@ const print = {
     separator: () => console.log(`${colors.blue}=================================================${colors.reset}`),
     header: () => {
         print.separator();
-        console.log(`${colors.bold}🚀 Configurador Gênesis Nazuna - Versão ${version}${colors.reset}`);
-        console.log(`${colors.bold}👨‍💻 Criado por Hiudy${colors.reset}`);
+        console.log(`${colors.bold}🚀 Configurador Gênesis LEO MODZ BOT - Versão ${version}${colors.reset}`);
+        console.log(`${colors.bold}👨‍💻 Criado por LEO MODZ${colors.reset}`);
         print.separator(); console.log();
     }
 };
@@ -278,7 +278,7 @@ async function main() {
         print.info('📝 Lembre-se de instalar com: npm run config:install');
     }
 
-    print.message(`🎉 Nazuna configurado e pronto para uso! Versão: ${version}`);
+    print.message(`🎉 LEO MODZ BOT configurado e pronto para uso! Versão: ${version}`);
 }
 
 main().catch((error) => {
