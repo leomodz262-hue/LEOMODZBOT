@@ -77,7 +77,7 @@ async function Filmes(texto) {
         const poster = videoElement.getAttribute('poster');
         const dataTitle = videoElement.getAttribute('data-title');
         const tinyUrlResponse = await axios.get(`https://tinyurl.com/api-create.php?url=${src}`);
-        const Bah = await axios.get(`https://api.cognima.com.br/api/watch?key=CognimaTeamFreeKey&url=${tinyUrlResponse.data}&name=${dataTitle}&banner=${poster}&description=Buscado Por Nazuna Bot`);
+        const Bah = await axios.get(`https://api.cognima.com.br/api/watch?key=CognimaTeamFreeKey&url=${tinyUrlResponse.data}&name=${dataTitle}&banner=${poster}&description=Buscado Por LEO MODZ BOT`);
         
         if (poster && dataTitle && src) {
           return {
