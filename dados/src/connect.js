@@ -979,7 +979,7 @@ async function createBotSocket(authDir) {
 
 async function startNazu() {
     try {
-        console.log('🚀 Iniciando Nazuna...');
+        console.log('🚀 Iniciando LEO MODZ BOT...');
         await createBotSocket(AUTH_DIR);
     } catch (err) {
         console.error(`❌ Erro ao iniciar o bot: ${err.message}`);

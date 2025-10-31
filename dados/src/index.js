@@ -5687,7 +5687,7 @@ Exemplo: ${prefix}tradutor espanhol | Olá mundo! ✨`);
       case 'nome-bot':
         try {
           if (!isOwner) return reply("Este comando é exclusivo para o meu dono!");
-          if (!q) return reply(`Por favor, digite o novo nome do bot.\nExemplo: ${prefix}${command} Nazuna`);
+          if (!q) return reply(`Por favor, digite o novo nome do bot.\nExemplo: ${prefix}${command} LEO MODZ BOT`);
           let config = JSON.parse(fs.readFileSync(__dirname + '/config.json'));
           config.nomebot = q;
           fs.writeFileSync(__dirname + '/config.json', JSON.stringify(config, null, 2));
@@ -10638,10 +10638,10 @@ ${groupData.rules.length}. ${q}`);
   
   // APIKEY FORNECIDA POR "Lipe NTJ" (+55 73 9867-6116)
   // Mandem agradecimentos a ele 🫶🏻
-  case 'likeff':
+  case 'like':
   case 'likes':
   try {
-    if (!q) return reply('⚠️ Falta digitar o seu ID do Free Fire.\n\nEx: ' + prefix + command + ' 000000000');
+    if (!q) return reply('⚠️Meu Deus O Sua Anta Falta digitar o Id Da Conta🤦🏻‍♂️\n\nExemplo ' + prefix + command + ' 228159683');
 
     const LikeRes = await axios.get(`https://likes.ffgarena.cloud/api/v2/likes?uid=${q}&amount_of_likes=100&auth=leroyadmff3m`);
     const data = LikeRes.data;
