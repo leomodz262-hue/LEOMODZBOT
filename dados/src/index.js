@@ -8175,6 +8175,7 @@ case 'divulgar':
         }
         break;
       case 'autodl':
+      case 'autodown':
         try {
           if (!isGroup) return reply("Isso só pode ser usado em grupo 💔");
           if (!isGroupAdmin) return reply("Você precisa ser adm 💔");

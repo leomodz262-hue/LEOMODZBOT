@@ -18,7 +18,7 @@ module.exports = async function menuButtons(prefix, botName = "MeuBot", userName
             {
                 name: 'single_select',
                 buttonParamsJson: JSON.stringify({
-                    title: '📋 Selecionar Menu',
+                    title: '📋 Navegação do Menu',
                     sections: [
                         {
                             title: '🤖 Inteligência Artificial',
@@ -26,110 +26,104 @@ module.exports = async function menuButtons(prefix, botName = "MeuBot", userName
                             rows: [
                                 {
                                     header: '🤖 Menu IA',
-                                    title: 'Comandos de IA',
-                                    description: 'ChatGPT, Gemini e outras IAs',
+                                    title: 'Chatbots & Geração',
+                                    description: 'IA conversacional, texto e imagem',
                                     id: `${prefix}menuia`
                                 }
                             ]
                         },
                         {
-                            title: '📥 Downloads',
+                            title: '📥 Downloads & Pesquisas',
                             highlight_label: 'Downloads',
                             rows: [
                                 {
                                     header: '📥 Menu Downloads',
-                                    title: 'Baixar Conteúdo',
-                                    description: 'YouTube, TikTok, Instagram e mais',
+                                    title: 'Baixar & Pesquisar',
+                                    description: 'Músicas, vídeos, redes sociais',
                                     id: `${prefix}menudown`
                                 }
                             ]
                         },
                         {
-                            title: '👑 Administração',
-                            highlight_label: 'Admin',
+                            title: '🎮 Diversão & Entretenimento',
+                            highlight_label: 'Diversão',
                             rows: [
                                 {
-                                    header: '👑 Menu Admin',
-                                    title: 'Comandos de Admin',
-                                    description: 'Gerenciar grupo e usuários',
-                                    id: `${prefix}menuadm`
-                                }
-                            ]
-                        },
-                        {
-                            title: '🎲 Diversão',
-                            highlight_label: 'Jogos',
-                            rows: [
-                                {
-                                    header: '� Menu Brincadeiras & Jogos',
-                                    title: '🎯 Diversão Total',
-                                    description: '🎲 Jogos, rankings, ships e muita zoeira!',
+                                    header: '🎮 Menu Diversão',
+                                    title: 'Jogos & Interações',
+                                    description: 'Jogos, rankings, ships e diversão',
                                     id: `${prefix}menubn`
                                 }
                             ]
                         },
                         {
-                            title: '🛠️ Ferramentas',
-                            highlight_label: 'Tools',
-                            rows: [
-                                {
-                                    header: '🛠️ Ferramentas',
-                                    title: 'Utilitários',
-                                    description: 'Ferramentas úteis e conversores',
-                                    id: `${prefix}ferramentas`
-                                }
-                            ]
-                        },
-                        {
-                            title: '👥 Membros',
-                            highlight_label: 'Membros',
-                            rows: [
-                                {
-                                    header: '👥 Menu Membros',
-                                    title: 'Comandos Gerais',
-                                    description: 'Comandos para todos os usuários',
-                                    id: `${prefix}menumemb`
-                                }
-                            ]
-                        },
-                        {
-                            title: '🎨 Criação',
-                            highlight_label: 'Criar',
+                            title: '🎨 Criação & Design',
+                            highlight_label: 'Criação',
                             rows: [
                                 {
                                     header: '🎨 Menu Stickers',
-                                    title: 'Criar Figurinhas',
-                                    description: 'Comandos para criar stickers',
+                                    title: 'Figurinhas & Stickers',
+                                    description: 'Criar e personalizar figurinhas',
                                     id: `${prefix}menufig`
                                 },
                                 {
                                     header: '✨ Alteradores',
-                                    title: 'Efeitos de Texto',
-                                    description: 'Modificar textos e imagens',
+                                    title: 'Efeitos & Modificações',
+                                    description: 'Texto, imagens e transformações',
                                     id: `${prefix}alteradores`
                                 }
                             ]
                         },
                         {
-                            title: '💰 Economia',
-                            highlight_label: 'Gold',
+                            title: '🛠️ Ferramentas & Utilitários',
+                            highlight_label: 'Ferramentas',
+                            rows: [
+                                {
+                                    header: '🛠️ Menu Ferramentas',
+                                    title: 'Utilitários & Ajudas',
+                                    description: 'Tradução, QR codes, links e mais',
+                                    id: `${prefix}ferramentas`
+                                }
+                            ]
+                        },
+                        {
+                            title: '👥 Comandos Gerais',
+                            highlight_label: 'Membros',
+                            rows: [
+                                {
+                                    header: '👥 Menu Membros',
+                                    title: 'Comandos Para Todos',
+                                    description: 'Perfil, status, configurações',
+                                    id: `${prefix}menumemb`
+                                }
+                            ]
+                        },
+                        {
+                            title: '💰 Economia & RPG',
+                            highlight_label: 'Economia',
                             rows: [
                                 {
                                     header: '💰 Menu Gold',
-                                    title: 'Sistema de Economia',
-                                    description: 'Ganhar e gastar gold no jogo',
+                                    title: 'Sistema Econômico',
+                                    description: 'Ganhar, gastar e investir gold',
                                     id: `${prefix}menugold`
                                 }
                             ]
                         },
                         {
-                            title: '👑 Dono',
-                            highlight_label: 'Owner',
+                            title: '👑 Administração & Dono',
+                            highlight_label: 'Admin',
                             rows: [
                                 {
-                                    header: '👑 Menu Dono',
-                                    title: 'Comandos do Dono',
-                                    description: 'Apenas para o criador do bot',
+                                    header: '👑 Menu Admin',
+                                    title: 'Gestão de Grupo',
+                                    description: 'Moderação e controle do grupo',
+                                    id: `${prefix}menuadm`
+                                },
+                                {
+                                    header: '🔧 Menu Dono',
+                                    title: 'Controle Total',
+                                    description: 'Configurações avançadas do bot',
                                     id: `${prefix}menudono`
                                 }
                             ]
